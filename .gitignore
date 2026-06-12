@@ -1,0 +1,14 @@
+backend/target/
+backend/.m2/
+backend/.m2-jdk21/
+frontend/node_modules/
+frontend/.nuxt/
+frontend/.nuxt-dev/
+frontend/.output/
+frontend/dev-*.log
+tools/
+secrets/
+backend-test-external.log
+.env
+.DS_Store
+Thumbs.db

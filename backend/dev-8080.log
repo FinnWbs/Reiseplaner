@@ -1,0 +1,50 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< de.travelmate:travelmate-backend >------------------
+[INFO] Building travelmate-backend 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- quarkus:3.17.6:dev (default-cli) @ travelmate-backend ---
+[INFO] Invoking resources:3.3.1:resources (default-resources) @ travelmate-backend
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Invoking compiler:3.13.0:compile (default-compile) @ travelmate-backend
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] Invoking resources:3.3.1:testResources (default-testResources) @ travelmate-backend
+[INFO] Not copying test resources
+[INFO] Invoking compiler:3.13.0:testCompile (default-testCompile) @ travelmate-backend
+[INFO] Not compiling test sources
+Listening for transport dt_socket at address: 5005
+Press [e] to edit command line args (currently ''), [h] for more options>
+Tests paused
+Press [e] to edit command line args (currently ''), [r] to resume testing, [h] for more options>
+Press [e] to edit command line args (currently ''), [r] to resume testing, [o] Toggle test output, [h] for more options>
+__  ____  __  _____   ___  __ ____  ______ 
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/ 
+ -/ /_/ / /_/ / __ |/ , _/ ,< / /_/ /\ \   
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
+2026-06-08 18:44:09,505 WARN  [io.qua.config] (Quarkus Main Thread) Unrecognized configuration key "quarkus.enforceBuildGoal" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+2026-06-08 18:44:10,898 INFO  [org.fly.cor.FlywayExecutor] (Quarkus Main Thread) Database: jdbc:postgresql://localhost:5432/travelmate (PostgreSQL 16.14)
+2026-06-08 18:44:10,955 INFO  [org.fly.cor.int.sch.JdbcTableSchemaHistory] (Quarkus Main Thread) Schema history table "public"."flyway_schema_history" does not exist yet
+2026-06-08 18:44:10,958 INFO  [org.fly.cor.int.com.DbValidate] (Quarkus Main Thread) Successfully validated 2 migrations (execution time 00:00.031s)
+2026-06-08 18:44:10,977 INFO  [org.fly.cor.int.sch.JdbcTableSchemaHistory] (Quarkus Main Thread) Creating Schema History table "public"."flyway_schema_history" ...
+2026-06-08 18:44:11,064 INFO  [org.fly.cor.int.com.DbMigrate] (Quarkus Main Thread) Current version of schema "public": << Empty Schema >>
+2026-06-08 18:44:11,079 INFO  [org.fly.cor.int.com.DbMigrate] (Quarkus Main Thread) Migrating schema "public" to version "1 - initial schema"
+2026-06-08 18:44:11,241 INFO  [org.fly.cor.int.com.DbMigrate] (Quarkus Main Thread) Migrating schema "public" to version "2 - seed interests"
+2026-06-08 18:44:11,262 INFO  [org.fly.cor.int.com.DbMigrate] (Quarkus Main Thread) Successfully applied 2 migrations to schema "public", now at version v2 (execution time 00:00.148s)
+2026-06-08 18:44:11,859 INFO  [io.quarkus] (Quarkus Main Thread) travelmate-backend 1.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.6) started in 5.124s. Listening on: http://0.0.0.0:8080
+2026-06-08 18:44:11,859 INFO  [io.quarkus] (Quarkus Main Thread) Profile dev activated. Live Coding activated.
+2026-06-08 18:44:11,859 INFO  [io.quarkus] (Quarkus Main Thread) Installed features: [agroal, cdi, flyway, hibernate-orm, hibernate-orm-panache, hibernate-validator, jdbc-postgresql, narayana-jta, rest, rest-jackson, security, smallrye-context-propagation, smallrye-jwt, vertx]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  36:31 min
+[INFO] Finished at: 2026-06-08T19:20:30+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal io.quarkus.platform:quarkus-maven-plugin:3.17.6:dev (default-cli) on project travelmate-backend: Failed to run: Dev mode process did not complete successfully -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
