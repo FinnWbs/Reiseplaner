@@ -22,9 +22,6 @@ public class ActivityPersistenceService {
     InterestRepository interests;
 
     @Inject
-    ActivityInterestRepository activityInterests;
-
-    @Inject
     ActivityCategoryMapper categoryMapper;
 
     @Transactional
@@ -136,10 +133,11 @@ public class ActivityPersistenceService {
         boolean isNew
     ) {
         if (!isNew) {
-            activityInterests.delete("activity", activity);
-            activityInterests.flush();
+            activity.interestScores.clear();
+            activities.flush();
+        } else {
+            activity.interestScores.clear();
         }
-        activity.interestScores.clear();
         for (Map.Entry<String, Integer> score : scores.entrySet()) {
             InterestEntity interest = interestByName.get(score.getKey());
             if (interest == null) {
@@ -150,7 +148,6 @@ public class ActivityPersistenceService {
             link.interest = interest;
             link.score = score.getValue();
             activity.interestScores.add(link);
-            activityInterests.persist(link);
         }
     }
 

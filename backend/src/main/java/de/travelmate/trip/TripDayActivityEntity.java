@@ -24,6 +24,12 @@ public class TripDayActivityEntity {
     @Column(nullable = false)
     public boolean locked;
 
+    @Column(name = "scheduled_start", nullable = false)
+    public int scheduledStart = 540;
+
+    @Column(name = "duration_minutes", nullable = false)
+    public int durationMinutes = 90;
+
     @Column(columnDefinition = "TEXT")
     public String notes;
 }

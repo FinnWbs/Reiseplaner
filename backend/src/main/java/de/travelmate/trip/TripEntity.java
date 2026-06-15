@@ -2,6 +2,7 @@ package de.travelmate.trip;
 
 import de.travelmate.user.UserEntity;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,8 +21,40 @@ public class TripEntity {
     @Column(nullable = false)
     public String city;
 
+    public String country;
+
+    @Column(name = "country_code")
+    public String countryCode;
+
+    public String state;
+
+    public Double latitude;
+
+    public Double longitude;
+
+    @Column(name = "place_id")
+    public String placeId;
+
     @Column(name = "days_count", nullable = false)
     public int daysCount;
+
+    @Column(name = "start_date")
+    public LocalDate startDate;
+
+    @Column(name = "end_date")
+    public LocalDate endDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    public TripPace pace = TripPace.BALANCED;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_rhythm", nullable = false)
+    public DayRhythm dayRhythm = DayRhythm.BALANCED;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "destination_source", nullable = false)
+    public DestinationSource destinationSource = DestinationSource.KNOWN;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

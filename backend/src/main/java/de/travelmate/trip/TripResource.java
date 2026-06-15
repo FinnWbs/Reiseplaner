@@ -52,6 +52,38 @@ public class TripResource {
     }
 
     @PUT
+    @Path("/{id}/days/{dayId}/availability")
+    public TripDto updateAvailability(
+        @PathParam("id") Long id,
+        @PathParam("dayId") Long dayId,
+        @Valid UpdateDayAvailabilityRequest request
+    ) {
+        return trips.updateAvailability(id, dayId, request);
+    }
+
+    @PUT
+    @Path("/{id}/schedule")
+    public TripDto updateSchedule(@PathParam("id") Long id, @Valid UpdateScheduleRequest request) {
+        return trips.updateSchedule(id, request);
+    }
+
+    @POST
+    @Path("/{id}/days/{dayId}/activities/{itemId}/regenerate")
+    public TripDto regenerateActivity(
+        @PathParam("id") Long id,
+        @PathParam("dayId") Long dayId,
+        @PathParam("itemId") Long itemId
+    ) {
+        return trips.regenerateActivity(id, dayId, itemId);
+    }
+
+    @PUT
+    @Path("/{id}/dates")
+    public TripDto updateDates(@PathParam("id") Long id, @Valid UpdateTripDatesRequest request) {
+        return trips.updateDates(id, request);
+    }
+
+    @PUT
     @Path("/{id}/days/{dayId}/activities/{itemId}")
     public TripDto replaceActivity(
         @PathParam("id") Long id,

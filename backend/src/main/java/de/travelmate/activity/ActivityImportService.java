@@ -27,7 +27,24 @@ public class ActivityImportService {
 
     public ActivityImportResponse importCity(String requestedCity) {
         String city = normalizeCity(requestedCity);
-        List<ExternalActivityCandidate> candidates = new ArrayList<>(geoapify.fetch(city));
+        return importCity(city, city);
+    }
+
+    public ActivityImportResponse importCity(String requestedCity, String lookupText) {
+        return importCity(requestedCity, lookupText, null, null, null);
+    }
+
+    public ActivityImportResponse importCity(
+        String requestedCity,
+        String lookupText,
+        String placeId,
+        Double latitude,
+        Double longitude
+    ) {
+        String city = normalizeCity(requestedCity);
+        String externalLookup = lookupText == null || lookupText.isBlank() ? city : lookupText.trim();
+        List<ExternalActivityCandidate> candidates =
+            new ArrayList<>(geoapify.fetch(externalLookup, placeId, latitude, longitude));
         if (candidates.isEmpty()) {
             throw new ExternalProviderException("Geoapify hat keine importierbaren Aktivitaeten geliefert.");
         }
@@ -36,7 +53,7 @@ public class ActivityImportService {
         warnings.addAll(wikidata.enrich(candidates));
         warnings.addAll(wikipedia.enrich(candidates));
         if (openStreetMap.isEnabled()) {
-            candidates.addAll(openStreetMap.fetch(city));
+            candidates.addAll(openStreetMap.fetch(externalLookup));
         }
         return persistence.persist(city, candidates, warnings);
     }

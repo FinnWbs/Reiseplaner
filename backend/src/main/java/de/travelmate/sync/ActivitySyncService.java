@@ -30,4 +30,18 @@ public class ActivitySyncService {
     public List<ActivityDto> syncCity(String city) {
         return importer.importCity(city).activities();
     }
+
+    public List<ActivityDto> syncCity(String city, String lookupText) {
+        return importer.importCity(city, lookupText).activities();
+    }
+
+    public List<ActivityDto> syncCity(
+        String city,
+        String lookupText,
+        String placeId,
+        Double latitude,
+        Double longitude
+    ) {
+        return importer.importCity(city, lookupText, placeId, latitude, longitude).activities();
+    }
 }

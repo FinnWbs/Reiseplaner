@@ -28,6 +28,15 @@ public class GeoapifyActivityProvider implements ActivityProvider {
 
     @Override
     public List<ExternalActivityCandidate> fetch(String city) {
+        return fetch(city, null, null, null);
+    }
+
+    public List<ExternalActivityCandidate> fetch(
+        String locationText,
+        String selectedPlaceId,
+        Double selectedLatitude,
+        Double selectedLongitude
+    ) {
         String apiKey = configuredApiKey.orElse("");
         if (apiKey == null || apiKey.isBlank()) {
             throw new ExternalProviderException(
@@ -37,15 +46,22 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         }
 
         try {
-            JsonNode results = client.geocode(city, "city", 1, "json", apiKey).path("results");
-            if (!results.isArray() || results.isEmpty()) {
-                throw new ExternalProviderException("Geoapify konnte die Stadt nicht aufloesen.");
+            Double latitude = selectedLatitude;
+            Double longitude = selectedLongitude;
+            String placeId = blankToNull(selectedPlaceId);
+
+            if (latitude == null || longitude == null || placeId == null) {
+                JsonNode results = client.geocode(locationText, "city", 1, "json", apiKey).path("results");
+                if (!results.isArray() || results.isEmpty()) {
+                    throw new ExternalProviderException("Geoapify konnte die Stadt nicht aufloesen.");
+                }
+
+                JsonNode location = results.get(0);
+                latitude = latitude == null ? location.path("lat").asDouble() : latitude;
+                longitude = longitude == null ? location.path("lon").asDouble() : longitude;
+                placeId = placeId == null ? text(location, "place_id") : placeId;
             }
 
-            JsonNode location = results.get(0);
-            double latitude = location.path("lat").asDouble();
-            double longitude = location.path("lon").asDouble();
-            String placeId = text(location, "place_id");
             String filter = placeId == null
                 ? "circle:" + longitude + "," + latitude + ",15000"
                 : "place:" + placeId;
@@ -69,7 +85,7 @@ public class GeoapifyActivityProvider implements ActivityProvider {
                 candidate.source = ActivitySource.GEOAPIFY;
                 candidate.externalId = externalId;
                 candidate.name = name;
-                candidate.city = city;
+                candidate.city = locationText;
                 candidate.rawCategory = firstText(properties.path("categories"));
                 candidate.address = firstNonBlank(text(properties, "formatted"), text(properties, "address_line2"));
                 candidate.latitude = number(properties, "lat");
@@ -110,5 +126,9 @@ public class GeoapifyActivityProvider implements ActivityProvider {
 
     private static String firstNonBlank(String first, String second) {
         return first != null && !first.isBlank() ? first : second;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

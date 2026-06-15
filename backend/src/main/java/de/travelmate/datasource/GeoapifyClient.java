@@ -12,6 +12,17 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 @Produces(MediaType.APPLICATION_JSON)
 public interface GeoapifyClient {
     @GET
+    @Path("/v1/geocode/autocomplete")
+    JsonNode autocomplete(
+        @QueryParam("text") String text,
+        @QueryParam("type") String type,
+        @QueryParam("limit") int limit,
+        @QueryParam("format") String format,
+        @QueryParam("lang") String language,
+        @QueryParam("apiKey") String apiKey
+    );
+
+    @GET
     @Path("/v1/geocode/search")
     JsonNode geocode(
         @QueryParam("text") String text,
