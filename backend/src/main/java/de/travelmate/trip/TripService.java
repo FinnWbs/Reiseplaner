@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Comparator;
 import java.util.List;
 
 @ApplicationScoped
@@ -60,6 +61,13 @@ public class TripService {
     }
 
     @Transactional
+    public void delete(Long tripId) {
+        TripEntity trip = requireMine(tripId);
+        trips.delete(trip);
+        trips.flush();
+    }
+
+    @Transactional
     public TripDto generatePlan(Long tripId, GeneratePlanRequest request) {
         TripEntity trip = requireMine(tripId);
         List<Long> interestIds = request == null ? List.of() : request.interestIds();
@@ -75,8 +83,10 @@ public class TripService {
         TripEntity trip = requireMine(tripId);
         TripDayEntity day = requireDay(trip, dayId);
         TripDayActivityEntity item = requireItem(day, itemId);
-        day.activities.remove(item);
         tripActivities.delete(item);
+        tripActivities.flush();
+        day.activities.remove(item);
+        day.activities.sort(Comparator.comparingInt(activity -> activity.position));
         renumber(day);
         return TripDto.from(trip);
     }

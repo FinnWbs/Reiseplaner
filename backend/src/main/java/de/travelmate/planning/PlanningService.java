@@ -18,6 +18,9 @@ public class PlanningService {
     @Inject
     ActivitySyncService sync;
 
+    @Inject
+    TripDayActivityRepository tripActivities;
+
     public void generatePlan(TripEntity trip, List<Long> interestIds) {
         if (sync.cityNeedsRefresh(trip.city)) {
             sync.syncCity(trip.city);
@@ -81,8 +84,16 @@ public class PlanningService {
     }
 
     private void removeUnlockedActivities(TripEntity trip) {
+        List<TripDayActivityEntity> removed = new ArrayList<>();
         for (TripDayEntity day : trip.days) {
-            day.activities.removeIf(item -> !item.locked);
+            day.activities.stream().filter(item -> !item.locked).forEach(removed::add);
+            day.activities.removeAll(removed.stream().filter(item -> item.tripDay == day).toList());
+        }
+        removed.forEach(tripActivities::delete);
+        tripActivities.flush();
+
+        for (TripDayEntity day : trip.days) {
+            day.activities.sort(Comparator.comparingInt(item -> item.position));
             int position = 1;
             for (TripDayActivityEntity item : day.activities) {
                 item.position = position++;

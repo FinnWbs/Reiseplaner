@@ -1,5 +1,7 @@
 package de.travelmate.activity;
 
+import java.time.LocalDateTime;
+
 public record ActivityDto(
     Long id,
     String externalId,
@@ -13,7 +15,10 @@ public record ActivityDto(
     Double longitude,
     String address,
     Double rating,
-    double dataQualityScore
+    double dataQualityScore,
+    LocalDateTime lastSyncedAt,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {
     public static ActivityDto from(ActivityEntity activity) {
         return new ActivityDto(
@@ -29,7 +34,10 @@ public record ActivityDto(
             activity.longitude,
             activity.address,
             activity.rating,
-            activity.dataQualityScore
+            activity.dataQualityScore,
+            activity.lastSyncedAt,
+            activity.createdAt,
+            activity.updatedAt
         );
     }
 }

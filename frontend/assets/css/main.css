@@ -25,6 +25,15 @@ select {
   grid-template-columns: minmax(280px, 380px) 1fr;
 }
 
+.planner-page {
+  display: block;
+}
+
+.planner-page .main {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+}
+
 .sidebar {
   background: #102033;
   color: white;
@@ -101,6 +110,10 @@ button.secondary {
   color: #102033;
 }
 
+button.danger {
+  background: #b42318;
+}
+
 .button-link {
   display: inline-flex;
   align-items: center;
@@ -152,13 +165,248 @@ button.secondary {
 
 .trip-day {
   border-top: 1px solid #e6ebf0;
-  padding-top: 16px;
+  padding-top: 20px;
 }
 
-.activity {
+.trip-plan-heading,
+.trip-day-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.trip-plan-heading h2,
+.trip-day-heading h3,
+.schedule-header h4 {
+  margin: 0;
+}
+
+.trip-plan-heading {
+  align-items: flex-end;
+}
+
+.trip-day-heading {
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.day-number {
   display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 6px;
+  background: #102033;
+  color: white;
+  font-weight: 800;
+}
+
+.day-schedule {
+  display: grid;
+}
+
+.schedule-item {
+  display: grid;
+  grid-template-columns: 72px 22px minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.schedule-time {
+  display: grid;
+  align-content: start;
   gap: 4px;
-  padding: 12px 0;
+  padding-top: 16px;
+  color: #102033;
+}
+
+.schedule-time span {
+  color: #667085;
+  font-size: 13px;
+}
+
+.schedule-marker {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.schedule-marker::after {
+  position: absolute;
+  top: 26px;
+  bottom: -26px;
+  width: 2px;
+  background: #d9e6df;
+  content: "";
+}
+
+.schedule-marker span {
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  margin-top: 20px;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #1f7a5a;
+  box-shadow: 0 0 0 2px #1f7a5a;
+}
+
+.schedule-item:last-child .schedule-marker::after {
+  display: none;
+}
+
+.schedule-content {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 36px;
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+  background: #fbfcfd;
+}
+
+.activity-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  background: #e7f3ed;
+  color: #176345;
+}
+
+.schedule-main {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.schedule-header {
+  min-width: 0;
+}
+
+.schedule-position {
+  display: block;
+  margin-bottom: 3px;
+  color: #1f7a5a;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.schedule-header h4 {
+  font-size: 17px;
+}
+
+.activity-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.activity-facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: #4b5565;
+  font-size: 13px;
+}
+
+.schedule-description {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.schedule-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #dfe4ea;
+  background: white;
+  color: #667085;
+}
+
+.icon-button:hover {
+  border-color: #d5a19c;
+  background: #fff4f2;
+  color: #b42318;
+}
+
+.icon-button svg {
+  pointer-events: none;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.activity-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+}
+
+.activity-card p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.activity-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.category {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #edf7f2;
+  color: #176345;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trip-list {
+  display: grid;
+  gap: 10px;
+}
+
+.trip-list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.trip-select {
+  min-width: 0;
+  text-align: left;
 }
 
 .muted {
@@ -168,6 +416,17 @@ button.secondary {
 .error {
   color: #b42318;
   font-weight: 600;
+}
+
+.success {
+  color: #176345;
+  font-weight: 600;
+}
+
+.warnings {
+  margin: 0;
+  padding-left: 20px;
+  color: #8a4b08;
 }
 
 .auth-page {
@@ -215,5 +474,34 @@ button.secondary {
   .toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .trip-list-item {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-plan-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .schedule-item {
+    grid-template-columns: 60px 18px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .schedule-header {
+    min-width: 0;
+  }
+
+  .schedule-content {
+    grid-template-columns: 36px minmax(0, 1fr) 34px;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .activity-icon {
+    width: 36px;
+    height: 36px;
   }
 }

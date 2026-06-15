@@ -8,6 +8,10 @@ set "PATH=%JAVA_HOME%\bin;%PATH%"
 set "JWT_PUBLIC_KEY_LOCATION=%ROOT%\secrets\publicKey.pem"
 set "JWT_PRIVATE_KEY_LOCATION=%ROOT%\secrets\privateKey.pem"
 
+if exist "%BACKEND%\.env" (
+  for /f "usebackq tokens=1,* delims==" %%A in ("%BACKEND%\.env") do set "%%A=%%B"
+)
+
 cd /d "%ROOT%"
 docker compose up -d postgres
 if errorlevel 1 (

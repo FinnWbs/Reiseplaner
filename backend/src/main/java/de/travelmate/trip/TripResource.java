@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 @Path("/trips")
@@ -29,6 +30,13 @@ public class TripResource {
     @Path("/{id}")
     public TripDto getMine(@PathParam("id") Long id) {
         return trips.getMine(id);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response delete(@PathParam("id") Long id) {
+        trips.delete(id);
+        return Response.noContent().build();
     }
 
     @POST

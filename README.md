@@ -42,6 +42,7 @@ node scripts/generate-jwt-keys.mjs
 docker compose up --build
 ```
 
+- Fuer echte Aktivitaetsimporte muss vorher `GEOAPIFY_API_KEY` gesetzt sein. Der kostenlose Key wird nicht eingecheckt.
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8080
 
@@ -49,4 +50,6 @@ docker compose up --build
 
 Nutzer waehlen Stadt, Anzahl der Reisetage und Interessen. Das Backend speichert Aktivitaeten zentral, mappt sie auf interne Interessen und erzeugt daraus einen regelbasierten Tagesplan.
 
-Externe Datenquellen sind architektonisch ueber den Sync-Service vorbereitet. Die aktuelle MVP-Version nutzt reproduzierbare Demo-Daten, damit die Anwendung ohne API-Schluessel und ohne fragile Live-Abhaengigkeiten laeuft.
+Geoapify liefert die primaeren POIs. Wikidata und Wikipedia ergaenzen externe Referenzen und Beschreibungstexte. OpenStreetMap-Referenzen werden gespeichert; ein eigener OSM-Abruf ist standardmaessig deaktiviert. Die Daten werden lokal persistiert und bei wiederholten Importen ueber externe IDs beziehungsweise Name und Stadt dedupliziert.
+
+Datenquellen und Attribution: [Geoapify](https://www.geoapify.com/), [Wikidata (CC0)](https://www.wikidata.org/wiki/Wikidata:Data_access), [Wikipedia](https://www.mediawiki.org/wiki/API:REST_API) und [OpenStreetMap](https://www.openstreetmap.org/copyright).

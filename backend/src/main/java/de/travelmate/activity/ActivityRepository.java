@@ -12,8 +12,21 @@ public class ActivityRepository implements PanacheRepository<ActivityEntity> {
         return find("source = ?1 and externalId = ?2", source, externalId).firstResultOptional();
     }
 
+    public Optional<ActivityEntity> findByExternalReference(ActivitySource source, String externalId) {
+        return find(
+            "select distinct activity from ActivityEntity activity join activity.externalRefs ref "
+                + "where ref.source = ?1 and ref.externalId = ?2",
+            source,
+            externalId
+        ).firstResultOptional();
+    }
+
+    public Optional<ActivityEntity> findByNormalizedNameAndCity(String name, String city) {
+        return find("lower(trim(name)) = ?1 and lower(trim(city)) = ?2", name, city).firstResultOptional();
+    }
+
     public List<ActivityEntity> findByCity(String city) {
-        return list("lower(city)", city.toLowerCase());
+        return list("lower(city) = ?1 order by name", city.trim().toLowerCase());
     }
 
     public boolean hasFreshMinimumForCity(String city, int minimum, LocalDateTime freshAfter) {
