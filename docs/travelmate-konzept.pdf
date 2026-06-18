@@ -1,0 +1,437 @@
+%PDF-1.4
+%TravelMate
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Length 5056 >>
+stream
+q
+1 1 1 rg 0 0 595.28 841.89 re f
+BT
+0.05 0.11 0.18 rg /F2 22 Tf 58.00 783.89 Td (TravelMate Planner: fachliches und) Tj
+0.05 0.11 0.18 rg /F2 22 Tf 58.00 755.89 Td (technisches Konzept) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 713.89 Td (Stand: 18.06.2026) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 684.89 Td (1. Kurzueberblick) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 656.89 Td (TravelMate Planner ist ein webbasiertes MVP zur Erstellung personalisierter) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 642.89 Td (Staedtereiseplaene. Nutzer registrieren sich, waehlen oder suchen ein Reiseziel,) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 628.89 Td (beantworten ein kurzes Reiseinterview und erhalten daraus einen gespeicherten,) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 614.89 Td (interaktiv anpassbaren Tagesplan.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 592.89 Td (Der Fokus liegt bewusst nicht auf Buchungen, Hotels, Fluegen, Wetter, echter) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 578.89 Td (KI-Reiseplanung oder perfektem Routing. Stattdessen entsteht ein nachvollziehbarer,) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 564.89 Td (regelbasierter Planer, der externe Aktivitaetsdaten importiert, lokal speichert und mit) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 550.89 Td (Interessen, Tageszeitprofilen und verfuegbaren Zeitfenstern kombiniert.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 521.89 Td (2. Fachliches Zielbild) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 493.89 Td (Das System unterstuetzt den Kernablauf:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 471.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 471.89 Td (Nutzer legt einen Account an oder meldet sich an.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 455.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 455.89 Td (Nutzer startet ein Reiseinterview.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 439.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 439.89 Td (Stadt wird manuell eingegeben, per Autocomplete ausgewaehlt oder aus Vorschlaegen) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 425.89 Td (uebernommen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 409.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 409.89 Td (Reisezeitraum oder reine Reisedauer wird festgelegt.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 393.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 393.89 Td (Bei bekanntem Zeitraum werden konkrete Planungstage ausgewaehlt.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 377.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 377.89 Td (Interessen, Tempo und Tagesrhythmus werden gewaehlt.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 361.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 361.89 Td (Das Backend erzeugt daraus einen Reiseplan.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 345.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 345.89 Td (Der Nutzer kann Zeitfenster je Tag anpassen, Aktivitaeten verschieben, entfernen) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 331.89 Td (oder einzeln neu generieren.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 309.89 Td (Das MVP soll zeigen, dass aus Stadt, Zeitraum, Interessen und externen Daten ein stabil) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 295.89 Td (gespeicherter, wieder abrufbarer Reiseplan entstehen kann.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 266.89 Td (3. Aktuelle Funktionen) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 238.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 238.89 Td (Registrierung und Login per E-Mail/Passwort mit JWT.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 222.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 222.89 Td (Sessionbasierte Speicherung des Tokens im Frontend.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 206.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 206.89 Td (Reiseinterview mit sieben Schritten.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 190.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 190.89 Td (Geoapify-basierter Stadt-Autocomplete ueber das Backend.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 174.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 174.89 Td (Auswahl von Reisezeitraum, Planungstagen, Interessen, Tempo und Tagesrhythmus.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 158.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 158.89 Td (Regelbasierte Reiseplanerstellung.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 142.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 142.89 Td (Interaktive Tagesplaene mit Startzeit, Dauer, Kategorie-Icon, Bewertung und Adresse.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 126.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 126.89 Td (Tageszeitfenster je Reisetag ueber einen 0-24-Uhr-Regler.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 110.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 110.89 Td (Drag-and-drop von Aktivitaeten innerhalb eines Tages und zwischen Tagen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 94.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 94.89 Td (Einzelnes Entfernen und Regenerieren von Aktivitaeten.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 78.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 78.89 Td (Dark Mode und Sprungbutton.) Tj
+0.42 0.48 0.56 rg /F1 8 Tf 497.28 28 Td (1 / 6) Tj
+ET
+Q
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Length 4987 >>
+stream
+q
+1 1 1 rg 0 0 595.28 841.89 re f
+BT
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 783.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 783.89 Td (Speicherung mehrerer Reisen pro Nutzer.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 767.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 767.89 Td (Loeschen ganzer Reisen anhand stabiler IDs.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 751.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 751.89 Td (Import echter Aktivitaeten aus externen Quellen.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 722.89 Td (4. Domaenenmodell) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 694.89 Td (Die zentrale Domaene besteht aus:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 672.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 672.89 Td (User: Account, Profil, Rolle.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 656.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 656.89 Td (Interest: interne Interessen wie Kultur, Geschichte, Natur, Food, Shopping,) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 642.89 Td (Nightlife und Sport.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 626.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 626.89 Td (UserInterest: Nutzerpraeferenzen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 610.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 610.89 Td (Activity: lokal gespeicherte Aktivitaet.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 594.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 594.89 Td (ActivityExternalRef: externe Referenzen, z. B. Geoapify, Wikidata, Wikipedia oder) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 580.89 Td (OSM.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 564.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 564.89 Td (ActivityInterest: Mapping von Aktivitaeten auf interne Interessen mit Score.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 548.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 548.89 Td (Trip: Reise eines Nutzers.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 532.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 532.89 Td (TripDay: einzelner Planungstag, optional mit Datum und Zeitfenster.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 516.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 516.89 Td (TripDayActivity: konkrete Aktivitaet im Tagesplan mit Position, Startzeit, Dauer und) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 502.89 Td (Lock-Status.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 480.89 Td (Interne Interessen entkoppeln die Fachlogik von externen Kategorien. Dadurch kann das) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 466.89 Td (System spaeter weitere Datenquellen ergaenzen, ohne die Planung direkt an eine externe) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 452.89 Td (API zu koppeln.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 423.89 Td (5. Datenquellen) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 395.89 Td (Die aktuelle Datenquellenstrategie ist:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 373.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 373.89 Td (Geoapify Places und Geocoding: primaere Quelle fuer POIs, Stadtaufloesung und) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 359.89 Td (Autocomplete.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 343.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 343.89 Td (Wikidata: externe IDs, Klassifikation und ergaenzende Metadaten.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 327.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 327.89 Td (Wikipedia: Beschreibungstexte und Kurzinfos.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 311.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 311.89 Td (OpenStreetMap: als vorbereiteter, deaktivierbarer Provider und Referenzquelle.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 289.89 Td (Der Geoapify-Key bleibt ausschliesslich im Backend. Das Frontend ruft keine externen) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 275.89 Td (APIs direkt auf.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 253.89 Td (Aktivitaeten werden lokal in PostgreSQL gespeichert. Wiederholte Importe derselben) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 239.89 Td (Stadt sollen keine Duplikate erzeugen. Dedupliziert wird ueber externe Referenzen oder) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 225.89 Td (als Fallback ueber normalisierten Namen und Stadt.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 196.89 Td (6. Planungslogik) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 168.89 Td (Die Planung ist regelbasiert. Aktivitaeten werden anhand folgender Kriterien bewertet) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 154.89 Td (und ausgewaehlt:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 132.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 132.89 Td (Passung zu ausgewaehlten Interessen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 116.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 116.89 Td (Kategorie und Tageszeitprofil.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 100.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 100.89 Td (Datenqualitaet und vorhandene Metadaten.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 84.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 84.89 Td (Optional vorhandene Bewertung.) Tj
+0.42 0.48 0.56 rg /F1 8 Tf 497.28 28 Td (2 / 6) Tj
+ET
+Q
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 5148 >>
+stream
+q
+1 1 1 rg 0 0 595.28 841.89 re f
+BT
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 783.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 783.89 Td (Vermeidung bereits verwendeter Aktivitaeten innerhalb einer Reise.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 761.89 Td (Aktivitaeten besitzen fachliche Zeitprofile:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 739.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 739.89 Td (Natur: eher tagsueber.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 723.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 723.89 Td (Kultur, Geschichte, Shopping und Sport: vor allem Tages- und fruehe Abendzeiten.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 707.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 707.89 Td (Food: bevorzugt mittags oder abends.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 691.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 691.89 Td (Nightlife: bevorzugt abends.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 669.89 Td (Zusaetzlich haben Aktivitaeten Standarddauern, z. B. Food 90 Minuten, Natur 120 Minuten) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 655.89 Td (und Nightlife 180 Minuten. Zwischen aufeinanderfolgenden Stopps wird ein Abstand) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 641.89 Td (eingeplant.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 619.89 Td (Wenn ein Nutzer das Zeitfenster eines Tages veraendert, werden unpassende Aktivitaeten) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 605.89 Td (sichtbar markiert, aber nicht automatisch geloescht. So bleiben Nutzerentscheidungen) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 591.89 Td (nachvollziehbar.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 562.89 Td (7. Frontend-Architektur) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 534.89 Td (Das Frontend basiert auf Nuxt 3 und ist nach dem letzten Refactor modularer aufgebaut.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 512.89 Td (Zentrale Bereiche:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 490.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 490.89 Td (pages/auth.vue: Registrierung und Login.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 474.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 474.89 Td (pages/index.vue: schlanke Seitenhuelle fuer den Planer.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 458.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 458.89 Td (components/TripInterview.vue: Reiseinterview.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 442.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 442.89 Td (components/LocationAutocomplete.vue: Stadtvorschlaege.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 426.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 426.89 Td (components/TripPlan.vue: Reiseplan-Container.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 410.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 410.89 Td (components/TripDaySchedule.vue: Tagesplan mit Drag-and-drop.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 394.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 394.89 Td (components/AvailabilityRange.vue: Zeitfenster-Regler.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 378.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 378.89 Td (components/TripList.vue: gespeicherte Reisen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 362.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 362.89 Td (components/FloatingControls.vue: Dark Mode und Scrollbutton.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 340.89 Td (Die Zustands- und API-Logik liegt in Composables:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 318.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 318.89 Td (useAuth: Authentifizierung und Session.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 302.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 302.89 Td (useApi: API-Requests mit Bearer Token.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 286.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 286.89 Td (useTripPlanner: Reiseinterview, Reiseverwaltung und Plan-Aktionen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 270.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 270.89 Td (useLocationAutocomplete: Stadt-Autocomplete.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 254.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 254.89 Td (usePlannerTheme: Dark Mode und Scrollsteuerung.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 232.89 Td (Gemeinsame TypeScript-Typen liegen in types/trip.ts.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 203.89 Td (8. Backend-Architektur) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 175.89 Td (Das Backend basiert auf Quarkus mit Java 21, REST, JWT und PostgreSQL.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 153.89 Td (Wichtige Pakete:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 131.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 131.89 Td (auth: Registrierung, Login, JWT und Passwort-Hashing.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 115.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 115.89 Td (user: Nutzerprofil und Nutzerinteressen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 99.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 99.89 Td (interest: interne Interessen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 83.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 83.89 Td (activity: Aktivitaetsmodell, Persistenz, Importantworten und Kategorie-Mapping.) Tj
+0.42 0.48 0.56 rg /F1 8 Tf 497.28 28 Td (3 / 6) Tj
+ET
+Q
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Length 5145 >>
+stream
+q
+1 1 1 rg 0 0 595.28 841.89 re f
+BT
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 783.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 783.89 Td (datasource: Provider fuer Geoapify, Wikidata, Wikipedia und vorbereiteten) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 769.89 Td (OSM-Zugriff.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 753.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 753.89 Td (location: Stadt-Autocomplete ueber Geoapify.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 737.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 737.89 Td (planning: Scoring, Tageszeitregeln und Planerstellung.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 721.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 721.89 Td (trip: Reiseverwaltung, Tagesplaene, Scheduling und DTOs.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 705.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 705.89 Td (sync/admin: vorbereitete Synchronisation und Admin-Schnittstellen.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 683.89 Td (TripService ist fuer Reise-Orchestrierung zustaendig. Schedule- und Drag-and-drop-Logik) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 669.89 Td (liegt in TripScheduleService. Dadurch ist die riskante Positionslogik klarer getrennt.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 640.89 Td (9. REST-API) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 612.89 Td (Aktuelle Kernendpunkte:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 590.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 590.89 Td (POST /auth/register) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 574.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 574.89 Td (POST /auth/login) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 558.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 558.89 Td (GET /users/me) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 542.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 542.89 Td (PUT /users/me) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 526.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 526.89 Td (GET /interests) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 510.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 510.89 Td (PUT /users/me/interests) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 494.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 494.89 Td (GET /locations/autocomplete?query=...) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 478.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 478.89 Td (GET /activities?city=...) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 462.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 462.89 Td (GET /activities/{id}) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 446.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 446.89 Td (POST /activities/import?city=...) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 430.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 430.89 Td (POST /trips) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 414.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 414.89 Td (GET /trips) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 398.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 398.89 Td (GET /trips/{id}) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 382.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 382.89 Td (DELETE /trips/{id}) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 366.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 366.89 Td (POST /trips/{id}/generate-plan) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 350.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 350.89 Td (PUT /trips/{id}/dates) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 334.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 334.89 Td (PUT /trips/{id}/schedule) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 318.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 318.89 Td (PUT /trips/{id}/days/{dayId}/availability) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 302.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 302.89 Td (DELETE /trips/{id}/days/{dayId}/activities/{itemId}) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 286.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 286.89 Td (PUT /trips/{id}/days/{dayId}/activities/{itemId}) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 270.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 270.89 Td (POST /trips/{id}/days/{dayId}/activities) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 254.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 254.89 Td (POST /trips/{id}/days/{dayId}/activities/{itemId}/regenerate) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 232.89 Td (API-Responses laufen ueber DTOs, damit Datenbankstruktur und externe Darstellung) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 218.89 Td (getrennt bleiben.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 189.89 Td (10. Datenbank und Migrationen) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 161.89 Td (PostgreSQL ist die zentrale Wahrheit. Flyway verwaltet das Schema.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 139.89 Td (Aktuelle Migrationen:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 117.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 117.89 Td (V1 initiales Schema.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 101.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 101.89 Td (V2 Seed-Daten fuer Interessen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 85.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 85.89 Td (V3 externe Aktivitaetsreferenzen.) Tj
+0.42 0.48 0.56 rg /F1 8 Tf 497.28 28 Td (4 / 6) Tj
+ET
+Q
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 11 0 R >>
+endobj
+13 0 obj
+<< /Length 4868 >>
+stream
+q
+1 1 1 rg 0 0 595.28 841.89 re f
+BT
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 783.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 783.89 Td (V4 datumsbasierte und interaktive Reiseplanung.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 767.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 767.89 Td (V5 Standort-Metadaten fuer Reisen.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 745.89 Td (Wichtige Constraints:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 723.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 723.89 Td (Aktivitaeten werden ueber externe Referenzen und Fallback-Logik dedupliziert.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 707.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 707.89 Td (TripDayActivity-Positionen sind eindeutig pro Tag.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 691.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 691.89 Td (Beim Drag-and-drop werden temporaere positive Positionen verwendet, um Unique- und) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 677.89 Td (Check-Constraint-Probleme zu vermeiden.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 648.89 Td (11. Qualitaet und Tests) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 620.89 Td (Der aktuelle Testfokus liegt auf Backend-Domaenenregeln:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 598.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 598.89 Td (Kategorie-Mapping.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 582.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 582.89 Td (Tageszeitprofile und Aktivitaetsdauer.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 566.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 566.89 Td (Planungsservice und Regenerieren.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 550.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 550.89 Td (Datumsvalidierung.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 534.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 534.89 Td (Location-Suggestion-Mapping.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 518.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 518.89 Td (Schedule-Positionslogik.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 496.89 Td (Frontend-Build wurde erfolgreich geprueft. Backend-Tests sind auf JDK 21 ausgelegt. In) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 482.89 Td (eingeschraenkten Windows-Sandboxen kann Java durch Path.toRealPath-Zugriffsprobleme) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 468.89 Td (blockiert werden; in normaler PowerShell oder per Docker-Fallback sollen die Tests) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 454.89 Td (laufen.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 425.89 Td (12. Technische Begruendung) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 397.89 Td (Die gewaehlte Architektur ist fuer ein Semester-MVP sinnvoll, weil sie:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 375.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 375.89 Td (externe Datenquellen kapselt,) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 359.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 359.89 Td (API-Key-Geheimnisse im Backend haelt,) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 343.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 343.89 Td (Aktivitaeten lokal wiederverwendbar speichert,) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 327.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 327.89 Td (Planung nachvollziehbar und ohne KI haelt,) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 311.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 311.89 Td (Nutzerentscheidungen nicht still ueberschreibt,) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 295.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 295.89 Td (spaetere Erweiterungen wie Oeffnungszeiten, Wetter oder Routing vorbereitet, aber) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 281.89 Td (noch nicht erzwingt.) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 259.89 Td (Der aktuelle Stand ist damit kein vollstaendiges Reiseprodukt, sondern ein solides) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 245.89 Td (MVP-Fundament: Auth, Datenimport, lokale Persistenz, regelbasierte Planung und) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 231.89 Td (interaktive Nachbearbeitung sind vorhanden.) Tj
+0.08 0.34 0.25 rg /F2 15 Tf 58.00 202.89 Td (13. Sinnvolle naechste Schritte) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 174.89 Td (Kurzfristig:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 152.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 152.89 Td (Backend-Tests ausserhalb der Sandbox oder mit Docker-Fallback vollstaendig) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 138.89 Td (ausfuehren.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 122.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 122.89 Td (Manuelle UI-Pruefung nach dem Refactor: Interview, Autocomplete, Drag-and-drop,) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 108.89 Td (Regler, Dark Mode, Loeschen und Regenerieren.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 92.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 92.89 Td (Getrackte Dev-Logs aus dem Git-Index entfernen.) Tj
+0.42 0.48 0.56 rg /F1 8 Tf 497.28 28 Td (5 / 6) Tj
+ET
+Q
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 13 0 R >>
+endobj
+15 0 obj
+<< /Length 919 >>
+stream
+q
+1 1 1 rg 0 0 595.28 841.89 re f
+BT
+0.10 0.13 0.18 rg /F1 10.5 Tf 58.00 783.89 Td (Danach:) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 761.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 761.89 Td (Frontend-Tests fuer kritische Nutzerfluesse ergaenzen.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 745.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 745.89 Td (Activity-Import fachlich weiter filtern, damit unsinnige POIs reduziert werden.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 729.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 729.89 Td (Oeffnungszeiten oder grobe Tageszeitvalidierung pro Quelle verbessern.) Tj
+0.05 0.11 0.18 rg /F2 10.5 Tf 58.00 713.89 Td (-) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 713.89 Td (Optional Kartenansicht oder Distanzlogik ergaenzen, ohne direkt komplexes Routing) Tj
+0.10 0.13 0.18 rg /F1 10.5 Tf 74.00 699.89 Td (einzubauen.) Tj
+0.42 0.48 0.56 rg /F1 8 Tf 497.28 28 Td (6 / 6) Tj
+ET
+Q
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 15 0 R >>
+endobj
+xref
+0 17
+0000000000 65535 f 
+0000000021 00000 n 
+0000000070 00000 n 
+0000000161 00000 n 
+0000000231 00000 n 
+0000000306 00000 n 
+0000005413 00000 n 
+0000005555 00000 n 
+0000010593 00000 n 
+0000010735 00000 n 
+0000015934 00000 n 
+0000016077 00000 n 
+0000021274 00000 n 
+0000021418 00000 n 
+0000026338 00000 n 
+0000026482 00000 n 
+0000027452 00000 n 
+trailer
+<< /Size 17 /Root 1 0 R >>
+startxref
+27596
+%%EOF

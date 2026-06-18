@@ -6,6 +6,9 @@ frontend/.nuxt/
 frontend/.nuxt-dev/
 frontend/.output/
 frontend/dev-*.log
+backend/dev-*.log
+backend/dev-*.err.log
+.idea/
 tools/
 secrets/
 backend-test-external.log
