@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { ArrowLeft, LogIn, UserPlus } from 'lucide-vue-next'
+
 type AuthMode = 'login' | 'register'
 
+const route = useRoute()
 const { authenticate, hydrateAuth, token } = useAuth()
+const { hasDraft } = useTripDraft()
 
-const mode = ref<AuthMode>('register')
+const mode = ref<AuthMode>('login')
 const email = ref('')
 const password = ref('')
 const displayName = ref('')
@@ -12,15 +16,19 @@ const loading = ref(false)
 
 const title = computed(() => mode.value === 'register' ? 'Account erstellen' : 'Einloggen')
 const submitLabel = computed(() => mode.value === 'register' ? 'Account erstellen' : 'Einloggen')
-const toggleLabel = computed(() => mode.value === 'register' ? 'Ich habe schon einen Account' : 'Neuen Account erstellen')
+const toggleLabel = computed(() => mode.value === 'register' ? 'Zurueck zum Login' : 'Noch keinen Account? Registrieren')
 
 const validate = () => {
   if (!email.value.trim() || !password.value) {
     return 'E-Mail und Passwort sind erforderlich.'
   }
 
-  if (mode.value === 'register' && !displayName.value.trim()) {
-    return 'Bitte gib einen Anzeigenamen ein.'
+  if (mode.value === 'register' && displayName.value.trim().length < 2) {
+    return 'Der Anzeigename muss mindestens 2 Zeichen lang sein.'
+  }
+
+  if (mode.value === 'register' && displayName.value.trim() === password.value) {
+    return 'Der Anzeigename darf nicht dem Passwort entsprechen.'
   }
 
   if (mode.value === 'register' && password.value.length < 8) {
@@ -41,7 +49,7 @@ const submitAuth = async () => {
       : { email: email.value.trim(), password: password.value }
 
     await authenticate(mode.value, body)
-    await navigateTo('/')
+    await navigateTo(route.query.continue === 'trip' || hasDraft() ? '/planner?draft=1' : '/calendar')
   } catch (err: any) {
     error.value = err?.data?.message || 'Anmeldung fehlgeschlagen. Bitte pruefe deine Eingaben.'
   } finally {
@@ -57,30 +65,45 @@ const toggleMode = () => {
 onMounted(async () => {
   hydrateAuth()
   if (token.value) {
-    await navigateTo('/')
+    await navigateTo(route.query.continue === 'trip' || hasDraft() ? '/planner?draft=1' : '/calendar')
   }
 })
 </script>
 
 <template>
-  <div class="page auth-page">
-    <aside class="sidebar">
-      <h1>TravelMate Planner</h1>
-      <p>Plane Staedtereisen mit wenigen Angaben und gespeicherten Interessen.</p>
-      <p class="muted">Erstelle einen Account oder melde dich an, um deine Reisen weiterzubearbeiten.</p>
-    </aside>
+  <div class="auth-journey-page">
+    <header class="welcome-nav">
+      <NuxtLink class="welcome-brand" to="/">
+        <span>T</span><strong>TravelMate</strong>
+      </NuxtLink>
+      <NuxtLink class="welcome-nav-link" to="/"><ArrowLeft :size="18" />Zur Startseite</NuxtLink>
+    </header>
 
-    <main class="main auth-main">
-      <section class="panel auth-panel grid">
+    <main class="auth-journey-main">
+      <section class="auth-journey-panel">
         <div class="auth-header">
-          <span class="eyebrow">{{ mode === 'register' ? 'Neu starten' : 'Willkommen zurueck' }}</span>
+          <span class="eyebrow">{{ mode === 'register' ? 'Dein TravelMate Konto' : 'Willkommen zurueck' }}</span>
           <h2>{{ title }}</h2>
+          <p>{{ mode === 'register' ? 'Speichere deine Reise und plane sie jederzeit weiter.' : 'Melde dich an, um deine Reisen und deinen Kalender zu oeffnen.' }}</p>
         </div>
 
-        <form class="grid" @submit.prevent="submitAuth">
+        <form class="auth-form" @submit.prevent="submitAuth">
           <label>
             E-Mail
-            <input v-model="email" type="email" autocomplete="email" required>
+            <input v-model="email" type="email" autocomplete="email" placeholder="name@beispiel.de" required>
+          </label>
+
+          <label v-if="mode === 'register'">
+            Anzeigename
+            <input
+              v-model="displayName"
+              type="text"
+              autocomplete="name"
+              minlength="2"
+              maxlength="80"
+              placeholder="Wie duerfen wir dich nennen?"
+              required
+            >
           </label>
 
           <label>
@@ -89,22 +112,20 @@ onMounted(async () => {
               v-model="password"
               type="password"
               :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
+              placeholder="Mindestens 8 Zeichen"
               required
             >
           </label>
 
-          <label v-if="mode === 'register'">
-            Anzeigename
-            <input v-model="displayName" type="text" autocomplete="name" required>
-          </label>
-
           <p v-if="error" class="error">{{ error }}</p>
 
-          <div class="actions auth-actions">
-            <button :disabled="loading" type="submit">
+          <div class="auth-actions">
+            <button class="auth-submit" :disabled="loading" type="submit">
+              <UserPlus v-if="mode === 'register'" :size="18" />
+              <LogIn v-else :size="18" />
               {{ loading ? 'Bitte warten...' : submitLabel }}
             </button>
-            <button class="secondary" type="button" @click="toggleMode">
+            <button class="auth-mode-toggle" type="button" @click="toggleMode">
               {{ toggleLabel }}
             </button>
           </div>

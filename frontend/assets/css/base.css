@@ -1,6 +1,16 @@
 :root {
   color-scheme: light;
   font-family: Inter, system-ui, sans-serif;
+  --brand-navy: #0b2f5b;
+  --brand-primary: #1264a3;
+  --brand-interactive: #2f80d1;
+  --brand-selection: #eaf3ff;
+  --brand-selection-strong: #d7e9ff;
+  --brand-text: #102a43;
+  --brand-muted: #5f7287;
+  --brand-border: #cbd9e8;
+  --brand-surface: #f4f8fc;
+  --brand-focus: #72b7ff;
   background: #f6f7f9;
   color: #1b1f27;
 }
@@ -58,8 +68,8 @@ select {
 }
 
 .floating-button:hover {
-  border-color: #1f7a5a;
-  color: #1f7a5a;
+  border-color: var(--brand-interactive);
+  color: var(--brand-primary);
 }
 
 .page-end {
@@ -68,7 +78,7 @@ select {
 }
 
 .sidebar {
-  background: #102033;
+  background: var(--brand-navy);
   color: white;
   padding: 32px;
 }
@@ -177,12 +187,12 @@ select {
 
 .location-option.highlighted,
 .location-option:hover {
-  background: #edf5f1;
-  color: #102033;
+  background: var(--brand-selection);
+  color: var(--brand-text);
 }
 
 .location-option svg {
-  color: #1f7a5a;
+  color: var(--brand-primary);
 }
 
 .location-option span {
@@ -208,7 +218,7 @@ button {
   border: 0;
   border-radius: 6px;
   padding: 10px 14px;
-  background: #1f7a5a;
+  background: var(--brand-primary);
   color: white;
   font-weight: 700;
   cursor: pointer;
@@ -221,7 +231,7 @@ button:disabled {
 
 button.secondary {
   background: #dfe9f3;
-  color: #102033;
+  color: var(--brand-text);
 }
 
 button.danger {
@@ -234,7 +244,7 @@ button.danger {
   justify-content: center;
   border-radius: 6px;
   padding: 10px 14px;
-  background: #1f7a5a;
+  background: var(--brand-primary);
   color: white;
   font-weight: 700;
   text-decoration: none;

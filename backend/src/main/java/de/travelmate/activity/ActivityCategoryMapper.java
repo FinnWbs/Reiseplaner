@@ -17,7 +17,8 @@ public class ActivityCategoryMapper {
         add(scores, value, "Natur", 10, "park", "natural", "garden", "beach", "viewpoint", "forest");
         add(scores, value, "Food", 10, "catering", "restaurant", "cafe", "food", "market");
         add(scores, value, "Shopping", 10, "commercial", "shop", "mall", "shopping");
-        add(scores, value, "Nightlife", 10, "nightclub", "club", "bar", "pub");
+        // Specific nightlife tags must win over Geoapify's generic "catering" parent.
+        add(scores, value, "Nightlife", 11, "nightclub", "club", "bar", "pub");
         add(scores, value, "Sport", 10, "sport", "stadium", "fitness");
 
         if (scores.isEmpty()) {

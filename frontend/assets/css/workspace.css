@@ -1,0 +1,1551 @@
+.route-loading {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: #667085;
+}
+
+.route-loading-mark,
+.app-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #1f7a5a;
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.workspace-page {
+  min-height: 100vh;
+  background: #f4f7f8;
+}
+
+.workspace-main {
+  width: min(100% - 40px, 1240px);
+  margin: 0 auto;
+  padding: 42px 0 70px;
+}
+
+.app-navigation {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto minmax(220px, 1fr);
+  align-items: center;
+  gap: 24px;
+  min-height: 72px;
+  padding: 10px max(22px, calc((100vw - 1240px) / 2));
+  border-bottom: 1px solid #dce4e7;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 22px rgba(20, 47, 59, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.app-brand,
+.app-nav-links,
+.app-nav-actions,
+.app-user {
+  display: flex;
+  align-items: center;
+}
+
+.app-brand {
+  gap: 10px;
+  color: #142f3b;
+  text-decoration: none;
+}
+
+.app-brand > span:last-child,
+.app-user {
+  display: grid;
+  gap: 1px;
+}
+
+.app-brand small,
+.app-user small {
+  color: #667085;
+  font-size: 12px;
+}
+
+.app-nav-links {
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #dce4e7;
+  border-radius: 8px;
+  background: #f6f9fa;
+}
+
+.app-nav-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 5px;
+  padding: 9px 12px;
+  color: #4c5e67;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-nav-links a:hover,
+.app-nav-links a.router-link-active {
+  background: white;
+  color: #176345;
+  box-shadow: 0 2px 8px rgba(20, 47, 59, 0.1);
+}
+
+.app-nav-actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.app-user {
+  margin-right: 6px;
+  text-align: right;
+}
+
+.nav-icon-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid #d6e0e4;
+  background: white;
+  color: #50636d;
+}
+
+.nav-icon-button:hover {
+  border-color: #80b8a1;
+  background: #edf7f2;
+  color: #176345;
+}
+
+.calendar-hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 28px;
+}
+
+.calendar-hero h1,
+.orbit-page-heading h1 {
+  margin: 5px 0 8px;
+  color: #142f3b;
+  font-size: clamp(32px, 5vw, 54px);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.calendar-hero p,
+.orbit-page-heading p {
+  margin: 0;
+  color: #667085;
+  line-height: 1.5;
+}
+
+.calendar-create-link {
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.calendar-shell,
+.calendar-trip-overview,
+.undated-trips {
+  border: 1px solid #dce4e7;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 14px 34px rgba(20, 47, 59, 0.08);
+}
+
+.calendar-shell {
+  overflow: hidden;
+}
+
+.calendar-toolbar,
+.calendar-month-control,
+.section-heading,
+.empty-journeys {
+  display: flex;
+  align-items: center;
+}
+
+.calendar-toolbar {
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #e4eaed;
+}
+
+.calendar-month-control {
+  gap: 14px;
+}
+
+.calendar-month-control h2 {
+  min-width: 210px;
+  margin: 0;
+  color: #142f3b;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-weekdays {
+  border-bottom: 1px solid #e4eaed;
+  background: #f7faf9;
+}
+
+.calendar-weekdays span {
+  padding: 11px 10px;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.calendar-cell {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-width: 0;
+  min-height: 116px;
+  padding: 10px;
+  border-right: 1px solid #e4eaed;
+  border-bottom: 1px solid #e4eaed;
+  border-radius: 0;
+  background: white;
+  color: #142f3b;
+  text-align: left;
+}
+
+.calendar-cell:nth-child(7n) {
+  border-right: 0;
+}
+
+.calendar-cell:nth-last-child(-n + 7) {
+  border-bottom: 0;
+}
+
+.calendar-cell:hover,
+.calendar-cell.selected {
+  background: #f1f8f5;
+}
+
+.calendar-cell.range-selected {
+  background: #dff1ea;
+  box-shadow: inset 0 2px 0 #5ea98c, inset 0 -2px 0 #5ea98c;
+}
+
+.calendar-cell.range-start,
+.calendar-cell.range-end {
+  background: #cae8dc;
+}
+
+.calendar-cell.range-start .calendar-date-number,
+.calendar-cell.range-end .calendar-date-number {
+  background: #1f7a5a;
+  color: white;
+}
+
+.calendar-cell.outside-month {
+  background: #fafbfb;
+  color: #a4adb2;
+}
+
+.calendar-date-number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.calendar-cell.today .calendar-date-number {
+  background: #142f3b;
+  color: white;
+}
+
+.calendar-cell-trips {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.calendar-trip-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border-left: 4px solid currentColor;
+  background: #edf7f2;
+  color: #176345;
+  text-align: left;
+}
+
+.calendar-trip-pill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-trip-pill.compact {
+  display: block;
+  padding: 5px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.trip-color-0 {
+  background: #e1f5ec;
+  color: #166447;
+}
+
+.trip-color-1 {
+  background: #e4efff;
+  color: #275b9b;
+}
+
+.trip-color-2 {
+  background: #fff0d8;
+  color: #945715;
+}
+
+.trip-color-3 {
+  background: #f1e8ff;
+  color: #7043a6;
+}
+
+.trip-color-4 {
+  background: #ffe7e5;
+  color: #a33c35;
+}
+
+.trip-color-5 {
+  background: #e2f5f4;
+  color: #176d70;
+}
+
+.mobile-selected-day {
+  display: none;
+}
+
+.calendar-range-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 20px;
+  border-top: 1px solid #d9e5e1;
+  background: #f1f8f5;
+}
+
+.calendar-range-action > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.calendar-range-action small {
+  color: #66777d;
+}
+
+.calendar-range-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-range-buttons button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.calendar-range-error {
+  margin: 0;
+  padding: 12px 20px;
+  border-top: 1px solid #efc5bd;
+  background: #fff2ef;
+  color: #a13c32;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.calendar-context-menu {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  min-width: 250px;
+  overflow: hidden;
+  border: 1px solid #cbd9d7;
+  border-radius: 7px;
+  background: white;
+  box-shadow: 0 16px 38px rgba(20, 47, 59, 0.2);
+}
+
+.calendar-context-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  border-radius: 0;
+  background: white;
+  color: #31464e;
+  text-align: left;
+}
+
+.calendar-context-menu button + button {
+  border-top: 1px solid #e5ebed;
+}
+
+.calendar-context-menu button:hover {
+  background: #edf6f2;
+  color: #176345;
+}
+
+.calendar-trip-overview,
+.undated-trips {
+  margin-top: 28px;
+  padding: 24px;
+}
+
+.section-heading {
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.section-heading h2 {
+  margin: 4px 0 0;
+  color: #142f3b;
+}
+
+.trip-count {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #142f3b;
+  color: white;
+  font-weight: 800;
+}
+
+.journey-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.journey-summary {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid currentColor;
+  text-align: left;
+}
+
+.journey-summary:hover {
+  translate: 0 -2px;
+  box-shadow: 0 10px 22px rgba(20, 47, 59, 0.12);
+}
+
+.journey-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.journey-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.journey-copy strong {
+  overflow: hidden;
+  color: #142f3b;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journey-copy small,
+.journey-days {
+  color: #5d6d75;
+}
+
+.journey-days {
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.empty-journeys {
+  justify-content: center;
+  gap: 18px;
+  padding: 34px;
+  border: 1px dashed #b9c8ce;
+  color: #50636d;
+}
+
+.empty-journeys p {
+  margin: 4px 0 0;
+}
+
+.calendar-loading {
+  display: grid;
+  min-height: 360px;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: #667085;
+}
+
+.calendar-loading span {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #cfe1d9;
+  border-top-color: #1f7a5a;
+  border-radius: 50%;
+  animation: calendar-spin 800ms linear infinite;
+}
+
+@keyframes calendar-spin {
+  to { rotate: 360deg; }
+}
+
+.workspace-error {
+  padding: 12px 14px;
+  border: 1px solid #f3b6b1;
+  border-radius: 6px;
+  background: #fff0ef;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 24px;
+  color: #50636d;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: #176345;
+}
+
+.orbit-page-main {
+  width: min(100% - 24px, 1380px);
+}
+
+.orbit-page-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(100% - 32px, 1100px);
+  margin: 0 auto 18px;
+}
+
+.orbit-page-heading p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.orbit-heading-count {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  color: #667085;
+}
+
+.orbit-heading-count strong {
+  color: #1f7a5a;
+  font-size: 30px;
+}
+
+.day-orbit-section {
+  position: relative;
+}
+
+.day-orbit-stage {
+  position: relative;
+  overflow: hidden;
+  scroll-margin-top: 88px;
+  height: 700px;
+  border: 1px solid #d7e3e5;
+  border-radius: 8px;
+  background: #dceff0;
+  perspective: 1400px;
+  perspective-origin: 50% 42%;
+  box-shadow: inset 0 -120px 0 #d4e7db, 0 22px 48px rgba(20, 47, 59, 0.14);
+  touch-action: pan-y;
+}
+
+.day-orbit-stage:focus-visible {
+  outline: 3px solid #60b992;
+  outline-offset: 4px;
+}
+
+.orbit-accent-band {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 145px;
+  background: #ffd472;
+  border-bottom: 24px solid #f29a79;
+}
+
+.orbit-card-position {
+  position: absolute;
+  top: 38px;
+  left: 50%;
+  width: min(680px, calc(100% - 180px));
+  height: 620px;
+  transform:
+    translateX(calc(-50% + var(--orbit-offset) * 58%))
+    translateZ(calc(var(--orbit-distance) * -150px))
+    rotateY(calc(var(--orbit-offset) * -24deg))
+    scale(calc(1 - var(--orbit-distance) * 0.09));
+  transform-origin: 50% 55%;
+  opacity: calc(1 - var(--orbit-distance) * 0.18);
+  filter: blur(calc(var(--orbit-distance) * 1.2px));
+  transition:
+    transform 620ms cubic-bezier(0.22, 0.78, 0.22, 1),
+    opacity 420ms ease,
+    filter 420ms ease;
+  transform-style: preserve-3d;
+}
+
+.orbit-card-position.is-active {
+  filter: none;
+}
+
+.orbit-card-position.is-hidden {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.orbit-day-card {
+  overflow: auto;
+  width: 100%;
+  height: 100%;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 8px;
+  background: #fdfefe;
+  color: #142f3b;
+  box-shadow: 0 24px 60px rgba(34, 67, 74, 0.23);
+  cursor: pointer;
+  scrollbar-width: thin;
+}
+
+.orbit-day-card.active {
+  cursor: default;
+}
+
+.orbit-card-header {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 19px;
+  border-bottom: 1px solid #e0e8e9;
+}
+
+.orbit-day-number {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 7px;
+  background: #142f3b;
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.orbit-kicker,
+.compact-category {
+  color: #1f7a5a;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.orbit-card-header h2 {
+  margin: 2px 0;
+  font-size: 25px;
+}
+
+.orbit-card-header p,
+.orbit-time-window {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.orbit-time-window {
+  padding: 8px 10px;
+  border: 1px solid #dce5e7;
+  border-radius: 6px;
+  background: #f5f8f8;
+  white-space: nowrap;
+}
+
+.compact-timeline {
+  display: grid;
+  padding: 8px 0 4px;
+}
+
+.compact-activity {
+  display: grid;
+  grid-template-columns: 66px 18px 38px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 15px 0;
+  border-bottom: 1px solid #e4eaec;
+}
+
+.compact-activity:last-child {
+  border-bottom: 0;
+}
+
+.compact-activity-time {
+  display: grid;
+  gap: 3px;
+  padding-top: 3px;
+}
+
+.compact-activity-time span {
+  color: #7a8990;
+  font-size: 11px;
+}
+
+.compact-activity-line {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: calc(100% + 30px);
+}
+
+.compact-activity-line::after {
+  position: absolute;
+  top: 12px;
+  bottom: -15px;
+  width: 2px;
+  background: #dbe7e2;
+  content: "";
+}
+
+.compact-activity:last-child .compact-activity-line::after {
+  display: none;
+}
+
+.compact-activity-line i {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  margin-top: 7px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: #1f7a5a;
+  box-shadow: 0 0 0 2px #1f7a5a;
+}
+
+.compact-activity-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: #e2f3eb;
+  color: #176345;
+}
+
+.category-nightlife .compact-activity-icon {
+  background: #eee8ff;
+  color: #6f48a5;
+}
+
+.category-food .compact-activity-icon {
+  background: #fff0d8;
+  color: #9a5a15;
+}
+
+.category-natur .compact-activity-icon {
+  background: #e0f2df;
+  color: #377345;
+}
+
+.category-shopping .compact-activity-icon {
+  background: #ffe6e0;
+  color: #a44a39;
+}
+
+.category-sport .compact-activity-icon {
+  background: #e2efff;
+  color: #2e629d;
+}
+
+.category-geschichte .compact-activity-icon {
+  background: #f4e7d8;
+  color: #7c5a32;
+}
+
+.compact-activity-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.compact-activity-copy h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.compact-activity-copy > p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: #52656e;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.compact-activity.expanded .compact-activity-copy > p {
+  display: block;
+}
+
+.compact-activity-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+  color: #667085;
+  font-size: 12px;
+}
+
+.compact-activity-details span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.compact-activity-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.compact-activity-actions .icon-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  text-decoration: none;
+}
+
+.compact-activity.expanded .compact-activity-actions button:first-child svg {
+  rotate: 180deg;
+}
+
+.orbit-day-card .availability-editor {
+  margin: 14px 0 0;
+  padding: 14px;
+  background: #f5f8f8;
+}
+
+.orbit-card-preview {
+  display: grid;
+  min-height: 390px;
+  place-content: center;
+  justify-items: center;
+  color: #667085;
+}
+
+.orbit-card-preview span {
+  color: #1f7a5a;
+  font-size: 54px;
+  font-weight: 800;
+}
+
+.orbit-card-preview p {
+  margin: 0 0 7px;
+  color: #142f3b;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.empty-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 300px;
+  color: #50636d;
+}
+
+.empty-day p {
+  margin: 4px 0 0;
+}
+
+.orbit-controls {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.orbit-arrow {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #cfdcdf;
+  border-radius: 50%;
+  background: white;
+  color: #142f3b;
+  box-shadow: 0 8px 20px rgba(20, 47, 59, 0.12);
+}
+
+.orbit-arrow:hover:not(:disabled) {
+  background: #1f7a5a;
+  color: white;
+}
+
+.orbit-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orbit-dots button {
+  width: 22px;
+  height: 5px;
+  padding: 0;
+  border-radius: 3px;
+  background: #b8c7cb;
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.orbit-dots button.active {
+  width: 42px;
+  background: #1f7a5a;
+}
+
+@media (max-width: 900px) {
+  .app-navigation {
+    grid-template-columns: auto 1fr;
+    backdrop-filter: none;
+  }
+
+  .app-nav-links {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    z-index: 60;
+    justify-content: space-around;
+    box-shadow: 0 10px 30px rgba(20, 47, 59, 0.2);
+  }
+
+  .app-user {
+    display: none;
+  }
+
+  .workspace-main {
+    padding-bottom: 100px;
+  }
+
+  .day-orbit-stage {
+    height: 680px;
+  }
+
+  .orbit-card-position {
+    width: min(650px, calc(100% - 90px));
+  }
+}
+
+@media (max-width: 680px) {
+  .workspace-main {
+    width: min(100% - 24px, 1240px);
+    padding-top: 28px;
+  }
+
+  .calendar-hero,
+  .orbit-page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .calendar-hero h1,
+  .orbit-page-heading h1 {
+    font-size: 36px;
+  }
+
+  .calendar-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .calendar-month-control {
+    justify-content: space-between;
+  }
+
+  .calendar-month-control h2 {
+    min-width: 0;
+    font-size: 19px;
+  }
+
+  .calendar-cell {
+    min-height: 54px;
+    padding: 5px;
+  }
+
+  .calendar-cell-trips {
+    display: none;
+  }
+
+  .calendar-date-number {
+    width: 24px;
+    height: 24px;
+  }
+
+  .mobile-selected-day {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border-top: 1px solid #e4eaed;
+  }
+
+  .calendar-range-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .calendar-range-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .journey-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .empty-journeys {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .orbit-page-heading {
+    width: 100%;
+  }
+
+  .day-orbit-stage {
+    height: 700px;
+  }
+
+  .orbit-card-position {
+    top: 24px;
+    width: calc(100% - 28px);
+    height: 650px;
+    transform:
+      translateX(calc(-50% + var(--orbit-offset) * 76%))
+      translateZ(calc(var(--orbit-distance) * -120px))
+      rotateY(calc(var(--orbit-offset) * -18deg))
+      scale(calc(1 - var(--orbit-distance) * 0.08));
+  }
+
+  .orbit-day-card {
+    padding: 18px;
+  }
+
+  .orbit-card-header {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .orbit-day-number {
+    width: 44px;
+    height: 44px;
+  }
+
+  .orbit-time-window {
+    grid-column: 1 / -1;
+    width: fit-content;
+  }
+
+  .compact-activity {
+    grid-template-columns: 54px 12px 34px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .compact-activity-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .compact-activity-actions {
+    grid-column: 4;
+    justify-content: flex-end;
+  }
+
+  .compact-activity-copy > p {
+    -webkit-line-clamp: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-card-position {
+    filter: none;
+    transition: opacity 160ms ease;
+  }
+
+  .journey-summary:hover {
+    translate: none;
+  }
+}
+
+/* Compact calendar dashboard */
+.calendar-page .workspace-main {
+  width: min(100% - 32px, 1440px);
+  padding-top: 18px;
+}
+
+.calendar-page .calendar-hero {
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.calendar-page .calendar-hero h1 {
+  margin: 2px 0 4px;
+  font-size: clamp(28px, 3.4vw, 42px);
+}
+
+.calendar-dashboard {
+  display: grid;
+  grid-template-columns: minmax(660px, 1.75fr) minmax(310px, 0.75fr);
+  align-items: stretch;
+  gap: 16px;
+}
+
+.calendar-dashboard .calendar-shell {
+  min-width: 0;
+}
+
+.calendar-dashboard .calendar-toolbar {
+  min-height: 58px;
+  padding: 10px 14px;
+}
+
+.calendar-dashboard .calendar-weekdays span {
+  padding: 7px;
+}
+
+.calendar-dashboard .calendar-cell {
+  min-height: 66px;
+  gap: 4px;
+  padding: 5px 7px;
+}
+
+.calendar-dashboard .calendar-date-number {
+  width: 23px;
+  height: 23px;
+  font-size: 11px;
+}
+
+.calendar-dashboard .calendar-trip-pill.compact {
+  padding: 3px 6px;
+  font-size: 10px;
+}
+
+.calendar-dashboard .calendar-range-action {
+  min-height: 58px;
+  padding: 8px 14px;
+}
+
+.calendar-trips-sidebar {
+  display: grid;
+  grid-template-rows: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.trip-group {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #dce4e7;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 14px 34px rgba(20, 47, 59, 0.08);
+}
+
+.trip-group-heading {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border-bottom: 1px solid #e4eaed;
+}
+
+.trip-group-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.trip-group-heading span:not(.trip-group-icon) {
+  color: #66777d;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.trip-group-heading h2 {
+  margin: 0;
+  color: #142f3b;
+  font-size: 17px;
+}
+
+.trip-group-heading > strong,
+.trip-group-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+}
+
+.trip-group-heading > strong {
+  width: 34px;
+  height: 28px;
+  background: #e4f3ed;
+  color: #176345;
+  font-size: 13px;
+}
+
+.trip-group-icon {
+  width: 38px;
+  height: 38px;
+  background: #e4f3ed;
+  color: #176345;
+}
+
+.idea-trip-group .trip-group-icon,
+.idea-trip-group .trip-group-heading > strong {
+  background: #fff0d8;
+  color: #945715;
+}
+
+.trip-group-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  scrollbar-width: thin;
+}
+
+.sidebar-trip-card {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid currentColor;
+  text-align: left;
+}
+
+.sidebar-trip-card.idea {
+  border-color: #e0c28a;
+  background: #fff7e8;
+  color: #8b5a16;
+}
+
+.sidebar-trip-card .journey-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.sidebar-trip-card .journey-copy {
+  gap: 2px;
+}
+
+.sidebar-trip-card .journey-copy small {
+  font-size: 11px;
+}
+
+.trip-group-empty {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 18px;
+  color: #718187;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Expanded day workspace */
+.orbit-page-main {
+  width: min(100% - 24px, 1540px);
+  padding-top: 18px;
+}
+
+.orbit-page-main .back-link {
+  margin-bottom: 8px;
+}
+
+.orbit-page-heading {
+  width: min(100% - 32px, 1320px);
+  margin-bottom: 10px;
+}
+
+.orbit-page-heading h1 {
+  font-size: clamp(30px, 4vw, 46px);
+}
+
+.day-orbit-stage {
+  height: clamp(620px, calc(100vh - 225px), 780px);
+}
+
+.orbit-card-position {
+  top: 28px;
+  width: min(1120px, calc(100% - 150px));
+  height: calc(100% - 56px);
+  transform:
+    translateX(calc(-50% + var(--orbit-offset) * 69%))
+    translateZ(calc(var(--orbit-distance) * -190px))
+    rotateY(calc(var(--orbit-offset) * -27deg))
+    scale(calc(1 - var(--orbit-distance) * 0.1));
+}
+
+.orbit-day-card {
+  overflow: hidden;
+  padding: 22px;
+}
+
+.orbit-active-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: 18px;
+  height: calc(100% - 82px);
+  padding-top: 14px;
+}
+
+.orbit-day-content {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+}
+
+.orbit-day-content .compact-timeline {
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 0 0;
+  scrollbar-width: thin;
+}
+
+.compact-activity {
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.compact-activity:hover,
+.compact-activity.selected {
+  background: #f0f8f5;
+  box-shadow: inset 3px 0 #1f7a5a;
+}
+
+.activity-day-map {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #dce5e7;
+  border-radius: 7px;
+  background: #f5f8f8;
+}
+
+.activity-day-map > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #dce5e7;
+  background: white;
+}
+
+.activity-day-map h3 {
+  margin: 2px 0 0;
+  color: #142f3b;
+  font-size: 17px;
+}
+
+.activity-day-map a,
+.activity-map-popup a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #176345;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.activity-map-canvas {
+  z-index: 1;
+  min-height: 300px;
+  height: 100%;
+}
+
+.activity-map-empty {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: #66777d;
+  text-align: center;
+}
+
+.activity-map-empty p {
+  max-width: 300px;
+  margin: 0 0 5px;
+  font-size: 13px;
+}
+
+.activity-map-marker-shell {
+  border: 0;
+  background: transparent;
+}
+
+.activity-map-marker {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #1f7a5a;
+  color: white;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 5px 14px rgba(20, 47, 59, 0.35);
+  transition: scale 150ms ease, background 150ms ease;
+}
+
+.activity-map-marker.selected {
+  background: #e97255;
+  scale: 1.18;
+}
+
+.activity-map-popup {
+  display: grid;
+  gap: 5px;
+  min-width: 160px;
+}
+
+.activity-map-popup > span {
+  color: #66777d;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.activity-map-popup > strong {
+  color: #142f3b;
+}
+
+@media (max-width: 1000px) {
+  .calendar-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-trips-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(240px, auto);
+  }
+
+  .trip-group {
+    max-height: 390px;
+  }
+
+  .orbit-active-layout {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .activity-day-map {
+    min-height: 360px;
+  }
+
+  .orbit-day-card {
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .calendar-page .workspace-main {
+    width: min(100% - 20px, 1440px);
+  }
+
+  .calendar-trips-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-dashboard .calendar-cell {
+    min-height: 54px;
+  }
+
+  .orbit-card-position {
+    width: calc(100% - 22px);
+    height: calc(100% - 36px);
+  }
+
+  .orbit-active-layout {
+    height: auto;
+    min-height: calc(100% - 90px);
+  }
+
+  .activity-day-map {
+    min-height: 320px;
+  }
+}

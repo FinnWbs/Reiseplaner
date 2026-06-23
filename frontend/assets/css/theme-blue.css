@@ -1,0 +1,364 @@
+/* TravelMate brand layer: semantic category and warning colors intentionally stay unchanged. */
+:root {
+  accent-color: var(--brand-interactive);
+}
+
+body,
+.workspace-page {
+  background: var(--brand-surface);
+  color: var(--brand-text);
+}
+
+a,
+.back-link,
+.activity-day-map a,
+.activity-map-popup a {
+  color: var(--brand-primary);
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand-focus);
+  outline-offset: 3px;
+}
+
+.route-loading-mark,
+.app-brand-mark,
+.welcome-brand > span,
+.sidebar,
+.day-number,
+.orbit-day-number,
+.trip-count {
+  background: var(--brand-navy);
+}
+
+.floating-button:hover,
+.icon-button:hover,
+.nav-icon-button:hover {
+  border-color: var(--brand-interactive);
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+}
+
+.app-brand,
+.welcome-brand,
+.welcome-copy h1,
+.welcome-question h2,
+.auth-journey-panel .auth-header h2,
+.calendar-hero h1,
+.calendar-month-control h2,
+.section-heading h2,
+.journey-copy strong,
+.orbit-page-heading h1,
+.orbit-card-header h2,
+.orbit-card-preview p,
+.compact-activity-copy h3,
+.activity-day-map h3,
+.trip-group-heading h2 {
+  color: var(--brand-text);
+}
+
+button:not(.secondary):not(.danger):not(.icon-button):not(.nav-icon-button):not(.floating-button):not(.orbit-arrow):not(.welcome-back):not(.auth-mode-toggle):hover,
+.button-link:hover {
+  background: var(--brand-navy);
+}
+
+.app-nav-links a:hover,
+.app-nav-links a.router-link-active {
+  background: white;
+  color: var(--brand-primary);
+  box-shadow: inset 0 -2px var(--brand-interactive), 0 2px 8px rgba(11, 47, 91, 0.1);
+}
+
+.eyebrow,
+.orbit-kicker,
+.compact-category,
+.welcome-eyebrow,
+.welcome-interview-header strong,
+.orbit-heading-count strong {
+  color: var(--brand-primary);
+}
+
+.calendar-cell:hover,
+.calendar-cell.selected,
+.compact-activity:hover,
+.compact-activity.selected {
+  background: var(--brand-selection);
+}
+
+.calendar-cell.range-selected {
+  background: var(--brand-selection);
+  box-shadow: inset 0 2px 0 var(--brand-interactive), inset 0 -2px 0 var(--brand-interactive);
+}
+
+.calendar-cell.range-start,
+.calendar-cell.range-end {
+  background: var(--brand-selection-strong);
+}
+
+.calendar-cell.range-start .calendar-date-number,
+.calendar-cell.range-end .calendar-date-number,
+.calendar-cell.today .calendar-date-number {
+  background: var(--brand-navy);
+}
+
+.calendar-range-action,
+.prepared-range {
+  border-color: #b7d5f4;
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+}
+
+.calendar-trip-pill,
+.trip-color-0,
+.trip-color-5 {
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+}
+
+.planned-trip-group .trip-group-icon,
+.planned-trip-group .trip-group-heading > strong {
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+}
+
+.planned-trip-group .sidebar-trip-card {
+  border-color: #9fc6ea;
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+}
+
+.idea-trip-group .trip-group-icon,
+.idea-trip-group .trip-group-heading > strong,
+.sidebar-trip-card.idea {
+  border-color: #bfd4eb;
+  background: #f1f6fc;
+  color: #41617f;
+}
+
+.progress-track,
+.welcome-progress {
+  background: #dbe8f5;
+}
+
+.progress-fill,
+.welcome-progress span,
+.range-selection,
+.orbit-dots button.active {
+  background: var(--brand-interactive);
+}
+
+.question-icon,
+.activity-icon,
+.compact-activity-icon {
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+}
+
+.chip.active,
+.choice.selected,
+.date-choice.selected,
+.welcome-choice-grid > button.selected,
+.welcome-date-options button.selected,
+.destination-mode > button.active,
+.climate-cards > button.selected {
+  border-color: var(--brand-interactive);
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+  box-shadow: inset 0 0 0 1px var(--brand-interactive);
+}
+
+.chip:hover,
+.choice:hover,
+.date-choice:hover,
+.welcome-suggestions button:hover,
+.welcome-interests button:hover,
+.welcome-interests button.selected {
+  border-color: var(--brand-interactive);
+  background: var(--brand-selection);
+  color: var(--brand-primary);
+}
+
+.welcome-nav-link:hover,
+.auth-mode-toggle,
+.welcome-interview-actions .welcome-back {
+  color: var(--brand-primary);
+}
+
+.auth-mode-toggle:hover {
+  background: var(--brand-selection);
+}
+
+.welcome-choice-grid > button {
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  min-height: 68px;
+  padding: 15px 17px;
+  color: var(--brand-text);
+}
+
+.welcome-choice-grid > button svg {
+  color: var(--brand-primary);
+}
+
+.welcome-choice-grid > button strong {
+  font-size: 15px;
+}
+
+.welcome-choice-grid > button span {
+  display: none;
+}
+
+.welcome-city-input svg,
+.location-option svg {
+  color: var(--brand-primary);
+}
+
+.welcome-climate button.active,
+.welcome-segmented button.active,
+.segmented button.active {
+  color: var(--brand-primary);
+  box-shadow: inset 0 -2px var(--brand-interactive), 0 2px 7px rgba(11, 47, 91, 0.1);
+}
+
+.schedule-marker span,
+.compact-activity-line i,
+.activity-map-marker {
+  background: var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--brand-primary);
+}
+
+.compact-activity:hover,
+.compact-activity.selected {
+  box-shadow: inset 3px 0 var(--brand-interactive);
+}
+
+.activity-map-marker.selected {
+  background: var(--brand-interactive);
+}
+
+.orbit-arrow:hover:not(:disabled) {
+  background: var(--brand-primary);
+}
+
+.day-orbit-stage {
+  border-color: #bdd3e6;
+  background: #dcecf8;
+  box-shadow: inset 0 -120px 0 #c9def1, 0 22px 48px rgba(11, 47, 91, 0.16);
+}
+
+.orbit-accent-band {
+  background: #b9dbff;
+  border-bottom-color: var(--brand-interactive);
+}
+
+.orbit-day-card {
+  box-shadow: 0 24px 60px rgba(11, 47, 91, 0.22);
+}
+
+.range-shell input[type="range"]::-webkit-slider-thumb {
+  background: var(--brand-primary);
+}
+
+.range-shell input[type="range"]::-moz-range-thumb {
+  background: var(--brand-primary);
+}
+
+:root.dark-mode {
+  --brand-selection: #142e4c;
+  --brand-selection-strong: #183d65;
+  --brand-text: #eef6ff;
+  --brand-muted: #a9bbce;
+  --brand-border: #38536e;
+  --brand-surface: #081827;
+  --brand-focus: #69b4ff;
+  background: #081827;
+}
+
+:root.dark-mode body,
+:root.dark-mode .workspace-page {
+  background: #081827;
+}
+
+:root.dark-mode .app-navigation,
+:root.dark-mode .panel,
+:root.dark-mode .calendar-shell,
+:root.dark-mode .trip-group,
+:root.dark-mode .orbit-day-card,
+:root.dark-mode .activity-day-map,
+:root.dark-mode .activity-day-map > header {
+  border-color: #294866;
+  background: #0f253b;
+}
+
+:root.dark-mode .app-nav-links,
+:root.dark-mode input,
+:root.dark-mode select,
+:root.dark-mode .location-dropdown,
+:root.dark-mode .location-option,
+:root.dark-mode .schedule-content,
+:root.dark-mode .availability-editor,
+:root.dark-mode .orbit-time-window,
+:root.dark-mode .orbit-day-card .availability-editor {
+  border-color: #38536e;
+  background: #0a1c2e;
+}
+
+:root.dark-mode .app-nav-links a:hover,
+:root.dark-mode .app-nav-links a.router-link-active,
+:root.dark-mode .location-option.highlighted,
+:root.dark-mode .location-option:hover,
+:root.dark-mode .floating-button:hover,
+:root.dark-mode .icon-button:hover,
+:root.dark-mode .nav-icon-button:hover {
+  border-color: #5ba8f0;
+  background: #142e4c;
+  color: #b8dcff;
+}
+
+:root.dark-mode .chip.active,
+:root.dark-mode .choice.selected,
+:root.dark-mode .date-choice.selected,
+:root.dark-mode .welcome-choice-grid > button.selected,
+:root.dark-mode .welcome-date-options button.selected,
+:root.dark-mode .destination-mode > button.active,
+:root.dark-mode .climate-cards > button.selected {
+  border-color: #5ba8f0;
+  background: #142e4c;
+  color: #d9ecff;
+  box-shadow: inset 0 0 0 1px #5ba8f0;
+}
+
+:root.dark-mode .calendar-cell:hover,
+:root.dark-mode .calendar-cell.selected,
+:root.dark-mode .compact-activity:hover,
+:root.dark-mode .compact-activity.selected,
+:root.dark-mode .calendar-range-action,
+:root.dark-mode .prepared-range {
+  background: #142e4c;
+}
+
+:root.dark-mode .calendar-cell.range-selected {
+  background: #142e4c;
+  box-shadow: inset 0 2px 0 #5ba8f0, inset 0 -2px 0 #5ba8f0;
+}
+
+:root.dark-mode .calendar-cell.range-start,
+:root.dark-mode .calendar-cell.range-end {
+  background: #183d65;
+}
+
+:root.dark-mode .day-orbit-stage {
+  border-color: #38536e;
+  background: #0b2943;
+  box-shadow: inset 0 -120px 0 #0d2235, 0 22px 48px rgba(0, 0, 0, 0.4);
+}
+
+:root.dark-mode .orbit-accent-band {
+  background: #163f68;
+  border-bottom-color: #2f80d1;
+}
+
+:root.dark-mode .compact-activity:hover,
+:root.dark-mode .compact-activity.selected {
+  box-shadow: inset 3px 0 #69b4ff;
+}

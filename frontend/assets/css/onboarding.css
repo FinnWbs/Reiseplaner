@@ -1,0 +1,592 @@
+.onboarding-page,
+.auth-journey-page,
+.planner-journey-page {
+  min-height: 100vh;
+  background-color: #f8f8f3;
+  background-image: url("/images/travelmate-journey-bg-blue.png");
+  background-position: center;
+  background-size: cover;
+  color: #17313b;
+}
+
+.planner-journey-page {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.planner-journey-main {
+  display: grid;
+  min-height: calc(100vh - 72px);
+  place-items: center;
+  padding: 28px 16px;
+}
+
+.planner-journey-main .welcome-interview {
+  max-height: calc(100vh - 128px);
+  overflow: auto;
+}
+
+.welcome-nav {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100% - 40px, 1180px);
+  min-height: 72px;
+  margin: 0 auto;
+}
+
+.welcome-brand,
+.welcome-nav-link {
+  display: inline-flex;
+  align-items: center;
+  color: #17313b;
+  text-decoration: none;
+}
+
+.welcome-brand {
+  gap: 10px;
+  font-size: 18px;
+}
+
+.welcome-brand > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 7px;
+  background: #1f7a6b;
+  color: white;
+  font-weight: 800;
+}
+
+.welcome-nav-link {
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid rgba(23, 49, 59, 0.18);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+}
+
+.welcome-nav-link:hover {
+  border-color: #1f7a6b;
+  color: #176357;
+}
+
+.welcome-main {
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+  width: min(100% - 32px, 900px);
+  margin: 0 auto;
+  padding: 44px 0 80px;
+}
+
+.welcome-copy {
+  max-width: 700px;
+  text-align: center;
+}
+
+.welcome-eyebrow {
+  color: #1f7a6b;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.welcome-copy h1 {
+  margin: 5px 0 10px;
+  color: #17313b;
+  font-size: clamp(58px, 10vw, 108px);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.welcome-copy p {
+  max-width: 620px;
+  margin: 0 auto;
+  color: #536870;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.welcome-interview {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 760px);
+  min-height: 430px;
+  padding: 26px;
+  border: 1px solid rgba(23, 49, 59, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 22px 56px rgba(34, 74, 80, 0.16);
+  backdrop-filter: blur(14px);
+}
+
+.welcome-interview-header,
+.welcome-interview-actions,
+.welcome-climate,
+.welcome-segmented {
+  display: flex;
+  align-items: center;
+}
+
+.welcome-interview-header {
+  justify-content: space-between;
+  gap: 16px;
+  color: #5f7278;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.welcome-interview-header strong {
+  color: #1f7a6b;
+}
+
+.welcome-progress {
+  overflow: hidden;
+  height: 5px;
+  border-radius: 3px;
+  background: #e5ecea;
+}
+
+.welcome-progress span {
+  display: block;
+  height: 100%;
+  background: #1f7a6b;
+  transition: width 180ms ease;
+}
+
+.prepared-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid #c9ddd5;
+  border-radius: 6px;
+  background: #edf7f3;
+  color: #176357;
+}
+
+.prepared-range span {
+  display: grid;
+  gap: 2px;
+}
+
+.prepared-range span:not(strong) {
+  font-size: 12px;
+}
+
+.welcome-question {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 280px;
+}
+
+.question-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 7px;
+  background: #e4f3ed;
+  color: #176357;
+}
+
+.welcome-question h2 {
+  margin: 0;
+  color: #17313b;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.15;
+}
+
+.welcome-question > p {
+  margin: -5px 0 4px;
+  color: #66777d;
+  line-height: 1.5;
+}
+
+.welcome-city-input {
+  position: relative;
+  display: block;
+}
+
+.welcome-city-input svg {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  color: #1f7a6b;
+  transform: translateY(-50%);
+}
+
+.welcome-city-input input,
+.welcome-date-grid input,
+.welcome-days-input input,
+.auth-form input {
+  border: 1px solid #cbd9d7;
+  background: white;
+  color: #17313b;
+}
+
+.welcome-city-input input {
+  min-height: 54px;
+  padding-left: 46px;
+  font-size: 16px;
+}
+
+.welcome-climate {
+  gap: 5px;
+  width: fit-content;
+  padding: 4px;
+  border: 1px solid #d5e0de;
+  border-radius: 7px;
+  background: #f1f6f4;
+}
+
+.welcome-climate button,
+.welcome-segmented button {
+  background: transparent;
+  color: #607178;
+}
+
+.welcome-climate button.active,
+.welcome-segmented button.active {
+  background: white;
+  color: #176357;
+  box-shadow: 0 2px 7px rgba(23, 49, 59, 0.1);
+}
+
+.welcome-suggestions,
+.welcome-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.welcome-suggestions button,
+.welcome-interests button {
+  border: 1px solid #d5e0de;
+  border-radius: 999px;
+  background: #f7faf9;
+  color: #43575f;
+  font-weight: 700;
+}
+
+.welcome-suggestions button:hover,
+.welcome-interests button:hover,
+.welcome-interests button.selected {
+  border-color: #1f7a6b;
+  background: #e7f4ef;
+  color: #176357;
+}
+
+.welcome-choice-grid,
+.welcome-date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.welcome-choice-grid > button {
+  display: grid;
+  gap: 5px;
+  min-height: 100px;
+  padding: 18px;
+  border: 1px solid #d5e0de;
+  background: #f8faf9;
+  color: #17313b;
+  text-align: left;
+}
+
+.welcome-choice-grid > button span {
+  color: #66777d;
+  font-size: 13px;
+}
+
+.welcome-choice-grid > button.selected {
+  border-color: #1f7a6b;
+  background: #e8f4ef;
+  box-shadow: inset 0 0 0 1px #1f7a6b;
+}
+
+.welcome-date-grid label,
+.welcome-days-input,
+.auth-form label {
+  color: #344950;
+  font-size: 14px;
+}
+
+.welcome-days-input {
+  width: min(100%, 240px);
+}
+
+.welcome-date-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  max-height: 190px;
+  overflow: auto;
+}
+
+.welcome-date-options button {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #d5e0de;
+  background: #f8faf9;
+  color: #344950;
+  text-align: left;
+}
+
+.welcome-date-options button span {
+  color: #6d7d83;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.welcome-date-options button.selected {
+  border-color: #1f7a6b;
+  background: #e7f4ef;
+  color: #176357;
+}
+
+.welcome-segmented {
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  border: 1px solid #d5e0de;
+  border-radius: 7px;
+  background: #f1f6f4;
+}
+
+.welcome-segmented button {
+  min-width: 120px;
+}
+
+.welcome-interview-actions {
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e3eae8;
+}
+
+.welcome-interview-error {
+  margin: 0;
+}
+
+.welcome-interview-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.welcome-interview-actions .welcome-back {
+  background: transparent;
+  color: #5b6e75;
+}
+
+.destination-mode,
+.climate-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.destination-mode > button,
+.climate-cards > button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 13px;
+  border: 1px solid #d5e0de;
+  background: #f8faf9;
+  color: #40555d;
+  text-align: left;
+}
+
+.destination-mode > button span,
+.climate-cards > button span {
+  display: grid;
+  gap: 3px;
+}
+
+.destination-mode > button small,
+.climate-cards > button small {
+  color: #718187;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.destination-mode > button.active,
+.climate-cards > button.selected {
+  border-color: #1f7a6b;
+  background: #e7f4ef;
+  color: #176357;
+  box-shadow: inset 0 0 0 1px #1f7a6b;
+}
+
+.welcome-location-search {
+  position: relative;
+}
+
+.welcome-location-search .location-search {
+  gap: 7px;
+  color: #344950;
+  font-size: 13px;
+}
+
+.welcome-location-search input {
+  min-height: 52px;
+  background: white;
+  font-size: 16px;
+}
+
+.inspiration-picker {
+  display: grid;
+  gap: 13px;
+}
+
+.welcome-suggestions button.selected {
+  border-color: #1f7a6b;
+  background: #1f7a6b;
+  color: white;
+}
+
+.auth-journey-main {
+  display: grid;
+  min-height: calc(100vh - 72px);
+  place-items: center;
+  padding: 38px 16px 80px;
+}
+
+.auth-journey-panel {
+  display: grid;
+  gap: 22px;
+  width: min(100%, 460px);
+  padding: 30px;
+  border: 1px solid rgba(23, 49, 59, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 58px rgba(34, 74, 80, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+.auth-journey-panel .auth-header {
+  gap: 8px;
+  text-align: center;
+}
+
+.auth-journey-panel .auth-header h2 {
+  color: #17313b;
+  font-size: 30px;
+}
+
+.auth-journey-panel .auth-header p {
+  margin: 0;
+  color: #66777d;
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: grid;
+  gap: 16px;
+}
+
+.auth-form input {
+  min-height: 48px;
+}
+
+.auth-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.auth-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.auth-mode-toggle {
+  background: transparent;
+  color: #176357;
+  font-size: 13px;
+}
+
+.auth-mode-toggle:hover {
+  background: #edf6f2;
+}
+
+@media (max-width: 640px) {
+  .welcome-nav {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .welcome-main {
+    padding-top: 24px;
+  }
+
+  .planner-journey-main {
+    min-height: 0;
+    place-items: start center;
+    padding: 22px 12px 96px;
+  }
+
+  .planner-journey-main .welcome-interview {
+    max-height: none;
+  }
+
+  .welcome-copy h1 {
+    font-size: 56px;
+  }
+
+  .welcome-copy p {
+    font-size: 15px;
+  }
+
+  .welcome-interview {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .welcome-question {
+    min-height: 310px;
+  }
+
+  .welcome-choice-grid,
+  .welcome-date-grid,
+  .destination-mode,
+  .climate-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-segmented {
+    display: grid;
+    width: 100%;
+  }
+
+  .welcome-segmented button {
+    min-width: 0;
+  }
+
+  .auth-journey-panel {
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-progress span {
+    transition: none;
+  }
+}

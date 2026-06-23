@@ -1,0 +1,134 @@
+import type { Trip, TripDay } from '~/types/trip'
+
+const workspaceErrorMessage = (err: any, fallback: string) =>
+  err?.data?.message || err?.data?.error || err?.response?._data?.message || err?.message || fallback
+
+export const useTripWorkspace = () => {
+  const { request } = useApi()
+  const { clearAuth, hydrateAuth, token, user } = useAuth()
+  const trips = ref<Trip[]>([])
+  const trip = ref<Trip | null>(null)
+  const loading = ref(true)
+  const error = ref('')
+  const deletingActivityId = ref<number | null>(null)
+  const regeneratingActivityId = ref<number | null>(null)
+
+  const requireAuth = async () => {
+    hydrateAuth()
+    if (token.value) return true
+    await navigateTo('/auth')
+    return false
+  }
+
+  const handleLoadError = async (err: any, fallback: string) => {
+    error.value = workspaceErrorMessage(err, fallback)
+    if (err?.statusCode === 401 || err?.response?.status === 401) {
+      clearAuth()
+      await navigateTo('/auth')
+    }
+  }
+
+  const loadTrips = async () => {
+    loading.value = true
+    error.value = ''
+    if (!await requireAuth()) return
+    try {
+      trips.value = await request<Trip[]>('/trips')
+    } catch (err: any) {
+      await handleLoadError(err, 'Reisen konnten nicht geladen werden.')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loadTrip = async (tripId: number) => {
+    loading.value = true
+    error.value = ''
+    if (!await requireAuth()) return
+    try {
+      trip.value = await request<Trip>(`/trips/${tripId}`)
+    } catch (err: any) {
+      await handleLoadError(err, 'Reise konnte nicht geladen werden.')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const replaceTrip = (updated: Trip) => {
+    trip.value = updated
+    trips.value = trips.value.map(item => item.id === updated.id ? updated : item)
+  }
+
+  const updateAvailability = async (day: TripDay) => {
+    if (!trip.value) return
+    error.value = ''
+    if (day.availableFrom >= day.availableUntil) {
+      day.availableUntil = Math.min(1440, day.availableFrom + 30)
+    }
+    try {
+      replaceTrip(await request<Trip>(`/trips/${trip.value.id}/days/${day.id}/availability`, {
+        method: 'PUT',
+        body: {
+          availableFrom: day.availableFrom,
+          availableUntil: day.availableUntil
+        }
+      }))
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Zeitfenster konnte nicht gespeichert werden.')
+      await loadTrip(trip.value.id)
+    }
+  }
+
+  const removeActivity = async (dayId: number, itemId: number) => {
+    if (!trip.value) return
+    deletingActivityId.value = itemId
+    error.value = ''
+    try {
+      replaceTrip(await request<Trip>(
+        `/trips/${trip.value.id}/days/${dayId}/activities/${itemId}`,
+        { method: 'DELETE' }
+      ))
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Aktivitaet konnte nicht entfernt werden.')
+    } finally {
+      deletingActivityId.value = null
+    }
+  }
+
+  const regenerateActivity = async (dayId: number, itemId: number) => {
+    if (!trip.value) return
+    regeneratingActivityId.value = itemId
+    error.value = ''
+    try {
+      replaceTrip(await request<Trip>(
+        `/trips/${trip.value.id}/days/${dayId}/activities/${itemId}/regenerate`,
+        { method: 'POST' }
+      ))
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Keine passende Alternative gefunden.')
+    } finally {
+      regeneratingActivityId.value = null
+    }
+  }
+
+  const logout = async () => {
+    clearAuth()
+    await navigateTo('/auth')
+  }
+
+  return {
+    trips,
+    trip,
+    user,
+    loading,
+    error,
+    deletingActivityId,
+    regeneratingActivityId,
+    loadTrips,
+    loadTrip,
+    updateAvailability,
+    removeActivity,
+    regenerateActivity,
+    logout
+  }
+}

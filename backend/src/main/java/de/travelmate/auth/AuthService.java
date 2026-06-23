@@ -18,6 +18,9 @@ public class AuthService {
     @Inject
     UserRepository users;
 
+    @Inject
+    RegistrationValidator registrationValidator;
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (users.findByEmail(request.email()).isPresent()) {
@@ -27,7 +30,7 @@ public class AuthService {
         UserEntity user = new UserEntity();
         user.email = request.email().toLowerCase();
         user.passwordHash = BcryptUtil.bcryptHash(request.password());
-        user.displayName = request.displayName();
+        user.displayName = registrationValidator.normalizeDisplayName(request.displayName(), request.password());
         user.role = UserRole.USER;
         users.persist(user);
 

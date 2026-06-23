@@ -1,0 +1,303 @@
+<script setup lang="ts">
+import { ArrowLeft, ArrowRight, CalendarCheck, CalendarPlus, ChevronRight, Lightbulb, MapPin, Plus, X } from 'lucide-vue-next'
+import type { Trip } from '~/types/trip'
+
+const workspace = useTripWorkspace()
+const theme = usePlannerTheme()
+const tripDraft = useTripDraft()
+const currentMonth = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12))
+const selectedDate = ref('')
+const rangeStart = ref('')
+const rangeEnd = ref('')
+const rangeComplete = ref(false)
+const rangeError = ref('')
+const contextMenu = ref<{ x: number; y: number } | null>(null)
+
+const monthLabel = computed(() => new Intl.DateTimeFormat('de-DE', {
+  month: 'long',
+  year: 'numeric'
+}).format(currentMonth.value))
+
+const datedTrips = computed(() => workspace.trips.value.filter(trip => trip.startDate && trip.endDate))
+const undatedTrips = computed(() => workspace.trips.value.filter(trip => !trip.startDate || !trip.endDate))
+const selectedTrips = computed(() => selectedDate.value
+  ? datedTrips.value.filter(trip => selectedDate.value >= trip.startDate! && selectedDate.value <= trip.endDate!)
+  : [])
+const normalizedRange = computed(() => {
+  if (!rangeStart.value) return { start: '', end: '' }
+  const end = rangeEnd.value || rangeStart.value
+  return rangeStart.value <= end
+    ? { start: rangeStart.value, end }
+    : { start: end, end: rangeStart.value }
+})
+const selectedPlanningDates = computed(() => datesInRange(
+  normalizedRange.value.start,
+  normalizedRange.value.end
+))
+const selectedRangeLabel = computed(() => normalizedRange.value.start
+  ? `${formatDate(normalizedRange.value.start)} bis ${formatDate(normalizedRange.value.end)}`
+  : '')
+
+function datesInRange(from: string, until: string) {
+  if (!from || !until) return []
+  const dates: string[] = []
+  const cursor = new Date(`${from}T12:00:00`)
+  const end = new Date(`${until}T12:00:00`)
+  while (cursor <= end && dates.length <= 14) {
+    dates.push(cursor.toISOString().slice(0, 10))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return dates
+}
+
+const updateRangeEnd = (date: string, complete: boolean) => {
+  const from = rangeStart.value <= date ? rangeStart.value : date
+  const until = rangeStart.value <= date ? date : rangeStart.value
+  if (datesInRange(from, until).length > 14) {
+    rangeError.value = 'Ein Reisezeitraum darf maximal 14 Tage umfassen.'
+    return
+  }
+  rangeError.value = ''
+  rangeEnd.value = date
+  rangeComplete.value = complete
+}
+
+const beginRange = (date: string) => {
+  contextMenu.value = null
+  rangeError.value = ''
+  rangeStart.value = date
+  rangeEnd.value = date
+  rangeComplete.value = false
+}
+
+const handleRangeClick = (date: string) => {
+  selectedDate.value = date
+  if (!rangeStart.value || rangeComplete.value) {
+    beginRange(date)
+    return
+  }
+  updateRangeEnd(date, true)
+}
+
+const clearRange = () => {
+  rangeStart.value = ''
+  rangeEnd.value = ''
+  rangeComplete.value = false
+  rangeError.value = ''
+  contextMenu.value = null
+}
+
+const openRangeContext = (_date: string, x: number, y: number) => {
+  if (rangeComplete.value) contextMenu.value = { x, y }
+}
+
+const createTripForRange = async () => {
+  if (!rangeComplete.value || selectedPlanningDates.value.length === 0) return
+  tripDraft.saveDraft({
+    city: '',
+    destinationSource: 'KNOWN',
+    datesKnown: true,
+    startDate: normalizedRange.value.start,
+    endDate: normalizedRange.value.end,
+    daysCount: selectedPlanningDates.value.length,
+    planningDates: selectedPlanningDates.value,
+    interestNames: [],
+    pace: 'BALANCED',
+    dayRhythm: 'BALANCED'
+  })
+  await navigateTo('/planner?source=calendar')
+}
+
+const moveMonth = (offset: number) => {
+  currentMonth.value = new Date(
+    currentMonth.value.getFullYear(),
+    currentMonth.value.getMonth() + offset,
+    1,
+    12
+  )
+}
+
+const goToday = () => {
+  const today = new Date()
+  currentMonth.value = new Date(today.getFullYear(), today.getMonth(), 1, 12)
+  selectedDate.value = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0')
+  ].join('-')
+}
+
+const openTrip = async (trip: Trip, date?: string) => {
+  const day = date ? trip.days.find(item => item.travelDate === date)?.dayNumber : undefined
+  await navigateTo({ path: `/trips/${trip.id}`, query: day ? { day } : undefined })
+}
+
+const closeContextMenu = () => {
+  contextMenu.value = null
+}
+
+onMounted(async () => {
+  theme.initPlannerTheme()
+  await workspace.loadTrips()
+  window.addEventListener('click', closeContextMenu)
+})
+
+onUnmounted(() => {
+  theme.cleanupPlannerTheme()
+  window.removeEventListener('click', closeContextMenu)
+})
+</script>
+
+<template>
+  <div class="workspace-page calendar-page">
+    <AppNavigation
+      :user="workspace.user.value"
+      :is-dark-mode="theme.isDarkMode.value"
+      @logout="workspace.logout"
+      @toggle-theme="theme.toggleTheme"
+    />
+
+    <main class="workspace-main">
+      <section class="calendar-hero">
+        <div>
+          <span class="eyebrow">Deine Reisezeit</span>
+          <h1>Was steht als Naechstes an?</h1>
+          <p>Alle Staedtereisen, Planungstage und offenen Reiseideen auf einen Blick.</p>
+        </div>
+        <NuxtLink class="button-link calendar-create-link" to="/planner"><Plus :size="18" />Neue Reise</NuxtLink>
+      </section>
+
+      <p v-if="workspace.error.value" class="error workspace-error">{{ workspace.error.value }}</p>
+      <section v-if="workspace.loading.value" class="calendar-loading" aria-live="polite">
+        <span />
+        <p>Reisen werden geladen...</p>
+      </section>
+
+      <template v-else>
+        <div class="calendar-dashboard">
+        <section class="calendar-shell">
+          <header class="calendar-toolbar">
+            <div class="calendar-month-control">
+              <button class="nav-icon-button" type="button" title="Vorheriger Monat" @click="moveMonth(-1)">
+                <ArrowLeft :size="19" />
+              </button>
+              <h2>{{ monthLabel }}</h2>
+              <button class="nav-icon-button" type="button" title="Naechster Monat" @click="moveMonth(1)">
+                <ArrowRight :size="19" />
+              </button>
+            </div>
+            <button class="secondary" type="button" @click="goToday">Heute</button>
+          </header>
+
+          <TravelCalendar
+            :month="currentMonth"
+            :trips="datedTrips"
+            :selected-date="selectedDate"
+            :range-start="rangeStart"
+            :range-end="rangeEnd"
+            @select-date="handleRangeClick"
+            @range-start="beginRange"
+            @range-hover="updateRangeEnd($event, false)"
+            @range-end="updateRangeEnd($event, true)"
+            @range-context="openRangeContext"
+            @open-trip="openTrip"
+          />
+
+          <div v-if="rangeComplete" class="calendar-range-action">
+            <div>
+              <span class="eyebrow">Ausgewaehlter Zeitraum</span>
+              <strong>{{ selectedRangeLabel }}</strong>
+              <small>{{ selectedPlanningDates.length }} {{ selectedPlanningDates.length === 1 ? 'Tag' : 'Tage' }}</small>
+            </div>
+            <div class="calendar-range-buttons">
+              <button class="secondary compact-button" type="button" @click="clearRange"><X :size="16" />Aufheben</button>
+              <button type="button" @click="createTripForRange"><Plus :size="17" />Reise anlegen</button>
+            </div>
+          </div>
+          <p v-if="rangeError" class="calendar-range-error">{{ rangeError }}</p>
+
+          <div v-if="selectedDate" class="mobile-selected-day">
+            <strong>{{ formatDate(selectedDate) }}</strong>
+            <span v-if="selectedTrips.length === 0" class="muted">Keine Reise an diesem Tag.</span>
+            <CalendarTripPill
+              v-for="trip in selectedTrips"
+              :key="trip.id"
+              :trip="trip"
+              @open="openTrip(trip, selectedDate)"
+            />
+          </div>
+        </section>
+
+        <div
+          v-if="contextMenu"
+          class="calendar-context-menu"
+          :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+          @click.stop
+        >
+          <button type="button" @click="createTripForRange"><Plus :size="16" />Neue Reise fuer diesen Zeitraum</button>
+          <button type="button" @click="clearRange"><X :size="16" />Auswahl aufheben</button>
+        </div>
+
+        <aside id="reisen" class="calendar-trips-sidebar" aria-label="Reiseuebersicht">
+          <section class="trip-group planned-trip-group">
+            <header class="trip-group-heading">
+              <span class="trip-group-icon"><CalendarCheck :size="19" /></span>
+              <div><span>Fest im Kalender</span><h2>Geplante Reisen</h2></div>
+              <strong>{{ datedTrips.length }}</strong>
+            </header>
+            <div v-if="datedTrips.length" class="trip-group-list">
+              <button
+                v-for="trip in datedTrips"
+                :key="trip.id"
+                class="sidebar-trip-card"
+                :class="`trip-color-${Math.abs(trip.id) % 6}`"
+                type="button"
+                @click="openTrip(trip)"
+              >
+                <span class="journey-icon"><MapPin :size="18" /></span>
+                <span class="journey-copy">
+                  <strong>{{ trip.city }}</strong>
+                  <small>{{ formatDate(trip.startDate) }} bis {{ formatDate(trip.endDate) }}</small>
+                  <small>{{ trip.daysCount }} Planungstage</small>
+                </span>
+                <ChevronRight :size="18" />
+              </button>
+            </div>
+            <div v-else class="trip-group-empty">
+              <CalendarPlus :size="22" /><span>Noch keine Reise mit festem Zeitraum.</span>
+            </div>
+          </section>
+
+          <section class="trip-group idea-trip-group">
+            <header class="trip-group-heading">
+              <span class="trip-group-icon"><Lightbulb :size="19" /></span>
+              <div><span>Noch flexibel</span><h2>Reiseideen</h2></div>
+              <strong>{{ undatedTrips.length }}</strong>
+            </header>
+            <div v-if="undatedTrips.length" class="trip-group-list">
+              <button
+                v-for="trip in undatedTrips"
+                :key="trip.id"
+                class="sidebar-trip-card idea"
+                type="button"
+                @click="openTrip(trip)"
+              >
+                <span class="journey-icon"><MapPin :size="18" /></span>
+                <span class="journey-copy">
+                  <strong>{{ trip.city }}</strong>
+                  <small>Noch ohne Reisezeitraum</small>
+                  <small>{{ trip.daysCount }} Tage vorgemerkt</small>
+                </span>
+                <ChevronRight :size="18" />
+              </button>
+            </div>
+            <div v-else class="trip-group-empty">
+              <Lightbulb :size="22" /><span>Keine offenen Reiseideen.</span>
+            </div>
+          </section>
+        </aside>
+        </div>
+      </template>
+    </main>
+  </div>
+</template>

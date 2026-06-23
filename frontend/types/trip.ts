@@ -17,6 +17,8 @@ export type TripActivity = {
     address?: string
     rating?: number
     dataQualityScore: number
+    latitude?: number
+    longitude?: number
   }
 }
 

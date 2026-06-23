@@ -24,6 +24,7 @@ const isNotFoundError = (err: any) =>
 export const useTripPlanner = () => {
   const { request } = useApi()
   const { clearAuth, hydrateAuth, token, user } = useAuth()
+  const tripDraft = useTripDraft()
 
   const interests = ref<Interest[]>([])
   const trips = ref<Trip[]>([])
@@ -198,11 +199,47 @@ export const useTripPlanner = () => {
       activeTrip.value = created
       trips.value = [created, ...trips.value.filter(trip => trip.id !== created.id)]
       resetInterview()
+      return created
     } catch (err: any) {
       error.value = plannerErrorMessage(err, 'Reise konnte nicht erstellt werden.')
+      return null
     } finally {
       loading.value = false
     }
+  }
+
+  const createTripFromDraft = async () => {
+    const draft = tripDraft.loadDraft()
+    if (!draft) return null
+
+    city.value = draft.city
+    location.selectedLocation.value = draft.city && (
+      draft.placeId || draft.latitude != null || draft.country
+    ) ? {
+      id: draft.placeId || `${draft.city}-${draft.countryCode || ''}`,
+      city: draft.city,
+      country: draft.country,
+      countryCode: draft.countryCode,
+      state: draft.state,
+      latitude: draft.latitude,
+      longitude: draft.longitude,
+      placeId: draft.placeId
+    } : null
+    datesKnown.value = draft.datesKnown
+    startDate.value = draft.startDate
+    endDate.value = draft.endDate
+    daysCount.value = draft.daysCount
+    planningDates.value = [...draft.planningDates]
+    pace.value = draft.pace
+    dayRhythm.value = draft.dayRhythm
+    selectedInterestIds.value = interests.value
+      .filter(interest => draft.interestNames.some(name => name.toLowerCase() === interest.name.toLowerCase()))
+      .map(interest => interest.id)
+    destinationKnown.value = draft.destinationSource !== 'SUGGESTED'
+
+    const created = await createTrip()
+    if (created) tripDraft.clearDraft()
+    return created
   }
 
   const replaceTripState = (updated: Trip) => {
@@ -389,6 +426,7 @@ export const useTripPlanner = () => {
     nextStep,
     previousStep,
     createTrip,
+    createTripFromDraft,
     removeActivity,
     regenerateActivity,
     persistSchedule,
