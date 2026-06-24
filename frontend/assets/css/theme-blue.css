@@ -57,7 +57,7 @@ a,
   color: var(--brand-text);
 }
 
-button:not(.secondary):not(.danger):not(.icon-button):not(.nav-icon-button):not(.floating-button):not(.orbit-arrow):not(.welcome-back):not(.auth-mode-toggle):hover,
+button:not(.secondary):not(.danger):not(.icon-button):not(.nav-icon-button):not(.floating-button):not(.orbit-arrow):not(.welcome-back):not(.auth-mode-toggle):not(.trip-group-heading):hover,
 .button-link:hover {
   background: var(--brand-navy);
 }
@@ -116,7 +116,7 @@ button:not(.secondary):not(.danger):not(.icon-button):not(.nav-icon-button):not(
 }
 
 .planned-trip-group .trip-group-icon,
-.planned-trip-group .trip-group-heading > strong {
+.planned-trip-group .trip-group-count {
   background: var(--brand-selection);
   color: var(--brand-primary);
 }
@@ -128,7 +128,7 @@ button:not(.secondary):not(.danger):not(.icon-button):not(.nav-icon-button):not(
 }
 
 .idea-trip-group .trip-group-icon,
-.idea-trip-group .trip-group-heading > strong,
+.idea-trip-group .trip-group-count,
 .sidebar-trip-card.idea {
   border-color: #bfd4eb;
   background: #f1f6fc;
@@ -298,7 +298,8 @@ button:not(.secondary):not(.danger):not(.icon-button):not(.nav-icon-button):not(
 :root.dark-mode .schedule-content,
 :root.dark-mode .availability-editor,
 :root.dark-mode .orbit-time-window,
-:root.dark-mode .orbit-day-card .availability-editor {
+:root.dark-mode .orbit-day-card .availability-editor,
+:root.dark-mode .day-availability-popover {
   border-color: #38536e;
   background: #0a1c2e;
 }

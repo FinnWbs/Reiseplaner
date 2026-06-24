@@ -19,7 +19,7 @@ const colorIndex = (tripId: number) => Math.abs(tripId) % 6
     class="calendar-trip-pill"
     :class="[`trip-color-${colorIndex(trip.id)}`, { compact }]"
     type="button"
-    :title="`${trip.city} oeffnen`"
+    :title="`${trip.city} öffnen`"
     @click.stop="$emit('open', trip)"
   >
     <MapPin v-if="!compact" :size="13" />

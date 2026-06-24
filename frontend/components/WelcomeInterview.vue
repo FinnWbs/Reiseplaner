@@ -153,11 +153,11 @@ onUnmounted(location.cleanupLocationAutocomplete)
 
     <div v-if="step === 1" class="welcome-question">
       <div class="question-icon"><MapPin :size="23" /></div>
-      <h2 id="welcome-question">Wohin moechtest du reisen?</h2>
-      <p>Suche gezielt nach einer Stadt oder entdecke passende Vorschlaege.</p>
+      <h2 id="welcome-question">Wohin möchtest du reisen?</h2>
+      <p>Suche gezielt nach einer Stadt oder entdecke passende Vorschläge.</p>
       <div class="destination-mode" aria-label="Art der Zielauswahl">
         <button :class="{ active: destinationMode === 'SEARCH' }" type="button" @click="chooseDestinationMode('SEARCH')">
-          <Search :size="18" /><span><strong>Stadt suchen</strong><small>Ich weiss schon, wohin</small></span>
+          <Search :size="18" /><span><strong>Stadt suchen</strong><small>Ich weiß schon, wohin</small></span>
         </button>
         <button :class="{ active: destinationMode === 'INSPIRE' }" type="button" @click="chooseDestinationMode('INSPIRE')">
           <Compass :size="18" /><span><strong>Inspirieren lassen</strong><small>Zeig mir passende Ziele</small></span>
@@ -185,10 +185,10 @@ onUnmounted(location.cleanupLocationAutocomplete)
       <div v-else class="inspiration-picker">
         <div class="climate-cards">
           <button :class="{ selected: climate === 'WARM' }" type="button" @click="climate = 'WARM'; city = ''">
-            <Sun :size="23" /><span><strong>Sonne & Waerme</strong><small>Lebendige Staedte und milde Abende</small></span>
+            <Sun :size="23" /><span><strong>Sonne & Wärme</strong><small>Lebendige Städte und milde Abende</small></span>
           </button>
           <button :class="{ selected: climate === 'COOL' }" type="button" @click="climate = 'COOL'; city = ''">
-            <Wind :size="23" /><span><strong>Kuehl & urban</strong><small>Kultur, Architektur und klare Luft</small></span>
+            <Wind :size="23" /><span><strong>Kühl & urban</strong><small>Kultur, Architektur und klare Luft</small></span>
           </button>
         </div>
         <div v-if="climate" class="welcome-suggestions">
@@ -205,8 +205,8 @@ onUnmounted(location.cleanupLocationAutocomplete)
 
     <div v-else-if="step === 2" class="welcome-question">
       <div class="question-icon"><CalendarDays :size="23" /></div>
-      <h2>Weisst du schon, wann es losgeht?</h2>
-      <p>Du kannst einen festen Zeitraum waehlen oder erstmal nur die Reisedauer festlegen.</p>
+      <h2>Weißt du schon, wann es losgeht?</h2>
+      <p>Du kannst einen festen Zeitraum wählen oder erstmal nur die Reisedauer festlegen.</p>
       <div class="welcome-choice-grid">
         <button :class="{ selected: datesKnown === true }" type="button" @click="datesKnown = true">
           <CalendarRange :size="22" /><strong>Fester Zeitraum</strong>
@@ -235,8 +235,8 @@ onUnmounted(location.cleanupLocationAutocomplete)
     <div v-else-if="step === 4" class="welcome-question">
       <template v-if="datesKnown">
         <div class="question-icon"><CalendarDays :size="23" /></div>
-        <h2>Welche Tage moechtest du verplanen?</h2>
-        <p>Du kannst auch nur einzelne Tage deines Aufenthalts auswaehlen.</p>
+        <h2>Welche Tage möchtest du verplanen?</h2>
+        <p>Du kannst auch nur einzelne Tage deines Aufenthalts auswählen.</p>
         <div class="welcome-date-options">
           <button
             v-for="date in datesBetween"
@@ -251,15 +251,15 @@ onUnmounted(location.cleanupLocationAutocomplete)
       </template>
       <template v-else>
         <div class="question-icon"><Sparkles :size="23" /></div>
-        <h2>{{ daysCount }} Tage voller Moeglichkeiten</h2>
-        <p>Den genauen Zeitraum kannst du spaeter jederzeit im Kalender ergaenzen.</p>
+        <h2>{{ daysCount }} Tage voller Möglichkeiten</h2>
+        <p>Den genauen Zeitraum kannst du später jederzeit im Kalender ergänzen.</p>
       </template>
     </div>
 
     <div v-else-if="step === 5" class="welcome-question">
       <div class="question-icon"><Sparkles :size="23" /></div>
-      <h2>Was moechtest du erleben?</h2>
-      <p>Waehle alles aus, was dich auf dieser Reise interessiert.</p>
+      <h2>Was möchtest du erleben?</h2>
+      <p>Wähle alles aus, was dich auf dieser Reise interessiert.</p>
       <div class="welcome-interests">
         <button
           v-for="interest in interests"
@@ -273,7 +273,7 @@ onUnmounted(location.cleanupLocationAutocomplete)
 
     <div v-else class="welcome-question">
       <div class="question-icon"><Sparkles :size="23" /></div>
-      <h2>Wie soll sich {{ city }} anfuehlen?</h2>
+      <h2>Wie soll sich {{ city }} anfühlen?</h2>
       <p>Damit passen Tagesumfang und Uhrzeiten besser zu dir.</p>
       <strong>Tempo</strong>
       <div class="welcome-segmented">
@@ -283,15 +283,15 @@ onUnmounted(location.cleanupLocationAutocomplete)
       </div>
       <strong>Tagesrhythmus</strong>
       <div class="welcome-segmented">
-        <button :class="{ active: dayRhythm === 'EARLY' }" type="button" @click="dayRhythm = 'EARLY'">Frueh</button>
+        <button :class="{ active: dayRhythm === 'EARLY' }" type="button" @click="dayRhythm = 'EARLY'">Früh</button>
         <button :class="{ active: dayRhythm === 'BALANCED' }" type="button" @click="dayRhythm = 'BALANCED'">Ausgeglichen</button>
-        <button :class="{ active: dayRhythm === 'LATE' }" type="button" @click="dayRhythm = 'LATE'">Spaet</button>
+        <button :class="{ active: dayRhythm === 'LATE' }" type="button" @click="dayRhythm = 'LATE'">Spät</button>
       </div>
     </div>
 
     <p v-if="error" class="error welcome-interview-error">{{ error }}</p>
     <footer class="welcome-interview-actions">
-      <button class="welcome-back" type="button" :disabled="step === 1" @click="step--"><ArrowLeft :size="18" />Zurueck</button>
+      <button class="welcome-back" type="button" :disabled="step === 1" @click="step--"><ArrowLeft :size="18" />Zurück</button>
       <button v-if="step < steps" type="button" :disabled="!ready" @click="next">Weiter<ArrowRight :size="18" /></button>
       <button v-else type="button" :disabled="loading" @click="finish">
         {{ loading ? 'Reise wird erstellt...' : 'Reise planen' }}<ArrowRight :size="18" />

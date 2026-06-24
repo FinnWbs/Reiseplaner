@@ -19,7 +19,7 @@ defineEmits<{
         <button class="secondary trip-select" @click="$emit('selectTrip', trip)">
           {{ trip.city }} &middot; {{ trip.daysCount }} Tage
         </button>
-        <button class="danger" @click="$emit('deleteTrip', trip.id)">Loeschen</button>
+        <button class="danger" @click="$emit('deleteTrip', trip.id)">Löschen</button>
       </div>
     </div>
   </section>

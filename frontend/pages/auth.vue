@@ -16,7 +16,7 @@ const loading = ref(false)
 
 const title = computed(() => mode.value === 'register' ? 'Account erstellen' : 'Einloggen')
 const submitLabel = computed(() => mode.value === 'register' ? 'Account erstellen' : 'Einloggen')
-const toggleLabel = computed(() => mode.value === 'register' ? 'Zurueck zum Login' : 'Noch keinen Account? Registrieren')
+const toggleLabel = computed(() => mode.value === 'register' ? 'Zurück zum Login' : 'Noch keinen Account? Registrieren')
 
 const validate = () => {
   if (!email.value.trim() || !password.value) {
@@ -51,7 +51,7 @@ const submitAuth = async () => {
     await authenticate(mode.value, body)
     await navigateTo(route.query.continue === 'trip' || hasDraft() ? '/planner?draft=1' : '/calendar')
   } catch (err: any) {
-    error.value = err?.data?.message || 'Anmeldung fehlgeschlagen. Bitte pruefe deine Eingaben.'
+    error.value = err?.data?.message || 'Anmeldung fehlgeschlagen. Bitte prüfe deine Eingaben.'
   } finally {
     loading.value = false
   }
@@ -82,9 +82,9 @@ onMounted(async () => {
     <main class="auth-journey-main">
       <section class="auth-journey-panel">
         <div class="auth-header">
-          <span class="eyebrow">{{ mode === 'register' ? 'Dein TravelMate Konto' : 'Willkommen zurueck' }}</span>
+          <span class="eyebrow">{{ mode === 'register' ? 'Dein TravelMate Konto' : 'Willkommen zurück' }}</span>
           <h2>{{ title }}</h2>
-          <p>{{ mode === 'register' ? 'Speichere deine Reise und plane sie jederzeit weiter.' : 'Melde dich an, um deine Reisen und deinen Kalender zu oeffnen.' }}</p>
+          <p>{{ mode === 'register' ? 'Speichere deine Reise und plane sie jederzeit weiter.' : 'Melde dich an, um deine Reisen und deinen Kalender zu öffnen.' }}</p>
         </div>
 
         <form class="auth-form" @submit.prevent="submitAuth">
@@ -101,7 +101,7 @@ onMounted(async () => {
               autocomplete="name"
               minlength="2"
               maxlength="80"
-              placeholder="Wie duerfen wir dich nennen?"
+              placeholder="Wie dürfen wir dich nennen?"
               required
             >
           </label>

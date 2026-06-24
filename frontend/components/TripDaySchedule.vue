@@ -62,7 +62,7 @@ const categoryIcon = (category?: string, subcategory?: string) => {
       <div class="day-number">{{ day.dayNumber }}</div>
       <div>
         <h3>{{ day.weekday || `Tag ${day.dayNumber}` }}</h3>
-        <span class="muted">{{ day.travelDate ? formatDate(day.travelDate) : `${day.activities.length} Aktivitaeten` }}</span>
+        <span class="muted">{{ day.travelDate ? formatDate(day.travelDate) : `${day.activities.length} Aktivitäten` }}</span>
       </div>
     </div>
 
@@ -83,7 +83,7 @@ const categoryIcon = (category?: string, subcategory?: string) => {
           </div>
           <div class="schedule-marker" aria-hidden="true"><span /></div>
           <div class="schedule-content">
-            <button class="drag-handle" type="button" title="Aktivitaet verschieben">
+            <button class="drag-handle" type="button" title="Aktivität verschieben">
               <GripVertical :size="20" />
             </button>
             <div class="activity-icon" :title="categoryName(item.activity.category, item.activity.subcategory)">
@@ -97,20 +97,20 @@ const categoryIcon = (category?: string, subcategory?: string) => {
                 <span v-if="item.activity.rating != null"><Star :size="15" />{{ item.activity.rating.toFixed(1) }}</span>
                 <span v-if="item.activity.address"><MapPin :size="15" />{{ item.activity.address }}</span>
               </div>
-              <span v-if="!item.fitsAvailability" class="window-warning">Ausserhalb deines Zeitfensters</span>
+              <span v-if="!item.fitsAvailability" class="window-warning">Außerhalb deines Zeitfensters</span>
             </div>
             <div class="schedule-actions">
               <button
                 type="button"
                 class="icon-button"
-                title="Alternative Aktivitaet"
+                title="Alternative Aktivität"
                 :disabled="regeneratingActivityId === item.id"
                 @click.stop="$emit('regenerateActivity', day.id, item.id)"
               ><RefreshCw :size="18" /></button>
               <button
                 type="button"
                 class="icon-button"
-                title="Aktivitaet entfernen"
+                title="Aktivität entfernen"
                 :disabled="deletingActivityId === item.id"
                 @click.stop="$emit('removeActivity', day.id, item.id)"
               ><Trash2 :size="18" /></button>

@@ -107,7 +107,7 @@ const onKeydown = (event: KeyboardEvent) => {
       <button
         class="orbit-arrow"
         type="button"
-        title="Naechster Tag"
+        title="Nächster Tag"
         :disabled="activeIndex === trip.days.length - 1"
         @click="setActive(activeIndex + 1)"
       ><ArrowRight :size="21" /></button>

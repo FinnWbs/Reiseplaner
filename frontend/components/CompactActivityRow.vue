@@ -78,7 +78,7 @@ const icon = computed(() => ({
       <div v-if="expanded" class="compact-activity-details">
         <span v-if="item.activity.rating != null"><Star :size="14" />{{ item.activity.rating.toFixed(1) }}</span>
         <span v-if="item.activity.address"><MapPin :size="14" />{{ item.activity.address }}</span>
-        <span v-if="!item.fitsAvailability" class="window-warning">Ausserhalb des Zeitfensters</span>
+        <span v-if="!item.fitsAvailability" class="window-warning">Außerhalb des Zeitfensters</span>
       </div>
     </div>
     <div class="compact-activity-actions">
@@ -87,26 +87,26 @@ const icon = computed(() => ({
         :href="googleMapsUrl(item, city)"
         target="_blank"
         rel="noopener noreferrer"
-        title="In Google Maps oeffnen"
+        title="In Google Maps öffnen"
         @click.stop
       ><ExternalLink :size="17" /></a>
       <button
         class="icon-button"
         type="button"
-        :title="expanded ? 'Details schliessen' : 'Details anzeigen'"
+        :title="expanded ? 'Details schließen' : 'Details anzeigen'"
         @click.stop="expanded = !expanded"
       ><ChevronDown :size="17" /></button>
       <button
         class="icon-button"
         type="button"
-        title="Alternative Aktivitaet"
+        title="Alternative Aktivität"
         :disabled="regenerating"
         @click.stop="$emit('regenerate', item.id)"
       ><RefreshCw :size="17" /></button>
       <button
         class="icon-button"
         type="button"
-        title="Aktivitaet entfernen"
+        title="Aktivität entfernen"
         :disabled="deleting"
         @click.stop="$emit('remove', item.id)"
       ><Trash2 :size="17" /></button>
