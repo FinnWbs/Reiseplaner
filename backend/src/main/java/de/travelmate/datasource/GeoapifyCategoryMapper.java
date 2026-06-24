@@ -1,0 +1,59 @@
+package de.travelmate.datasource;
+
+import de.travelmate.interest.InterestType;
+import jakarta.enterprise.context.ApplicationScoped;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@ApplicationScoped
+public class GeoapifyCategoryMapper {
+    private static final Map<InterestType, List<String>> CATEGORIES = Map.of(
+        InterestType.SIGHTSEEING, List.of(
+            "tourism.sights.castle",
+            "tourism.sights.place_of_worship.cathedral", "tourism.sights.city_gate"
+        ),
+        InterestType.CULTURE, List.of(
+            "entertainment.museum", "entertainment.culture.gallery",
+            "entertainment.culture.theatre", "entertainment.culture.arts_centre"
+        ),
+        InterestType.NATURE, List.of(
+            "leisure.park", "leisure.park.garden", "leisure.park.nature_reserve",
+            "natural.protected_area", "natural.forest", "natural.water", "national_park"
+        ),
+        InterestType.FOOD, List.of(
+            "catering.restaurant", "catering.cafe", "catering.biergarten", "catering.food_court"
+        ),
+        InterestType.SHOPPING, List.of(
+            "commercial.shopping_mall", "commercial.department_store", "commercial.marketplace",
+            "commercial.clothing", "commercial.gift_and_souvenir"
+        ),
+        InterestType.NIGHTLIFE, List.of(
+            "catering.bar", "catering.pub", "catering.taproom", "entertainment.cinema",
+            "entertainment.escape_game"
+        )
+    );
+
+    public List<String> categoriesFor(InterestType interest) {
+        return CATEGORIES.getOrDefault(interest, List.of());
+    }
+
+    public Map<InterestType, Integer> scoreInterests(Set<String> categories) {
+        Map<InterestType, Integer> scores = new EnumMap<>(InterestType.class);
+        for (Map.Entry<InterestType, List<String>> entry : CATEGORIES.entrySet()) {
+            if (categories.stream().anyMatch(category -> matches(category, entry.getValue()))) {
+                scores.put(entry.getKey(), 10);
+            }
+        }
+        return scores;
+    }
+
+    public Map<InterestType, Integer> scoreInterest(InterestType interest) {
+        return interest == null ? Map.of() : Map.of(interest, 10);
+    }
+
+    private static boolean matches(String category, List<String> accepted) {
+        return accepted.stream().anyMatch(value -> category.equals(value) || category.startsWith(value + "."));
+    }
+}

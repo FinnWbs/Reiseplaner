@@ -4,11 +4,14 @@ import de.travelmate.activity.ActivityEntity;
 import de.travelmate.activity.ActivityInterestEntity;
 import de.travelmate.activity.ActivityRepository;
 import de.travelmate.interest.InterestEntity;
+import de.travelmate.interest.InterestType;
+import de.travelmate.sync.ActivitySyncService;
 import de.travelmate.trip.TripDayActivityEntity;
 import de.travelmate.trip.TripDayEntity;
 import de.travelmate.trip.TripEntity;
 import org.junit.jupiter.api.Test;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
@@ -128,6 +131,40 @@ class PlanningServiceTest {
         assertEquals(0, service.score(activity, Set.of(99L)).totalScore());
     }
 
+    @Test
+    void generatesBalancedPlanAcrossSelectedInterests() {
+        InterestEntity culture = interest(1L, "Kultur & Museen");
+        culture.code = InterestType.CULTURE.name();
+        InterestEntity food = interest(2L, "Essen & Cafés");
+        food.code = InterestType.FOOD.name();
+        InterestEntity nature = interest(3L, "Natur & Outdoor");
+        nature.code = InterestType.NATURE.name();
+
+        ActivityEntity museum = primaryActivity(1L, "Museum", InterestType.CULTURE, culture);
+        ActivityEntity gallery = primaryActivity(2L, "Galerie", InterestType.CULTURE, culture);
+        ActivityEntity restaurant = primaryActivity(3L, "Restaurant", InterestType.FOOD, food);
+        ActivityEntity park = primaryActivity(4L, "Stadtpark", InterestType.NATURE, nature);
+        PlanningService service = serviceWithActivities(museum, gallery, restaurant, park);
+        service.sync = new ActivitySyncService() {
+            @Override
+            public boolean needsRefresh(String city, Set<InterestType> interests) {
+                return false;
+            }
+        };
+        TripDayEntity day = emptyDay();
+        day.trip.pace = de.travelmate.trip.TripPace.ACTIVE;
+        day.trip.selectedInterests = new HashSet<>(Set.of(culture, food, nature));
+
+        service.generatePlan(day.trip, List.of(1L, 2L, 3L), Set.of(
+            InterestType.CULTURE, InterestType.FOOD, InterestType.NATURE
+        ));
+
+        Set<InterestType> scheduled = day.activities.stream()
+            .map(item -> item.activity.primaryInterest)
+            .collect(java.util.stream.Collectors.toSet());
+        assertEquals(Set.of(InterestType.CULTURE, InterestType.FOOD, InterestType.NATURE), scheduled);
+    }
+
     private ActivityEntity activity(Double rating, double quality) {
         ActivityEntity activity = new ActivityEntity();
         activity.rating = rating;
@@ -148,6 +185,11 @@ class PlanningServiceTest {
         service.activities = new ActivityRepository() {
             @Override
             public List<ActivityEntity> findByCity(String city) {
+                return List.of(available);
+            }
+
+            @Override
+            public List<ActivityEntity> findActiveByCity(String city) {
                 return List.of(available);
             }
         };
@@ -185,6 +227,18 @@ class PlanningServiceTest {
         interest.id = id;
         interest.name = name;
         return interest;
+    }
+
+    private ActivityEntity primaryActivity(
+        Long id,
+        String name,
+        InterestType type,
+        InterestEntity interest
+    ) {
+        ActivityEntity activity = activity(id, name, null, 1.0);
+        activity.primaryInterest = type;
+        activity.interestScores.add(mapping(activity, interest, 10));
+        return activity;
     }
 
     private ActivityInterestEntity mapping(ActivityEntity activity, InterestEntity interest, int score) {

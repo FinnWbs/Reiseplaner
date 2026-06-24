@@ -1,6 +1,9 @@
 package de.travelmate.trip;
 
 import de.travelmate.planning.PlanningService;
+import de.travelmate.interest.InterestRepository;
+import de.travelmate.interest.InterestType;
+import de.travelmate.interest.InterestEntity;
 import de.travelmate.user.CurrentUserService;
 import de.travelmate.user.UserEntity;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -9,6 +12,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @ApplicationScoped
 public class TripService {
@@ -26,6 +30,9 @@ public class TripService {
 
     @Inject
     TripDateValidator dateValidator;
+
+    @Inject
+    InterestRepository interests;
 
     @Transactional
     public TripDto create(CreateTripRequest request) {
@@ -64,8 +71,12 @@ public class TripService {
             trip.days.add(day);
         }
 
+        Set<InterestType> requestedInterests = request.interests() == null ? Set.of() : Set.copyOf(request.interests());
+        List<InterestEntity> selected = interests.findByCodes(requestedInterests);
+        trip.selectedInterests = new java.util.HashSet<>(selected);
         trips.persist(trip);
-        planning.generatePlan(trip, request.interestIds());
+        List<Long> interestIds = selected.stream().map(interest -> interest.id).toList();
+        planning.generatePlan(trip, interestIds, requestedInterests);
         return TripDto.from(trip);
     }
 
@@ -90,10 +101,20 @@ public class TripService {
     public TripDto generatePlan(Long tripId, GeneratePlanRequest request) {
         TripEntity trip = requireMine(tripId);
         List<Long> interestIds = request == null ? List.of() : request.interestIds();
+        List<InterestEntity> selected;
         if (interestIds == null || interestIds.isEmpty()) {
-            interestIds = currentUser.requireCurrentUser().interests.stream().map(interest -> interest.id).toList();
+            selected = trip.selectedInterests.isEmpty()
+                ? currentUser.requireCurrentUser().interests.stream().toList()
+                : trip.selectedInterests.stream().toList();
+        } else {
+            selected = interests.findByIds(interestIds);
         }
-        planning.generatePlan(trip, interestIds);
+        trip.selectedInterests = new java.util.HashSet<>(selected);
+        interestIds = selected.stream().map(interest -> interest.id).toList();
+        Set<InterestType> selectedTypes = selected.stream()
+            .map(interest -> InterestType.valueOf(interest.code))
+            .collect(java.util.stream.Collectors.toSet());
+        planning.generatePlan(trip, interestIds, selectedTypes);
         return TripDto.from(trip);
     }
 
