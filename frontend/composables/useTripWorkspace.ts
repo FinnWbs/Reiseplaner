@@ -89,7 +89,7 @@ export const useTripWorkspace = () => {
         { method: 'DELETE' }
       ))
     } catch (err: any) {
-      error.value = workspaceErrorMessage(err, 'Aktivitaet konnte nicht entfernt werden.')
+      error.value = workspaceErrorMessage(err, 'Aktivität konnte nicht entfernt werden.')
     } finally {
       deletingActivityId.value = null
     }

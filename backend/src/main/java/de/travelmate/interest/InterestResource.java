@@ -14,6 +14,9 @@ public class InterestResource {
 
     @GET
     public List<InterestDto> list() {
-        return interests.listAll().stream().map(InterestDto::from).toList();
+        return interests.listAll().stream()
+            .filter(interest -> InterestType.valueOf(interest.code).isPrimary())
+            .map(InterestDto::from)
+            .toList();
     }
 }

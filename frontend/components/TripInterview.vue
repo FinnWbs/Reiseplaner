@@ -67,10 +67,10 @@ defineEmits<{
     <div class="progress-track"><span :style="{ width: `${interviewStep / 7 * 100}%` }" /></div>
 
     <div v-if="interviewStep === 1" class="question">
-      <h3>Weisst du schon, wo du hinwillst?</h3>
+      <h3>Weißt du schon, wo du hinwillst?</h3>
       <div class="choice-grid">
         <button :class="{ selected: destinationKnown === true }" class="choice" @click="$emit('updateDestinationKnown', true)">Ja, Stadt eingeben</button>
-        <button :class="{ selected: destinationKnown === false }" class="choice" @click="$emit('updateDestinationKnown', false)">Nein, Vorschlaege zeigen</button>
+        <button :class="{ selected: destinationKnown === false }" class="choice" @click="$emit('updateDestinationKnown', false)">Nein, Vorschläge zeigen</button>
       </div>
     </div>
 
@@ -113,9 +113,9 @@ defineEmits<{
     </div>
 
     <div v-else-if="interviewStep === 3" class="question">
-      <h3>Weisst du schon, wann du fahren willst?</h3>
+      <h3>Weißt du schon, wann du fahren willst?</h3>
       <div class="choice-grid">
-        <button :class="{ selected: datesKnown === true }" class="choice" @click="$emit('updateDatesKnown', true)">Ja, Zeitraum waehlen</button>
+        <button :class="{ selected: datesKnown === true }" class="choice" @click="$emit('updateDatesKnown', true)">Ja, Zeitraum wählen</button>
         <button :class="{ selected: datesKnown === false }" class="choice" @click="$emit('updateDatesKnown', false)">Nein, nur Dauer festlegen</button>
       </div>
     </div>
@@ -137,7 +137,7 @@ defineEmits<{
     <div v-else-if="interviewStep === 5" class="question">
       <template v-if="datesKnown">
         <h3>Welche Tage sollen wir konkret planen?</h3>
-        <p class="muted">Die Planungstage duerfen eine Teilmenge deiner gesamten Reise sein.</p>
+        <p class="muted">Die Planungstage dürfen eine Teilmenge deiner gesamten Reise sein.</p>
         <div class="date-grid">
           <button
             v-for="date in dateOptions"
@@ -153,7 +153,7 @@ defineEmits<{
       </template>
       <template v-else>
         <h3>{{ daysCount }} Tage ohne festes Datum</h3>
-        <p class="muted">Du kannst den Reisezeitraum spaeter ergaenzen. Bis dahin werden die Tage nummeriert.</p>
+        <p class="muted">Du kannst den Reisezeitraum später ergänzen. Bis dahin werden die Tage nummeriert.</p>
       </template>
     </div>
 
@@ -171,7 +171,7 @@ defineEmits<{
     </div>
 
     <div v-else class="question">
-      <h3>Wie soll sich die Reise anfuehlen?</h3>
+      <h3>Wie soll sich die Reise anfühlen?</h3>
       <strong>Tempo</strong>
       <div class="segmented">
         <button :class="{ active: pace === 'RELAXED' }" @click="$emit('updatePace', 'RELAXED')">Entspannt</button>
@@ -180,19 +180,19 @@ defineEmits<{
       </div>
       <strong>Tagesrhythmus</strong>
       <div class="segmented">
-        <button :class="{ active: dayRhythm === 'EARLY' }" @click="$emit('updateDayRhythm', 'EARLY')">Frueh</button>
+        <button :class="{ active: dayRhythm === 'EARLY' }" @click="$emit('updateDayRhythm', 'EARLY')">Früh</button>
         <button :class="{ active: dayRhythm === 'BALANCED' }" @click="$emit('updateDayRhythm', 'BALANCED')">Ausgeglichen</button>
-        <button :class="{ active: dayRhythm === 'LATE' }" @click="$emit('updateDayRhythm', 'LATE')">Spaet</button>
+        <button :class="{ active: dayRhythm === 'LATE' }" @click="$emit('updateDayRhythm', 'LATE')">Spät</button>
       </div>
       <div class="interview-summary">
         <strong>{{ city }}</strong>
-        <span>{{ datesKnown ? `${planningDates.length} ausgewaehlte Planungstage` : `${daysCount} Tage` }}</span>
+        <span>{{ datesKnown ? `${planningDates.length} ausgewählte Planungstage` : `${daysCount} Tage` }}</span>
       </div>
     </div>
 
     <p v-if="error" class="error">{{ error }}</p>
     <footer class="interview-actions">
-      <button class="secondary" :disabled="interviewStep === 1" @click="$emit('previousStep')">Zurueck</button>
+      <button class="secondary" :disabled="interviewStep === 1" @click="$emit('previousStep')">Zurück</button>
       <button v-if="interviewStep < 7" :disabled="!stepReady" @click="$emit('nextStep')">Weiter</button>
       <button v-else :disabled="loading" @click="$emit('createTrip')">{{ loading ? 'Plan wird erstellt...' : 'Reiseplan erstellen' }}</button>
     </footer>

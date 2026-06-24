@@ -1,11 +1,14 @@
 package de.travelmate.trip;
 
+import de.travelmate.interest.InterestEntity;
 import de.travelmate.user.UserEntity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "trips")
@@ -63,6 +66,14 @@ public class TripEntity {
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dayNumber ASC")
     public List<TripDayEntity> days = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+        name = "trip_interests",
+        joinColumns = @JoinColumn(name = "trip_id"),
+        inverseJoinColumns = @JoinColumn(name = "interest_id")
+    )
+    public Set<InterestEntity> selectedInterests = new HashSet<>();
 
     @Column(name = "created_at", nullable = false)
     public LocalDateTime createdAt = LocalDateTime.now();

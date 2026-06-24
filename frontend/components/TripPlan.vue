@@ -44,10 +44,10 @@ const emit = defineEmits<{
         </p>
       </div>
       <div class="trip-plan-meta">
-        <span class="muted">Zeiten sind regelbasierte Vorschlaege</span>
+        <span class="muted">Zeiten sind regelbasierte Vorschläge</span>
         <button class="secondary compact-button" @click="emit('beginDateEdit')">
           <CalendarDays :size="16" />
-          {{ trip.startDate ? 'Reisedaten aendern' : 'Zeitraum ergaenzen' }}
+          {{ trip.startDate ? 'Reisedaten ändern' : 'Zeitraum ergänzen' }}
         </button>
       </div>
     </div>
@@ -64,7 +64,7 @@ const emit = defineEmits<{
           <input :value="editEndDate" type="date" :min="editStartDate" @input="emit('updateEditEndDate', ($event.target as HTMLInputElement).value)">
         </label>
       </div>
-      <p class="muted">Waehle die Tage aus, fuer die ein konkreter Plan bestehen soll.</p>
+      <p class="muted">Wähle die Tage aus, für die ein konkreter Plan bestehen soll.</p>
       <div class="date-grid">
         <button
           v-for="date in editDateOptions"

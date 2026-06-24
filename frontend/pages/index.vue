@@ -26,9 +26,9 @@ const completeInterview = async (draft: Parameters<typeof saveDraft>[0]) => {
 
     <main class="welcome-main">
       <section class="welcome-copy">
-        <span class="welcome-eyebrow">Persoenliche Staedtereisen</span>
+        <span class="welcome-eyebrow">Persönliche Städtereisen</span>
         <h1>TravelMate</h1>
-        <p>Aus deinen Vorstellungen wird Schritt fuer Schritt ein Reiseplan, der zu deinem Rhythmus passt.</p>
+        <p>Aus deinen Vorstellungen wird Schritt für Schritt ein Reiseplan, der zu deinem Rhythmus passt.</p>
       </section>
       <WelcomeInterview @complete="completeInterview" />
     </main>

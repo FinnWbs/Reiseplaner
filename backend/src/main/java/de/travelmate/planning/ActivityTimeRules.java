@@ -1,6 +1,7 @@
 package de.travelmate.planning;
 
 import de.travelmate.activity.ActivityEntity;
+import de.travelmate.interest.InterestType;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -16,6 +17,10 @@ public class ActivityTimeRules {
     private static final TimeProfile DAYTIME = new TimeProfile(540, 1200, 90, 600);
 
     public static TimeProfile profile(ActivityEntity activity) {
+        if (activity.primaryInterest == InterestType.NIGHTLIFE) return NIGHTLIFE;
+        if (activity.primaryInterest == InterestType.FOOD) return FOOD;
+        if (activity.primaryInterest == InterestType.NATURE) return NATURE;
+        if (activity.primaryInterest == InterestType.CULTURE) return CULTURE;
         Set<String> terms = terms(
             nullToEmpty(activity.category) + " "
                 + nullToEmpty(activity.subcategory) + " "

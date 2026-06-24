@@ -272,7 +272,7 @@ export const useTripPlanner = () => {
         await refreshActiveTrip()
         tripError.value = 'Der Reiseplan wurde aktualisiert. Bitte versuche es mit dem neu geladenen Plan erneut.'
       } else {
-        tripError.value = plannerErrorMessage(err, 'Aktivitaet konnte nicht entfernt werden.')
+        tripError.value = plannerErrorMessage(err, 'Aktivität konnte nicht entfernt werden.')
       }
     } finally {
       deletingActivityId.value = null
@@ -356,7 +356,7 @@ export const useTripPlanner = () => {
       trips.value = trips.value.filter(trip => trip.id !== tripId)
       if (activeTrip.value?.id === tripId) activeTrip.value = trips.value[0] ?? null
     } catch (err: any) {
-      error.value = plannerErrorMessage(err, 'Reise konnte nicht geloescht werden.')
+      error.value = plannerErrorMessage(err, 'Reise konnte nicht gelöscht werden.')
     }
   }
 

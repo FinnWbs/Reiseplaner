@@ -48,7 +48,7 @@ const popupContent = (item: TripActivity) => {
   link.href = googleMapsUrl(item, props.city)
   link.target = '_blank'
   link.rel = 'noopener noreferrer'
-  link.textContent = 'In Google Maps oeffnen'
+  link.textContent = 'In Google Maps öffnen'
   wrapper.append(link)
   return wrapper
 }
@@ -118,7 +118,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="activity-day-map" aria-label="Aktivitaeten auf der Karte">
+  <section class="activity-day-map" aria-label="Aktivitäten auf der Karte">
     <header>
       <div>
         <span class="orbit-kicker">Tageskarte</span>
@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
     <div v-else class="activity-map-empty">
       <MapPinned :size="30" />
       <strong>Noch keine Kartenpositionen</strong>
-      <p>Fuer diese Aktivitaeten sind noch keine Koordinaten gespeichert.</p>
+      <p>Für diese Aktivitäten sind noch keine Koordinaten gespeichert.</p>
       <a :href="googleMapsCityUrl(city)" target="_blank" rel="noopener noreferrer">
         {{ city }} in Google Maps ansehen <ExternalLink :size="15" />
       </a>

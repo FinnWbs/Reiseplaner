@@ -351,9 +351,14 @@
 }
 
 :root.dark-mode .orbit-time-window,
-:root.dark-mode .orbit-day-card .availability-editor {
+:root.dark-mode .orbit-day-card .availability-editor,
+:root.dark-mode .day-availability-popover {
   border-color: #33465a;
   background: #101a26;
+}
+
+:root.dark-mode .day-availability-fields label {
+  color: #aebaca;
 }
 
 :root.dark-mode .orbit-card-preview p,

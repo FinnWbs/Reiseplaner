@@ -56,7 +56,7 @@ defineEmits<{
       </button>
     </div>
     <span v-if="selectedLocation" class="selected-location">
-      Ausgewaehlt: {{ selectedLocation.city }}<template v-if="describeLocation(selectedLocation)">, {{ describeLocation(selectedLocation) }}</template>
+      Ausgewählt: {{ selectedLocation.city }}<template v-if="describeLocation(selectedLocation)">, {{ describeLocation(selectedLocation) }}</template>
     </span>
     <span v-else-if="error" class="field-error">{{ error }}</span>
   </label>

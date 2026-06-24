@@ -50,7 +50,7 @@ onUnmounted(theme.cleanupPlannerTheme)
     />
 
     <main class="workspace-main orbit-page-main">
-      <NuxtLink class="back-link" to="/calendar"><ArrowLeft :size="17" />Zurueck zum Kalender</NuxtLink>
+      <NuxtLink class="back-link" to="/calendar"><ArrowLeft :size="17" />Zurück zum Kalender</NuxtLink>
 
       <section v-if="workspace.loading.value" class="calendar-loading" aria-live="polite">
         <span />
@@ -64,7 +64,7 @@ onUnmounted(theme.cleanupPlannerTheme)
             <h1>{{ workspace.trip.value.city }}</h1>
             <p>
               <MapPin :size="16" />
-              {{ workspace.trip.value.country || workspace.trip.value.state || 'Staedtereise' }}
+              {{ workspace.trip.value.country || workspace.trip.value.state || 'Städtereise' }}
               <template v-if="workspace.trip.value.startDate">
                 <span>&middot;</span><CalendarDays :size="16" />
                 {{ formatDate(workspace.trip.value.startDate) }} bis {{ formatDate(workspace.trip.value.endDate) }}

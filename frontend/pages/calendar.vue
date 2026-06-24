@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight, CalendarCheck, CalendarPlus, ChevronRight, Lightbulb, MapPin, Plus, X } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight, CalendarCheck, CalendarPlus, ChevronDown, ChevronRight, Lightbulb, MapPin, Plus, X } from 'lucide-vue-next'
 import type { Trip } from '~/types/trip'
 
 const workspace = useTripWorkspace()
@@ -12,6 +12,8 @@ const rangeEnd = ref('')
 const rangeComplete = ref(false)
 const rangeError = ref('')
 const contextMenu = ref<{ x: number; y: number } | null>(null)
+const plannedTripsExpanded = ref(true)
+const unplannedTripsExpanded = ref(false)
 
 const monthLabel = computed(() => new Intl.DateTimeFormat('de-DE', {
   month: 'long',
@@ -161,8 +163,8 @@ onUnmounted(() => {
       <section class="calendar-hero">
         <div>
           <span class="eyebrow">Deine Reisezeit</span>
-          <h1>Was steht als Naechstes an?</h1>
-          <p>Alle Staedtereisen, Planungstage und offenen Reiseideen auf einen Blick.</p>
+          <h1>Was steht als Nächstes an?</h1>
+          <p>Alle Städtereisen, Planungstage und offenen Reiseideen auf einen Blick.</p>
         </div>
         <NuxtLink class="button-link calendar-create-link" to="/planner"><Plus :size="18" />Neue Reise</NuxtLink>
       </section>
@@ -182,7 +184,7 @@ onUnmounted(() => {
                 <ArrowLeft :size="19" />
               </button>
               <h2>{{ monthLabel }}</h2>
-              <button class="nav-icon-button" type="button" title="Naechster Monat" @click="moveMonth(1)">
+              <button class="nav-icon-button" type="button" title="Nächster Monat" @click="moveMonth(1)">
                 <ArrowRight :size="19" />
               </button>
             </div>
@@ -205,7 +207,7 @@ onUnmounted(() => {
 
           <div v-if="rangeComplete" class="calendar-range-action">
             <div>
-              <span class="eyebrow">Ausgewaehlter Zeitraum</span>
+              <span class="eyebrow">Ausgewählter Zeitraum</span>
               <strong>{{ selectedRangeLabel }}</strong>
               <small>{{ selectedPlanningDates.length }} {{ selectedPlanningDates.length === 1 ? 'Tag' : 'Tage' }}</small>
             </div>
@@ -234,18 +236,24 @@ onUnmounted(() => {
           :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
           @click.stop
         >
-          <button type="button" @click="createTripForRange"><Plus :size="16" />Neue Reise fuer diesen Zeitraum</button>
+          <button type="button" @click="createTripForRange"><Plus :size="16" />Neue Reise für diesen Zeitraum</button>
           <button type="button" @click="clearRange"><X :size="16" />Auswahl aufheben</button>
         </div>
 
-        <aside id="reisen" class="calendar-trips-sidebar" aria-label="Reiseuebersicht">
-          <section class="trip-group planned-trip-group">
-            <header class="trip-group-heading">
+        <aside id="reisen" class="calendar-trips-sidebar" aria-label="Reiseübersicht">
+          <section class="trip-group planned-trip-group" :class="{ collapsed: !plannedTripsExpanded }">
+            <button
+              class="trip-group-heading"
+              type="button"
+              :aria-expanded="plannedTripsExpanded"
+              @click="plannedTripsExpanded = !plannedTripsExpanded"
+            >
               <span class="trip-group-icon"><CalendarCheck :size="19" /></span>
-              <div><span>Fest im Kalender</span><h2>Geplante Reisen</h2></div>
-              <strong>{{ datedTrips.length }}</strong>
-            </header>
-            <div v-if="datedTrips.length" class="trip-group-list">
+              <span class="trip-group-title"><span>Fest im Kalender</span><h2>Geplante Reisen</h2></span>
+              <span class="trip-group-count">{{ datedTrips.length }}</span>
+              <ChevronDown class="trip-group-chevron" :size="18" />
+            </button>
+            <div v-if="plannedTripsExpanded && datedTrips.length" class="trip-group-list">
               <button
                 v-for="trip in datedTrips"
                 :key="trip.id"
@@ -263,18 +271,24 @@ onUnmounted(() => {
                 <ChevronRight :size="18" />
               </button>
             </div>
-            <div v-else class="trip-group-empty">
+            <div v-else-if="plannedTripsExpanded" class="trip-group-empty">
               <CalendarPlus :size="22" /><span>Noch keine Reise mit festem Zeitraum.</span>
             </div>
           </section>
 
-          <section class="trip-group idea-trip-group">
-            <header class="trip-group-heading">
+          <section class="trip-group idea-trip-group" :class="{ collapsed: !unplannedTripsExpanded }">
+            <button
+              class="trip-group-heading"
+              type="button"
+              :aria-expanded="unplannedTripsExpanded"
+              @click="unplannedTripsExpanded = !unplannedTripsExpanded"
+            >
               <span class="trip-group-icon"><Lightbulb :size="19" /></span>
-              <div><span>Noch flexibel</span><h2>Reiseideen</h2></div>
-              <strong>{{ undatedTrips.length }}</strong>
-            </header>
-            <div v-if="undatedTrips.length" class="trip-group-list">
+              <span class="trip-group-title"><span>Noch flexibel</span><h2>Ungeplante Reisen</h2></span>
+              <span class="trip-group-count">{{ undatedTrips.length }}</span>
+              <ChevronDown class="trip-group-chevron" :size="18" />
+            </button>
+            <div v-if="unplannedTripsExpanded && undatedTrips.length" class="trip-group-list">
               <button
                 v-for="trip in undatedTrips"
                 :key="trip.id"
@@ -291,8 +305,8 @@ onUnmounted(() => {
                 <ChevronRight :size="18" />
               </button>
             </div>
-            <div v-else class="trip-group-empty">
-              <Lightbulb :size="22" /><span>Keine offenen Reiseideen.</span>
+            <div v-else-if="unplannedTripsExpanded" class="trip-group-empty">
+              <Lightbulb :size="22" /><span>Keine ungeplanten Reisen.</span>
             </div>
           </section>
         </aside>

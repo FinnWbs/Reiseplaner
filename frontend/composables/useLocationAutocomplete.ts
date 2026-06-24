@@ -34,7 +34,7 @@ export const useLocationAutocomplete = (city: Ref<string>) => {
       highlightedLocationIndex.value = locationSuggestions.value.length > 0 ? 0 : -1
     } catch (err: any) {
       clearLocationSuggestions()
-      locationError.value = locationErrorMessage(err, 'Standortvorschlaege konnten nicht geladen werden.')
+      locationError.value = locationErrorMessage(err, 'Standortvorschläge konnten nicht geladen werden.')
     } finally {
       locationLoading.value = false
     }
