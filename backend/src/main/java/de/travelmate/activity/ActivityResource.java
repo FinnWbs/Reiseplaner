@@ -22,7 +22,7 @@ public class ActivityResource {
     @GET
     public List<ActivityDto> list(@QueryParam("city") String city) {
         String normalizedCity = ActivityImportService.normalizeCity(city);
-        return activities.findByCity(normalizedCity).stream().map(ActivityDto::from).toList();
+        return activities.findActiveByCity(normalizedCity).stream().map(ActivityDto::from).toList();
     }
 
     @GET

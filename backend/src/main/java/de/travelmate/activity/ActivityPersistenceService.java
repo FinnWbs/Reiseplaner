@@ -3,6 +3,7 @@ package de.travelmate.activity;
 import de.travelmate.datasource.ExternalActivityCandidate;
 import de.travelmate.interest.InterestEntity;
 import de.travelmate.interest.InterestRepository;
+import de.travelmate.interest.InterestType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -12,6 +13,7 @@ import java.util.*;
 
 @ApplicationScoped
 public class ActivityPersistenceService {
+    public static final int CURRENT_IMPORT_VERSION = 2;
     @Inject
     ActivityRepository activities;
 
@@ -33,8 +35,8 @@ public class ActivityPersistenceService {
         int created = 0;
         int updated = 0;
         int skipped = 0;
-        Map<String, InterestEntity> interestByName = new HashMap<>();
-        interests.listAll().forEach(interest -> interestByName.put(interest.name, interest));
+        Map<String, InterestEntity> interestByCode = new HashMap<>();
+        interests.listAll().forEach(interest -> interestByCode.put(interest.code, interest));
 
         for (ExternalActivityCandidate candidate : candidates) {
             if (candidate.name == null || candidate.name.isBlank() || candidate.externalId == null) {
@@ -56,11 +58,14 @@ public class ActivityPersistenceService {
             activity.longitude = candidate.longitude;
             activity.address = blankToNull(candidate.address);
             activity.rating = candidate.rating;
+            activity.primaryInterest = candidate.primaryInterest;
+            activity.active = true;
+            activity.importVersion = CURRENT_IMPORT_VERSION;
             activity.dataQualityScore = qualityScore(candidate);
             activity.lastSyncedAt = LocalDateTime.now();
 
             ActivityCategoryMapper.CategoryMapping mapping =
-                categoryMapper.map(candidate.rawCategory, candidate.name);
+                categoryMapper.map(candidate.primaryInterest, candidate.rawCategories);
             activity.category = mapping.dominantCategory();
             if (isNew) {
                 activities.persist(activity);
@@ -69,13 +74,18 @@ public class ActivityPersistenceService {
             } else {
                 updated++;
             }
-            replaceInterestScores(activity, mapping.interestScores(), interestByName, isNew);
+            replaceInterestScores(activity, mapping.interestScores(), interestByCode, isNew);
             mergeExternalRefs(activity, candidate.externalRefs, warnings);
         }
 
         activities.flush();
         List<ActivityDto> saved = activities.findByCity(city).stream().map(ActivityDto::from).toList();
         return new ActivityImportResponse(city, created, updated, skipped, saved, List.copyOf(warnings));
+    }
+
+    @Transactional
+    public void deactivateGeoapifyActivities(String city, InterestType interest) {
+        activities.deactivateForCityAndInterest(city, interest);
     }
 
     private Optional<ActivityEntity> findExisting(ExternalActivityCandidate candidate, String city) {
@@ -128,8 +138,8 @@ public class ActivityPersistenceService {
 
     private void replaceInterestScores(
         ActivityEntity activity,
-        Map<String, Integer> scores,
-        Map<String, InterestEntity> interestByName,
+        Map<InterestType, Integer> scores,
+        Map<String, InterestEntity> interestByCode,
         boolean isNew
     ) {
         if (!isNew) {
@@ -138,8 +148,8 @@ public class ActivityPersistenceService {
         } else {
             activity.interestScores.clear();
         }
-        for (Map.Entry<String, Integer> score : scores.entrySet()) {
-            InterestEntity interest = interestByName.get(score.getKey());
+        for (Map.Entry<InterestType, Integer> score : scores.entrySet()) {
+            InterestEntity interest = interestByCode.get(score.getKey().name());
             if (interest == null) {
                 continue;
             }

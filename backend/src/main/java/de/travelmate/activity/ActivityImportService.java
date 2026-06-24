@@ -7,6 +7,8 @@ import jakarta.ws.rs.BadRequestException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import de.travelmate.interest.InterestType;
 
 @ApplicationScoped
 public class ActivityImportService {
@@ -31,7 +33,7 @@ public class ActivityImportService {
     }
 
     public ActivityImportResponse importCity(String requestedCity, String lookupText) {
-        return importCity(requestedCity, lookupText, null, null, null);
+        return importCity(requestedCity, lookupText, null, null, null, InterestType.primaryTypes());
     }
 
     public ActivityImportResponse importCity(
@@ -41,12 +43,23 @@ public class ActivityImportService {
         Double latitude,
         Double longitude
     ) {
+        return importCity(requestedCity, lookupText, placeId, latitude, longitude, InterestType.primaryTypes());
+    }
+
+    public ActivityImportResponse importCity(
+        String requestedCity,
+        String lookupText,
+        String placeId,
+        Double latitude,
+        Double longitude,
+        Set<InterestType> interests
+    ) {
         String city = normalizeCity(requestedCity);
         String externalLookup = lookupText == null || lookupText.isBlank() ? city : lookupText.trim();
-        List<ExternalActivityCandidate> candidates =
-            new ArrayList<>(geoapify.fetch(externalLookup, placeId, latitude, longitude));
-        if (candidates.isEmpty()) {
-            throw new ExternalProviderException("Geoapify hat keine importierbaren Aktivitaeten geliefert.");
+        Set<InterestType> selected = interests == null || interests.isEmpty() ? InterestType.primaryTypes() : interests;
+        List<ExternalActivityCandidate> candidates = new ArrayList<>();
+        for (InterestType interest : selected) {
+            candidates.addAll(geoapify.fetch(externalLookup, placeId, latitude, longitude, Set.of(interest)));
         }
 
         List<String> warnings = new ArrayList<>();
@@ -55,6 +68,25 @@ public class ActivityImportService {
         if (openStreetMap.isEnabled()) {
             candidates.addAll(openStreetMap.fetch(externalLookup));
         }
+        return persistence.persist(city, candidates, warnings);
+    }
+
+    public ActivityImportResponse importInterest(
+        String requestedCity,
+        String lookupText,
+        String placeId,
+        Double latitude,
+        Double longitude,
+        InterestType interest
+    ) {
+        String city = normalizeCity(requestedCity);
+        String externalLookup = lookupText == null || lookupText.isBlank() ? city : lookupText.trim();
+        List<ExternalActivityCandidate> candidates =
+            new ArrayList<>(geoapify.fetch(externalLookup, placeId, latitude, longitude, Set.of(interest)));
+        List<String> warnings = new ArrayList<>();
+        warnings.addAll(wikidata.enrich(candidates));
+        warnings.addAll(wikipedia.enrich(candidates));
+        persistence.deactivateGeoapifyActivities(city, interest);
         return persistence.persist(city, candidates, warnings);
     }
 

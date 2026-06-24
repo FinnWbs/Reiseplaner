@@ -29,8 +29,21 @@ public class ActivityRepository implements PanacheRepository<ActivityEntity> {
         return list("lower(city) = ?1 order by name", city.trim().toLowerCase());
     }
 
+    public List<ActivityEntity> findActiveByCity(String city) {
+        return list("lower(city) = ?1 and active = true order by name", city.trim().toLowerCase());
+    }
+
     public boolean hasFreshMinimumForCity(String city, int minimum, LocalDateTime freshAfter) {
         long count = count("lower(city) = ?1 and lastSyncedAt >= ?2", city.toLowerCase(), freshAfter);
         return count >= minimum;
+    }
+
+    public long deactivateForCityAndInterest(String city, de.travelmate.interest.InterestType interest) {
+        return update(
+            "active = false where source = ?1 and lower(city) = ?2 and primaryInterest = ?3",
+            ActivitySource.GEOAPIFY,
+            city.trim().toLowerCase(),
+            interest
+        );
     }
 }

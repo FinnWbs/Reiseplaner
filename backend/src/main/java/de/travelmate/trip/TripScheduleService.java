@@ -75,7 +75,9 @@ public class TripScheduleService {
     public void regenerateActivity(TripEntity trip, Long dayId, Long itemId) {
         TripDayEntity day = requireDay(trip, dayId);
         TripDayActivityEntity item = requireItem(day, itemId);
-        Set<Long> interestIds = currentUser.requireCurrentUser().interests.stream()
+        Set<Long> interestIds = (trip.selectedInterests.isEmpty()
+            ? currentUser.requireCurrentUser().interests
+            : trip.selectedInterests).stream()
             .map(interest -> interest.id)
             .collect(java.util.stream.Collectors.toSet());
         ActivityEntity replacement = planning.replacementFor(trip, item, interestIds)
@@ -89,6 +91,9 @@ public class TripScheduleService {
         TripDayActivityEntity item = requireItem(day, itemId);
         ActivityEntity replacement = activities.findByIdOptional(request.activityId())
             .orElseThrow(() -> new BadRequestException("Aktivitaet existiert nicht."));
+        if (!replacement.active) {
+            throw new BadRequestException("Diese Aktivitaet ist nicht mehr fuer neue Plaene verfuegbar.");
+        }
         item.activity = replacement;
         item.notes = request.notes();
         item.locked = request.locked() != null && request.locked();
@@ -101,6 +106,9 @@ public class TripScheduleService {
         }
         ActivityEntity activity = activities.findByIdOptional(request.activityId())
             .orElseThrow(() -> new BadRequestException("Aktivitaet existiert nicht."));
+        if (!activity.active) {
+            throw new BadRequestException("Diese Aktivitaet ist nicht mehr fuer neue Plaene verfuegbar.");
+        }
         TripDayActivityEntity item = new TripDayActivityEntity();
         item.tripDay = day;
         item.activity = activity;

@@ -1,5 +1,6 @@
 package de.travelmate.activity;
 
+import de.travelmate.interest.InterestType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,6 +35,16 @@ public class ActivityEntity {
     public Double longitude;
     public String address;
     public Double rating;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "primary_interest")
+    public InterestType primaryInterest;
+
+    @Column(nullable = false)
+    public boolean active = true;
+
+    @Column(name = "import_version", nullable = false)
+    public int importVersion = 1;
 
     @Column(name = "data_quality_score", nullable = false)
     public double dataQualityScore;
