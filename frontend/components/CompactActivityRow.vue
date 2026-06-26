@@ -7,11 +7,9 @@ import {
   MapPin,
   Moon,
   Palette,
-  RefreshCw,
   ShoppingBag,
   Star,
   Trees,
-  Trash2,
   Utensils
 } from 'lucide-vue-next'
 import type { TripActivity } from '~/types/trip'
@@ -20,15 +18,12 @@ import { googleMapsUrl } from '~/utils/maps'
 const props = defineProps<{
   item: TripActivity
   city: string
-  deleting: boolean
-  regenerating: boolean
   selected?: boolean
 }>()
 
-defineEmits<{
-  remove: [itemId: number]
-  regenerate: [itemId: number]
+const emit = defineEmits<{
   select: [itemId: number]
+  actionMenu: [itemId: number, x: number, y: number]
 }>()
 
 const expanded = ref(false)
@@ -53,6 +48,31 @@ const icon = computed(() => ({
   Nightlife: Moon,
   Sport: Dumbbell
 })[categoryName.value])
+
+const getMenuAnchor = (element: HTMLElement) => {
+  const rect = element.getBoundingClientRect()
+  return {
+    x: rect.right - 232,
+    y: rect.top + 10
+  }
+}
+
+const openActionMenu = (event: MouseEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  emit('select', props.item.id)
+  emit('actionMenu', props.item.id, event.clientX, event.clientY)
+}
+
+const openKeyboardActionMenu = (event: KeyboardEvent) => {
+  if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return
+  const element = event.currentTarget as HTMLElement
+  const anchor = getMenuAnchor(element)
+  event.preventDefault()
+  event.stopPropagation()
+  emit('select', props.item.id)
+  emit('actionMenu', props.item.id, anchor.x, anchor.y)
+}
 </script>
 
 <template>
@@ -60,8 +80,10 @@ const icon = computed(() => ({
     class="compact-activity"
     :class="[`category-${categoryName.toLowerCase()}`, { expanded, selected, 'outside-window': !item.fitsAvailability }]"
     tabindex="0"
-    @click="$emit('select', item.id)"
-    @keydown.enter="$emit('select', item.id)"
+    @click="emit('select', item.id)"
+    @contextmenu="openActionMenu"
+    @keydown.enter="emit('select', item.id)"
+    @keydown="openKeyboardActionMenu"
   >
     <div class="compact-activity-time">
       <strong>{{ formatMinutes(item.scheduledStart) }}</strong>
@@ -88,28 +110,16 @@ const icon = computed(() => ({
         target="_blank"
         rel="noopener noreferrer"
         title="In Google Maps öffnen"
+        aria-label="In Google Maps öffnen"
         @click.stop
       ><ExternalLink :size="17" /></a>
       <button
         class="icon-button"
         type="button"
         :title="expanded ? 'Details schließen' : 'Details anzeigen'"
+        :aria-label="expanded ? 'Details schließen' : 'Details anzeigen'"
         @click.stop="expanded = !expanded"
       ><ChevronDown :size="17" /></button>
-      <button
-        class="icon-button"
-        type="button"
-        title="Alternative Aktivität"
-        :disabled="regenerating"
-        @click.stop="$emit('regenerate', item.id)"
-      ><RefreshCw :size="17" /></button>
-      <button
-        class="icon-button"
-        type="button"
-        title="Aktivität entfernen"
-        :disabled="deleting"
-        @click.stop="$emit('remove', item.id)"
-      ><Trash2 :size="17" /></button>
     </div>
   </article>
 </template>

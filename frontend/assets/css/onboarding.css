@@ -326,6 +326,10 @@
   width: min(100%, 240px);
 }
 
+.welcome-inline-inputs {
+  margin-top: 16px;
+}
+
 .welcome-date-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));

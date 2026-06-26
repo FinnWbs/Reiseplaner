@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight, CalendarCheck, CalendarPlus, ChevronDown, ChevronRight, Lightbulb, MapPin, Plus, X } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight, CalendarCheck, CalendarPlus, ChevronDown, ChevronRight, Lightbulb, MapPin, Plus, Trash2, X } from 'lucide-vue-next'
 import type { Trip } from '~/types/trip'
 
 const workspace = useTripWorkspace()
@@ -11,9 +11,17 @@ const rangeStart = ref('')
 const rangeEnd = ref('')
 const rangeComplete = ref(false)
 const rangeError = ref('')
-const contextMenu = ref<{ x: number; y: number } | null>(null)
+const contextMenu = ref<
+  | { type: 'range'; x: number; y: number }
+  | { type: 'trip'; x: number; y: number; trip: Trip }
+  | null
+>(null)
 const plannedTripsExpanded = ref(true)
 const unplannedTripsExpanded = ref(false)
+const tripPendingDeletion = ref<Trip | null>(null)
+const longPressTripId = ref<number | null>(null)
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+let longPressOrigin: { x: number; y: number } | null = null
 
 const monthLabel = computed(() => new Intl.DateTimeFormat('de-DE', {
   month: 'long',
@@ -90,7 +98,7 @@ const clearRange = () => {
 }
 
 const openRangeContext = (_date: string, x: number, y: number) => {
-  if (rangeComplete.value) contextMenu.value = { x, y }
+  if (rangeComplete.value) contextMenu.value = { type: 'range', x, y }
 }
 
 const createTripForRange = async () => {
@@ -130,23 +138,89 @@ const goToday = () => {
 }
 
 const openTrip = async (trip: Trip, date?: string) => {
+  contextMenu.value = null
   const day = date ? trip.days.find(item => item.travelDate === date)?.dayNumber : undefined
   await navigateTo({ path: `/trips/${trip.id}`, query: day ? { day } : undefined })
+}
+
+const removeTrip = async (trip: Trip) => {
+  contextMenu.value = null
+  tripPendingDeletion.value = trip
+}
+
+const confirmTripDeletion = async () => {
+  const trip = tripPendingDeletion.value
+  if (!trip) return
+  const deleted = await workspace.deleteTrip(trip.id)
+  if (!deleted) return
+  tripPendingDeletion.value = null
+  if (selectedDate.value) {
+    const stillHasTrip = datedTrips.value.some(item =>
+      selectedDate.value >= item.startDate! && selectedDate.value <= item.endDate!
+    )
+    if (!stillHasTrip) selectedDate.value = ''
+  }
+}
+
+const openTripContext = (event: MouseEvent, trip: Trip) => {
+  event.preventDefault()
+  event.stopPropagation()
+  contextMenu.value = { type: 'trip', x: event.clientX, y: event.clientY, trip }
+}
+
+const clearLongPress = () => {
+  if (longPressTimer) clearTimeout(longPressTimer)
+  longPressTimer = null
+  longPressOrigin = null
+}
+
+const startTripLongPress = (event: PointerEvent, trip: Trip) => {
+  if (event.pointerType === 'mouse') return
+  clearLongPress()
+  longPressOrigin = { x: event.clientX, y: event.clientY }
+  longPressTimer = setTimeout(() => {
+    longPressTripId.value = trip.id
+    contextMenu.value = { type: 'trip', x: event.clientX, y: event.clientY, trip }
+    longPressTimer = null
+  }, 550)
+}
+
+const moveTripLongPress = (event: PointerEvent) => {
+  if (!longPressOrigin) return
+  if (Math.hypot(event.clientX - longPressOrigin.x, event.clientY - longPressOrigin.y) > 10) {
+    clearLongPress()
+  }
+}
+
+const handleTripClick = (trip: Trip) => {
+  clearLongPress()
+  if (longPressTripId.value === trip.id) {
+    longPressTripId.value = null
+    return
+  }
+  openTrip(trip)
 }
 
 const closeContextMenu = () => {
   contextMenu.value = null
 }
 
+const handleEscape = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') closeContextMenu()
+}
+
 onMounted(async () => {
   theme.initPlannerTheme()
   await workspace.loadTrips()
   window.addEventListener('click', closeContextMenu)
+  window.addEventListener('keydown', handleEscape)
 })
 
 onUnmounted(() => {
+  clearLongPress()
   theme.cleanupPlannerTheme()
   window.removeEventListener('click', closeContextMenu)
+  window.removeEventListener('keydown', handleEscape)
 })
 </script>
 
@@ -162,9 +236,9 @@ onUnmounted(() => {
     <main class="workspace-main">
       <section class="calendar-hero">
         <div>
-          <span class="eyebrow">Deine Reisezeit</span>
-          <h1>Was steht als Nächstes an?</h1>
-          <p>Alle Städtereisen, Planungstage und offenen Reiseideen auf einen Blick.</p>
+          <span class="eyebrow">Deine Reiseübersicht</span>
+          <h1>Plane weniger. Erlebe mehr.</h1>
+          <p>Termine, Reiseideen und Tagespläne an einem Ort.</p>
         </div>
         <NuxtLink class="button-link calendar-create-link" to="/planner"><Plus :size="18" />Neue Reise</NuxtLink>
       </section>
@@ -180,16 +254,20 @@ onUnmounted(() => {
         <section class="calendar-shell">
           <header class="calendar-toolbar">
             <div class="calendar-month-control">
-              <button class="nav-icon-button" type="button" title="Vorheriger Monat" @click="moveMonth(-1)">
+              <button class="nav-icon-button" type="button" title="Vorheriger Monat" aria-label="Vorheriger Monat" @click="moveMonth(-1)">
                 <ArrowLeft :size="19" />
               </button>
               <h2>{{ monthLabel }}</h2>
-              <button class="nav-icon-button" type="button" title="Nächster Monat" @click="moveMonth(1)">
+              <button class="nav-icon-button" type="button" title="Nächster Monat" aria-label="Nächster Monat" @click="moveMonth(1)">
                 <ArrowRight :size="19" />
               </button>
             </div>
             <button class="secondary" type="button" @click="goToday">Heute</button>
           </header>
+          <div class="calendar-hint">
+            <CalendarPlus :size="16" />
+            <span>Wähle einen Tag oder ziehe über mehrere Tage, um direkt eine Reise anzulegen.</span>
+          </div>
 
           <TravelCalendar
             :month="currentMonth"
@@ -236,8 +314,16 @@ onUnmounted(() => {
           :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
           @click.stop
         >
-          <button type="button" @click="createTripForRange"><Plus :size="16" />Neue Reise für diesen Zeitraum</button>
-          <button type="button" @click="clearRange"><X :size="16" />Auswahl aufheben</button>
+          <template v-if="contextMenu.type === 'range'">
+            <button type="button" @click="createTripForRange"><Plus :size="16" />Neue Reise für diesen Zeitraum</button>
+            <button type="button" @click="clearRange"><X :size="16" />Auswahl aufheben</button>
+          </template>
+          <template v-else>
+            <button type="button" @click="openTrip(contextMenu.trip)"><ChevronRight :size="16" />Reise öffnen</button>
+            <button class="context-menu-danger" type="button" @click="removeTrip(contextMenu.trip)">
+              <Trash2 :size="16" />Reise löschen
+            </button>
+          </template>
         </div>
 
         <aside id="reisen" class="calendar-trips-sidebar" aria-label="Reiseübersicht">
@@ -260,7 +346,13 @@ onUnmounted(() => {
                 class="sidebar-trip-card"
                 :class="`trip-color-${Math.abs(trip.id) % 6}`"
                 type="button"
-                @click="openTrip(trip)"
+                @click="handleTripClick(trip)"
+                @contextmenu="openTripContext($event, trip)"
+                @pointerdown="startTripLongPress($event, trip)"
+                @pointermove="moveTripLongPress"
+                @pointerup="clearLongPress"
+                @pointercancel="clearLongPress"
+                @pointerleave="clearLongPress"
               >
                 <span class="journey-icon"><MapPin :size="18" /></span>
                 <span class="journey-copy">
@@ -294,7 +386,13 @@ onUnmounted(() => {
                 :key="trip.id"
                 class="sidebar-trip-card idea"
                 type="button"
-                @click="openTrip(trip)"
+                @click="handleTripClick(trip)"
+                @contextmenu="openTripContext($event, trip)"
+                @pointerdown="startTripLongPress($event, trip)"
+                @pointermove="moveTripLongPress"
+                @pointerup="clearLongPress"
+                @pointercancel="clearLongPress"
+                @pointerleave="clearLongPress"
               >
                 <span class="journey-icon"><MapPin :size="18" /></span>
                 <span class="journey-copy">
@@ -313,5 +411,14 @@ onUnmounted(() => {
         </div>
       </template>
     </main>
+
+    <TripDeleteDialog
+      :open="Boolean(tripPendingDeletion)"
+      :trip="tripPendingDeletion"
+      :loading="workspace.deletingTripId.value === tripPendingDeletion?.id"
+      :error="tripPendingDeletion ? workspace.error.value : ''"
+      @cancel="tripPendingDeletion = null"
+      @confirm="confirmTripDeletion"
+    />
   </div>
 </template>

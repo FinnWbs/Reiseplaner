@@ -18,21 +18,12 @@ const emit = defineEmits<{
 
 const pointerStart = ref<number | null>(null)
 const stage = ref<HTMLElement | null>(null)
+const activeDay = computed(() => props.trip.days[props.activeIndex])
 
 const setActive = (index: number) => {
   if (index < 0 || index >= props.trip.days.length || index === props.activeIndex) return
   emit('change', index)
   nextTick(() => stage.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-}
-
-const cardStyle = (index: number) => {
-  const offset = index - props.activeIndex
-  const distance = Math.abs(offset)
-  return {
-    '--orbit-offset': offset,
-    '--orbit-distance': distance,
-    zIndex: props.trip.days.length - distance
-  }
 }
 
 const onPointerDown = (event: PointerEvent) => {
@@ -55,6 +46,21 @@ const onKeydown = (event: KeyboardEvent) => {
 
 <template>
   <section class="day-orbit-section" @keydown="onKeydown">
+    <div class="day-switcher" aria-label="Reisetage">
+      <button
+        v-for="(day, index) in trip.days"
+        :key="day.id"
+        type="button"
+        :class="{ active: index === activeIndex }"
+        :aria-current="index === activeIndex ? 'step' : undefined"
+        @click="setActive(index)"
+      >
+        <span>Tag {{ day.dayNumber }}</span>
+        <strong>{{ day.weekday || (day.travelDate ? formatDate(day.travelDate) : `Tag ${day.dayNumber}`) }}</strong>
+        <small>{{ day.activities.length }} {{ day.activities.length === 1 ? 'Stopp' : 'Stopps' }}</small>
+      </button>
+    </div>
+
     <div
       ref="stage"
       class="day-orbit-stage"
@@ -64,21 +70,13 @@ const onKeydown = (event: KeyboardEvent) => {
       @pointerup="onPointerUp"
       @pointercancel="pointerStart = null"
     >
-      <div class="orbit-accent-band" aria-hidden="true" />
-      <div
-        v-for="(day, index) in trip.days"
-        :key="day.id"
-        class="orbit-card-position"
-        :class="{ 'is-active': index === activeIndex, 'is-hidden': Math.abs(index - activeIndex) > 2 }"
-        :style="cardStyle(index)"
-      >
+      <div v-if="activeDay" class="orbit-card-position is-active">
         <DayOrbitCard
-          :day="day"
+          :day="activeDay"
           :city="trip.city"
-          :active="index === activeIndex"
+          active
           :deleting-activity-id="deletingActivityId"
           :regenerating-activity-id="regeneratingActivityId"
-          @select="setActive(index)"
           @update-availability="$emit('updateAvailability', $event)"
           @regenerate-activity="(dayId, itemId) => $emit('regenerateActivity', dayId, itemId)"
           @remove-activity="(dayId, itemId) => $emit('removeActivity', dayId, itemId)"
@@ -91,6 +89,7 @@ const onKeydown = (event: KeyboardEvent) => {
         class="orbit-arrow"
         type="button"
         title="Vorheriger Tag"
+        aria-label="Vorheriger Tag"
         :disabled="activeIndex === 0"
         @click="setActive(activeIndex - 1)"
       ><ArrowLeft :size="21" /></button>
@@ -108,6 +107,7 @@ const onKeydown = (event: KeyboardEvent) => {
         class="orbit-arrow"
         type="button"
         title="Nächster Tag"
+        aria-label="Nächster Tag"
         :disabled="activeIndex === trip.days.length - 1"
         @click="setActive(activeIndex + 1)"
       ><ArrowRight :size="21" /></button>
