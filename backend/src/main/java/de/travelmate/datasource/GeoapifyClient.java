@@ -36,6 +36,7 @@ public interface GeoapifyClient {
     @Path("/v2/places")
     JsonNode places(
         @QueryParam("categories") String categories,
+        @QueryParam("conditions") String conditions,
         @QueryParam("filter") String filter,
         @QueryParam("bias") String bias,
         @QueryParam("limit") int limit,

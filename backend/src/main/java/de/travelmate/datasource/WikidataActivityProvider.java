@@ -34,6 +34,11 @@ public class WikidataActivityProvider {
                 if (title != null) {
                     candidate.externalRefs.put(ActivitySource.WIKIPEDIA, title);
                 }
+                candidate.wikidataSitelinksCount = entity.path("sitelinks").size();
+                JsonNode claims = entity.path("claims");
+                candidate.hasImage = claims.has("P18");
+                candidate.hasHeritageStatus = claims.has("P1435");
+                candidate.isUnescoWorldHeritage = hasClaimValue(claims.path("P1435"), "Q9259");
             } catch (RuntimeException exception) {
                 warnings.add("Wikidata-Anreicherung fuer " + candidate.name + " fehlgeschlagen.");
             }
@@ -57,5 +62,22 @@ public class WikidataActivityProvider {
         }
         String title = link.path("title").asText(null);
         return title == null || title.isBlank() ? null : title;
+    }
+
+    private static boolean hasClaimValue(JsonNode claims, String wikidataId) {
+        if (!claims.isArray()) {
+            return false;
+        }
+        for (JsonNode claim : claims) {
+            String id = claim.path("mainsnak")
+                .path("datavalue")
+                .path("value")
+                .path("id")
+                .asText(null);
+            if (wikidataId.equals(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -91,6 +92,7 @@ public class GeoapifyActivityProvider implements ActivityProvider {
                 int radius = interest == InterestType.NATURE ? 25000 : 12000;
                 JsonNode features = client.places(
                     String.join(",", categories),
+                    conditionsFor(interest),
                     "circle:" + originLongitude + "," + originLatitude + "," + radius,
                     bias,
                     Math.min(limit, 20),
@@ -102,14 +104,21 @@ public class GeoapifyActivityProvider implements ActivityProvider {
                 }
                 for (JsonNode feature : features) {
                     ExternalActivityCandidate candidate = candidate(feature.path("properties"), locationText);
-                    if (candidate == null || !filtering.isRelevant(candidate) || filtering.isDuplicate(candidate, seen)) {
+                    if (candidate == null || !filtering.isRelevant(candidate, interest) || filtering.isDuplicate(candidate, seen)) {
                         continue;
                     }
+                    candidate.distanceToCenterKm = distanceInKilometers(
+                        originLatitude,
+                        originLongitude,
+                        candidate.latitude,
+                        candidate.longitude
+                    );
                     candidate.primaryInterest = interest;
                     candidate.matchedInterests.add(interest);
                     candidates.add(candidate);
                 }
             }
+            populateNearbyShopDensity(candidates);
             return candidates.stream()
                 .sorted(Comparator.comparingDouble((ExternalActivityCandidate candidate) ->
                     scoring.score(candidate, interests, originLatitude, originLongitude)
@@ -174,6 +183,48 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         copyRawTag(raw, candidate, "memorial");
         copyRawTag(raw, candidate, "memorial:type");
         copyRawTag(raw, candidate, "artwork_type");
+        copyRawTag(raw, candidate, "natural");
+        copyRawTag(raw, candidate, "waterway");
+        copyRawTag(raw, candidate, "amenity");
+        copyRawTag(raw, candidate, "landuse");
+        copyRawTag(raw, candidate, "cemetery");
+        copyRawTag(raw, candidate, "funeral");
+        copyRawTag(raw, candidate, "grave");
+        copyRawTag(raw, candidate, "grave_yard");
+        copyRawTag(raw, candidate, "leisure");
+        copyRawTag(raw, candidate, "access");
+        copyRawTag(raw, candidate, "operator");
+        copyRawTag(raw, candidate, "ownership");
+        copyRawTag(raw, candidate, "highway");
+        copyRawTag(raw, candidate, "railway");
+        copyRawTag(raw, candidate, "public_transport");
+        copyRawTag(raw, candidate, "aeroway");
+        copyRawTag(raw, candidate, "bridge");
+        copyRawTag(raw, candidate, "level");
+        copyRawTag(raw, candidate, "addr:floor");
+        copyRawTag(raw, candidate, "platform");
+        copyRawTag(raw, candidate, "subway");
+        copyRawTag(raw, candidate, "rail");
+        copyRawTag(raw, candidate, "terminal");
+        copyRawTag(raw, candidate, "emergency");
+        copyRawTag(raw, candidate, "parking");
+        copyRawTag(raw, candidate, "tourism");
+        copyRawTag(raw, candidate, "man_made");
+        copyRawTag(raw, candidate, "shop");
+        copyRawTag(raw, candidate, "building");
+        copyRawTag(raw, candidate, "indoor");
+        copyRawTag(raw, candidate, "office");
+        copyRawTag(raw, candidate, "cuisine");
+        copyRawTag(raw, candidate, "heritage");
+        copyRawTag(raw, candidate, "garden:type");
+        copyRawTag(raw, candidate, "garden");
+        copyRawTag(raw, candidate, "botanical");
+        copyRawTag(raw, candidate, "route");
+        candidate.geometryAreaM2 = firstNonNull(number(raw, "area"), number(raw, "way_area"));
+        String wikipedia = firstNonBlank(text(raw, "wikipedia"), text(raw, "wikipedia:de"));
+        if (wikipedia != null) {
+            candidate.externalRefs.put(ActivitySource.WIKIPEDIA, wikipedia.replaceFirst("^[a-z]{2}:", ""));
+        }
         String osmId = text(raw, "osm_id");
         if (osmId != null) {
             candidate.externalRefs.put(ActivitySource.OPEN_STREET_MAP, osmId);
@@ -181,11 +232,50 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         return candidate;
     }
 
+    private static String conditionsFor(InterestType interest) {
+        return interest == InterestType.NATURE ? "named,access" : null;
+    }
+
     private static void copyRawTag(JsonNode raw, ExternalActivityCandidate candidate, String tag) {
         String value = text(raw, tag);
         if (value != null) {
             candidate.rawTags.put(tag, value);
         }
+    }
+
+    static void populateNearbyShopDensity(List<ExternalActivityCandidate> candidates) {
+        for (ExternalActivityCandidate candidate : candidates) {
+            if (candidate.latitude == null || candidate.longitude == null) {
+                continue;
+            }
+            int density = 0;
+            for (ExternalActivityCandidate neighbor : candidates) {
+                if (candidate == neighbor || neighbor.latitude == null || neighbor.longitude == null) {
+                    continue;
+                }
+                if (isRetailLike(neighbor)
+                    && distanceInKilometers(
+                        candidate.latitude,
+                        candidate.longitude,
+                        neighbor.latitude,
+                        neighbor.longitude
+                    ) <= 0.25) {
+                    density++;
+                }
+            }
+            candidate.nearbyShopDensity = density;
+        }
+    }
+
+    private static boolean isRetailLike(ExternalActivityCandidate candidate) {
+        return candidate.rawCategories.stream().anyMatch(category -> {
+            String normalized = category.toLowerCase(Locale.ROOT);
+            return normalized.equals("commercial")
+                || normalized.startsWith("commercial.")
+                || normalized.equals("shop")
+                || normalized.startsWith("shop.");
+        }) || candidate.rawTags.containsKey("shop")
+            || "marketplace".equalsIgnoreCase(candidate.rawTags.get("amenity"));
     }
 
     private static String text(JsonNode node, String field) {
@@ -199,6 +289,24 @@ public class GeoapifyActivityProvider implements ActivityProvider {
 
     private static String firstNonBlank(String first, String second) {
         return first != null && !first.isBlank() ? first : second;
+    }
+
+    private static Double firstNonNull(Double first, Double second) {
+        return first != null ? first : second;
+    }
+
+    private static double distanceInKilometers(
+        double firstLatitude,
+        double firstLongitude,
+        double secondLatitude,
+        double secondLongitude
+    ) {
+        double latitudeDelta = Math.toRadians(secondLatitude - firstLatitude);
+        double longitudeDelta = Math.toRadians(secondLongitude - firstLongitude);
+        double a = Math.sin(latitudeDelta / 2) * Math.sin(latitudeDelta / 2)
+            + Math.cos(Math.toRadians(firstLatitude)) * Math.cos(Math.toRadians(secondLatitude))
+            * Math.sin(longitudeDelta / 2) * Math.sin(longitudeDelta / 2);
+        return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     private static String safeFailureReason(RuntimeException exception) {

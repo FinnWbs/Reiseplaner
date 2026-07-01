@@ -11,8 +11,10 @@ import java.util.Set;
 public class GeoapifyCategoryMapper {
     private static final Map<InterestType, List<String>> CATEGORIES = Map.of(
         InterestType.SIGHTSEEING, List.of(
+            "tourism.sights",
             "tourism.sights.castle",
-            "tourism.sights.place_of_worship.cathedral", "tourism.sights.city_gate"
+            "tourism.sights.place_of_worship.cathedral", "tourism.sights.city_gate",
+            "tourism.attraction.viewpoint", "tourism.attraction.fountain", "tourism.attraction.artwork"
         ),
         InterestType.CULTURE, List.of(
             "entertainment.museum", "entertainment.culture.gallery",
@@ -20,14 +22,14 @@ public class GeoapifyCategoryMapper {
         ),
         InterestType.NATURE, List.of(
             "leisure.park", "leisure.park.garden", "leisure.park.nature_reserve",
-            "natural.protected_area", "natural.forest", "natural.water", "national_park"
+            "natural.protected_area", "natural.forest", "beach",
+            "national_park"
         ),
         InterestType.FOOD, List.of(
             "catering.restaurant", "catering.cafe", "catering.biergarten", "catering.food_court"
         ),
         InterestType.SHOPPING, List.of(
-            "commercial.shopping_mall", "commercial.department_store", "commercial.marketplace",
-            "commercial.clothing", "commercial.gift_and_souvenir"
+            "commercial.shopping_mall", "commercial.department_store", "commercial.marketplace"
         ),
         InterestType.NIGHTLIFE, List.of(
             "catering.bar", "catering.pub", "catering.taproom", "entertainment.cinema",

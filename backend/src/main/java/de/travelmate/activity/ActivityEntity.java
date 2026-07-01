@@ -1,6 +1,7 @@
 package de.travelmate.activity;
 
 import de.travelmate.interest.InterestType;
+import de.travelmate.quality.CanonicalCategory;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -48,6 +49,31 @@ public class ActivityEntity {
 
     @Column(name = "data_quality_score", nullable = false)
     public double dataQualityScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "canonical_category")
+    public CanonicalCategory canonicalCategory;
+
+    @Column(name = "popularity_score", nullable = false)
+    public double popularityScore;
+
+    @Column(name = "notability_score", nullable = false)
+    public double notabilityScore;
+
+    @Column(name = "quality_score", nullable = false)
+    public double qualityScore;
+
+    @Column(name = "category_fit_score", nullable = false)
+    public double categoryFitScore;
+
+    @Column(name = "itinerary_fit_score", nullable = false)
+    public double itineraryFitScore;
+
+    @Column(name = "final_score", nullable = false)
+    public double finalScore;
+
+    @Column(name = "quality_reason_codes", columnDefinition = "TEXT")
+    public String qualityReasonCodes;
 
     @Column(name = "last_synced_at")
     public LocalDateTime lastSyncedAt;

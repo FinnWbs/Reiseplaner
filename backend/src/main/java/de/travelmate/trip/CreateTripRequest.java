@@ -10,6 +10,7 @@ import de.travelmate.interest.InterestType;
 public record CreateTripRequest(
     @NotBlank String city,
     @Min(1) @Max(14) int daysCount,
+    List<Long> interestIds,
     List<InterestType> interests,
     LocalDate startDate,
     LocalDate endDate,

@@ -21,6 +21,21 @@ class ActivityScoringServiceTest {
         assertTrue(matchingScore > distantScore);
     }
 
+    @Test
+    void natureQualityBonusPrefersGardenOverGenericPark() {
+        ExternalActivityCandidate garden = candidate(52.5201, 13.4051);
+        garden.primaryInterest = InterestType.NATURE;
+        garden.rawCategories.add("leisure.park.garden");
+        ExternalActivityCandidate park = candidate(52.5201, 13.4051);
+        park.primaryInterest = InterestType.NATURE;
+        park.rawCategories.add("leisure.park");
+
+        double gardenScore = scoring.score(garden, Set.of(InterestType.NATURE), 52.52, 13.405);
+        double parkScore = scoring.score(park, Set.of(InterestType.NATURE), 52.52, 13.405);
+
+        assertTrue(gardenScore > parkScore);
+    }
+
     private static ExternalActivityCandidate candidate(double latitude, double longitude) {
         ExternalActivityCandidate candidate = new ExternalActivityCandidate();
         candidate.name = "Testort";

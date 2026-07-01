@@ -1,6 +1,6 @@
 package de.travelmate.location;
 
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -10,7 +10,6 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 @Path("/locations")
-@RolesAllowed({"USER", "ADMIN"})
 @Produces(MediaType.APPLICATION_JSON)
 public class LocationResource {
     @Inject
@@ -18,6 +17,7 @@ public class LocationResource {
 
     @GET
     @Path("/autocomplete")
+    @PermitAll
     public List<LocationSuggestionDto> autocomplete(@QueryParam("query") String query) {
         return locations.autocomplete(query);
     }

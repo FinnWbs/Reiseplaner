@@ -2,6 +2,7 @@ package de.travelmate.planning;
 
 import de.travelmate.activity.ActivityEntity;
 import de.travelmate.activity.ActivityInterestEntity;
+import de.travelmate.activity.ActivityPersistenceService;
 import de.travelmate.activity.ActivityRepository;
 import de.travelmate.interest.InterestEntity;
 import de.travelmate.interest.InterestType;
@@ -132,6 +133,17 @@ class PlanningServiceTest {
     }
 
     @Test
+    void oldImportVersionScoresZeroForNewPlans() {
+        PlanningService service = new PlanningService();
+        InterestEntity nature = interest(3L, "Natur & Outdoor");
+        nature.code = InterestType.NATURE.name();
+        ActivityEntity oldNature = primaryActivity(5L, "Old Urban Viewpoint", InterestType.NATURE, nature);
+        oldNature.importVersion = ActivityPersistenceService.CURRENT_IMPORT_VERSION - 1;
+
+        assertEquals(0, service.score(oldNature, Set.of(3L)).totalScore());
+    }
+
+    @Test
     void generatesBalancedPlanAcrossSelectedInterests() {
         InterestEntity culture = interest(1L, "Kultur & Museen");
         culture.code = InterestType.CULTURE.name();
@@ -165,10 +177,50 @@ class PlanningServiceTest {
         assertEquals(Set.of(InterestType.CULTURE, InterestType.FOOD, InterestType.NATURE), scheduled);
     }
 
+    @Test
+    void generatePlanDoesNotUseOldNatureCandidatesAsFallback() {
+        InterestEntity nature = interest(3L, "Natur & Outdoor");
+        nature.code = InterestType.NATURE.name();
+        ActivityEntity oldViewpoint = primaryActivity(5L, "Tokyo Station train tracks Viewpoint 6F", InterestType.NATURE, nature);
+        oldViewpoint.importVersion = ActivityPersistenceService.CURRENT_IMPORT_VERSION - 1;
+
+        PlanningService service = serviceWithActivities(oldViewpoint);
+        service.sync = noRefreshSync();
+        TripDayEntity day = emptyDay();
+        day.trip.selectedInterests = new HashSet<>(Set.of(nature));
+
+        service.generatePlan(day.trip, List.of(3L), Set.of(InterestType.NATURE));
+
+        assertTrue(day.activities.isEmpty());
+    }
+
+    @Test
+    void generatePlanReallocatesWhenNatureHasOnlyOldInvalidCandidates() {
+        InterestEntity nature = interest(3L, "Natur & Outdoor");
+        nature.code = InterestType.NATURE.name();
+        InterestEntity food = interest(4L, "Essen & Cafes");
+        food.code = InterestType.FOOD.name();
+
+        ActivityEntity oldViewpoint = primaryActivity(5L, "Station Platform Viewpoint", InterestType.NATURE, nature);
+        oldViewpoint.importVersion = ActivityPersistenceService.CURRENT_IMPORT_VERSION - 1;
+        ActivityEntity restaurant = primaryActivity(6L, "Restaurant", InterestType.FOOD, food);
+
+        PlanningService service = serviceWithActivities(oldViewpoint, restaurant);
+        service.sync = noRefreshSync();
+        TripDayEntity day = emptyDay();
+        day.trip.selectedInterests = new HashSet<>(Set.of(nature, food));
+
+        service.generatePlan(day.trip, List.of(3L, 4L), Set.of(InterestType.NATURE, InterestType.FOOD));
+
+        assertTrue(day.activities.stream().noneMatch(item -> item.activity == oldViewpoint));
+        assertTrue(day.activities.stream().anyMatch(item -> item.activity == restaurant));
+    }
+
     private ActivityEntity activity(Double rating, double quality) {
         ActivityEntity activity = new ActivityEntity();
         activity.rating = rating;
         activity.dataQualityScore = quality;
+        activity.importVersion = ActivityPersistenceService.CURRENT_IMPORT_VERSION;
         return activity;
     }
 
@@ -247,5 +299,14 @@ class PlanningServiceTest {
         mapping.interest = interest;
         mapping.score = score;
         return mapping;
+    }
+
+    private ActivitySyncService noRefreshSync() {
+        return new ActivitySyncService() {
+            @Override
+            public boolean needsRefresh(String city, Set<InterestType> interests) {
+                return false;
+            }
+        };
     }
 }

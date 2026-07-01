@@ -30,7 +30,11 @@ public class ActivityRepository implements PanacheRepository<ActivityEntity> {
     }
 
     public List<ActivityEntity> findActiveByCity(String city) {
-        return list("lower(city) = ?1 and active = true order by name", city.trim().toLowerCase());
+        return list(
+            "lower(city) = ?1 and active = true and importVersion = ?2 order by name",
+            city.trim().toLowerCase(),
+            ActivityPersistenceService.CURRENT_IMPORT_VERSION
+        );
     }
 
     public boolean hasFreshMinimumForCity(String city, int minimum, LocalDateTime freshAfter) {

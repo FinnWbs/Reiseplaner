@@ -21,6 +21,17 @@ public class ExternalActivityCandidate {
     public String website;
     public String openingHours;
     public boolean hasWikidata;
+    public boolean hasImage;
+    public boolean hasHeritageStatus;
+    public boolean isUnescoWorldHeritage;
+    public int wikidataSitelinksCount;
+    public Integer wikipediaPageviews365d;
+    public Double geometryAreaM2;
+    public Double distanceToCenterKm;
+    public int nearbyShopDensity;
+    public boolean suppressedAsSubPoi;
+    public String suppressionReason;
+    public String preferredParentName;
     public final Map<String, String> rawTags = new HashMap<>();
     public Double latitude;
     public Double longitude;

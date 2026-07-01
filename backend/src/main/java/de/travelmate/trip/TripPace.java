@@ -1,9 +1,9 @@
 package de.travelmate.trip;
 
 public enum TripPace {
-    RELAXED(1),
-    BALANCED(2),
-    ACTIVE(3);
+    RELAXED(2),
+    BALANCED(3),
+    ACTIVE(4);
 
     private final int activitiesPerDay;
 

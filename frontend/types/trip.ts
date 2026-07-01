@@ -1,4 +1,4 @@
-export type Interest = { id: number; name: string }
+export type Interest = { id: number; key: string; name: string }
 
 export type TripActivity = {
   id: number

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import de.travelmate.interest.InterestType;
+import de.travelmate.quality.PoiRelationshipService;
 
 @ApplicationScoped
 public class ActivityImportService {
@@ -26,6 +27,9 @@ public class ActivityImportService {
 
     @Inject
     ActivityPersistenceService persistence;
+
+    @Inject
+    PoiRelationshipService relationships;
 
     public ActivityImportResponse importCity(String requestedCity) {
         String city = normalizeCity(requestedCity);
@@ -68,6 +72,7 @@ public class ActivityImportService {
         if (openStreetMap.isEnabled()) {
             candidates.addAll(openStreetMap.fetch(externalLookup));
         }
+        relationships.suppressSubPois(candidates);
         return persistence.persist(city, candidates, warnings);
     }
 
@@ -86,6 +91,7 @@ public class ActivityImportService {
         List<String> warnings = new ArrayList<>();
         warnings.addAll(wikidata.enrich(candidates));
         warnings.addAll(wikipedia.enrich(candidates));
+        relationships.suppressSubPois(candidates);
         persistence.deactivateGeoapifyActivities(city, interest);
         return persistence.persist(city, candidates, warnings);
     }

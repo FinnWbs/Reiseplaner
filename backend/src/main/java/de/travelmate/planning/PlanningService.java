@@ -1,9 +1,11 @@
 package de.travelmate.planning;
 
 import de.travelmate.activity.ActivityEntity;
+import de.travelmate.activity.ActivityPersistenceService;
 import de.travelmate.activity.ActivityRepository;
 import de.travelmate.interest.InterestEntity;
 import de.travelmate.interest.InterestType;
+import de.travelmate.quality.PoiQualityEngine;
 import de.travelmate.sync.ActivitySyncService;
 import de.travelmate.trip.*;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -25,6 +27,9 @@ public class PlanningService {
 
     @Inject
     ActivityTimeRules timeRules;
+
+    @Inject
+    PoiQualityEngine qualityEngine;
 
     public void generatePlan(TripEntity trip, List<Long> interestIds) {
         generatePlan(trip, interestIds, Set.of());
@@ -69,16 +74,28 @@ public class PlanningService {
     }
 
     public ScoredActivity score(ActivityEntity activity, Set<Long> interestIds) {
+        if (activity.importVersion != ActivityPersistenceService.CURRENT_IMPORT_VERSION) {
+            return new ScoredActivity(activity, 0);
+        }
         int interestScore = activity.interestScores.stream()
             .filter(mapping -> interestIds.contains(mapping.interest.id))
             .filter(mapping -> activity.primaryInterest == null || mapping.interest.code.equals(activity.primaryInterest.name()))
             .mapToInt(mapping -> mapping.score)
             .max()
             .orElse(0);
+        if (interestIds != null && !interestIds.isEmpty() && interestScore <= 0) {
+            return new ScoredActivity(activity, 0);
+        }
 
         double ratingScore = activity.rating == null ? 0 : Math.max(0, Math.min(10, activity.rating * 2));
         double qualityScore = Math.max(0, Math.min(10, activity.dataQualityScore * 10));
-        double total = interestScore * 0.6 + ratingScore * 0.2 + qualityScore * 0.2;
+        double legacyScore = (interestScore * 0.6 + ratingScore * 0.2 + qualityScore * 0.2) / 10;
+        double storedFinalScore = activity.finalScore > 0 ? activity.finalScore : legacyScore;
+        double categoryFitScore = activity.categoryFitScore > 0
+            ? activity.categoryFitScore
+            : Math.max(0, Math.min(1, interestScore / 10.0));
+        double itineraryFitScore = activity.itineraryFitScore > 0 ? activity.itineraryFitScore : 1;
+        double total = 10 * engine().planningScore(storedFinalScore, categoryFitScore, itineraryFitScore, 1);
         return new ScoredActivity(activity, total);
     }
 
@@ -292,6 +309,10 @@ public class PlanningService {
             return trip.city + ", " + trip.countryCode;
         }
         return trip.city;
+    }
+
+    private PoiQualityEngine engine() {
+        return qualityEngine == null ? new PoiQualityEngine() : qualityEngine;
     }
 
     private record SlotChoice(ActivityEntity activity, int start, int duration) {}

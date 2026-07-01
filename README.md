@@ -52,4 +52,6 @@ Nutzer waehlen Stadt, Anzahl der Reisetage und Interessen. Das Backend speichert
 
 Geoapify liefert die primaeren POIs. Wikidata und Wikipedia ergaenzen externe Referenzen und Beschreibungstexte. OpenStreetMap-Referenzen werden gespeichert; ein eigener OSM-Abruf ist standardmaessig deaktiviert. Die Daten werden lokal persistiert und bei wiederholten Importen ueber externe IDs beziehungsweise Name und Stadt dedupliziert.
 
+Die Relevanzbewertung fuer importierte Orte ist in [docs/poi-quality-engine.md](docs/poi-quality-engine.md) dokumentiert.
+
 Datenquellen und Attribution: [Geoapify](https://www.geoapify.com/), [Wikidata (CC0)](https://www.wikidata.org/wiki/Wikidata:Data_access), [Wikipedia](https://www.mediawiki.org/wiki/API:REST_API) und [OpenStreetMap](https://www.openstreetmap.org/copyright).

@@ -9,6 +9,7 @@ import de.travelmate.user.UserEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDate;
 import java.util.List;
@@ -71,12 +72,17 @@ public class TripService {
             trip.days.add(day);
         }
 
-        Set<InterestType> requestedInterests = request.interests() == null ? Set.of() : Set.copyOf(request.interests());
-        List<InterestEntity> selected = interests.findByCodes(requestedInterests);
+        List<InterestEntity> selected = resolveSelectedInterests(request);
+        if (selected.isEmpty()) {
+            throw new BadRequestException("Mindestens ein Interesse ist erforderlich.");
+        }
         trip.selectedInterests = new java.util.HashSet<>(selected);
         trips.persist(trip);
         List<Long> interestIds = selected.stream().map(interest -> interest.id).toList();
-        planning.generatePlan(trip, interestIds, requestedInterests);
+        Set<InterestType> selectedTypes = selected.stream()
+            .map(interest -> InterestType.valueOf(interest.code))
+            .collect(java.util.stream.Collectors.toSet());
+        planning.generatePlan(trip, interestIds, selectedTypes);
         return TripDto.from(trip);
     }
 
@@ -198,6 +204,14 @@ public class TripService {
     private String normalizeCity(String city) {
         String trimmed = city.trim();
         return trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1).toLowerCase();
+    }
+
+    private List<InterestEntity> resolveSelectedInterests(CreateTripRequest request) {
+        if (request.interestIds() != null && !request.interestIds().isEmpty()) {
+            return interests.findByIds(request.interestIds());
+        }
+        Set<InterestType> requestedInterests = request.interests() == null ? Set.of() : Set.copyOf(request.interests());
+        return interests.findByCodes(requestedInterests);
     }
 
     private String blankToNull(String value) {
