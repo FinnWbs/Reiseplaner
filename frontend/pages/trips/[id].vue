@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays, MapPin } from 'lucide-vue-next'
+import { ArrowLeft, CalendarDays, MapPin, Trash2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const workspace = useTripWorkspace()
 const theme = usePlannerTheme()
 const activeIndex = ref(0)
+const deleteDialogOpen = ref(false)
 
 const tripId = computed(() => Number(route.params.id))
 
@@ -23,6 +24,18 @@ const syncDayFromRoute = () => {
   const requestedDay = Number(route.query.day)
   const index = workspace.trip.value.days.findIndex(day => day.dayNumber === requestedDay)
   activeIndex.value = index >= 0 ? index : 0
+}
+
+const removeCurrentTrip = async () => {
+  const trip = workspace.trip.value
+  if (!trip) return
+  deleteDialogOpen.value = true
+}
+
+const confirmCurrentTripDeletion = async () => {
+  const trip = workspace.trip.value
+  if (!trip) return
+  if (await workspace.deleteTrip(trip.id)) await navigateTo('/calendar')
 }
 
 watch(() => route.query.day, syncDayFromRoute)
@@ -89,6 +102,15 @@ onUnmounted(theme.cleanupPlannerTheme)
           @regenerate-activity="workspace.regenerateActivity"
           @remove-activity="workspace.removeActivity"
         />
+
+        <footer class="trip-danger-zone">
+          <button
+            class="trip-delete-button"
+            type="button"
+            :disabled="workspace.deletingTripId.value === workspace.trip.value.id"
+            @click="removeCurrentTrip"
+          ><Trash2 :size="17" />{{ workspace.deletingTripId.value ? 'Wird gelöscht...' : 'Reise löschen' }}</button>
+        </footer>
       </template>
 
       <section v-else class="empty-journeys">
@@ -96,5 +118,14 @@ onUnmounted(theme.cleanupPlannerTheme)
         <NuxtLink class="button-link" to="/calendar">Zum Kalender</NuxtLink>
       </section>
     </main>
+
+    <TripDeleteDialog
+      :open="deleteDialogOpen"
+      :trip="workspace.trip.value"
+      :loading="workspace.deletingTripId.value === workspace.trip.value?.id"
+      :error="deleteDialogOpen ? workspace.error.value : ''"
+      @cancel="deleteDialogOpen = false"
+      @confirm="confirmCurrentTripDeletion"
+    />
   </div>
 </template>

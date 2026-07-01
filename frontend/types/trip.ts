@@ -1,5 +1,11 @@
 export type Interest = { id: number; key: string; name: string }
 
+export type ActivityImage = {
+  url: string
+  alt: string
+  credit?: string
+}
+
 export type TripActivity = {
   id: number
   position: number
@@ -19,6 +25,7 @@ export type TripActivity = {
     dataQualityScore: number
     latitude?: number
     longitude?: number
+    images?: ActivityImage[]
   }
 }
 

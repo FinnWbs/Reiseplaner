@@ -134,6 +134,7 @@ const openContextMenu = (event: MouseEvent, iso: string) => {
         @click="selectByClick(cell.iso)"
         @contextmenu="openContextMenu($event, cell.iso)"
         @keydown.enter="emit('selectDate', cell.iso)"
+        @keydown.space.prevent="emit('selectDate', cell.iso)"
       >
         <span class="calendar-date-number">{{ cell.dayNumber }}</span>
         <div class="calendar-cell-trips">

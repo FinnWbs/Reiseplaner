@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight, CalendarClock, CalendarDays, CalendarRange, Compass, MapPin, Search, Sparkles, Sun, Wind } from 'lucide-vue-next'
 import type { TripDraft } from '~/composables/useTripDraft'
-import type { LocationSuggestion } from '~/types/trip'
 
 const props = defineProps<{
   initialDraft?: TripDraft | null
@@ -14,7 +13,7 @@ const emit = defineEmits<{
   complete: [draft: TripDraft]
 }>()
 
-const steps = 6
+const steps = 5
 const step = ref(1)
 const city = ref(props.initialDraft?.city || '')
 const destinationMode = ref<'SEARCH' | 'INSPIRE'>('SEARCH')
@@ -52,14 +51,13 @@ const suggestions = computed(() => {
 })
 const ready = computed(() => {
   if (step.value === 1) return city.value.trim().length >= 2
-  if (step.value === 2) return datesKnown.value !== null
-  if (step.value === 3) {
+  if (step.value === 2) {
     return datesKnown.value
       ? Boolean(startDate.value && endDate.value && endDate.value >= startDate.value)
-      : daysCount.value >= 1 && daysCount.value <= 14
+      : datesKnown.value === false && daysCount.value >= 1 && daysCount.value <= 14
   }
-  if (step.value === 4) return !datesKnown.value || planningDates.value.length > 0
-  if (step.value === 5) return interestNames.value.length > 0
+  if (step.value === 3) return !datesKnown.value || planningDates.value.length > 0
+  if (step.value === 4) return interestNames.value.length > 0
   return true
 })
 
@@ -68,7 +66,7 @@ watch(datesBetween, (dates) => {
   if (datesKnown.value && dates.length > 0 && planningDates.value.length === 0) {
     planningDates.value = [...dates]
   }
-})
+}, { immediate: true })
 
 const togglePlanningDate = (date: string) => {
   planningDates.value = planningDates.value.includes(date)
@@ -97,7 +95,21 @@ const chooseDestinationMode = (mode: 'SEARCH' | 'INSPIRE') => {
 }
 
 const next = () => {
-  if (ready.value && step.value < steps) step.value++
+  if (!ready.value || step.value >= steps) return
+  if (step.value === 2 && datesKnown.value === false) {
+    step.value = 4
+    return
+  }
+  step.value++
+}
+
+const previous = () => {
+  if (step.value <= 1) return
+  if (step.value === 4 && datesKnown.value === false) {
+    step.value = 2
+    return
+  }
+  step.value--
 }
 
 const finish = () => emit('complete', {
@@ -215,48 +227,33 @@ onUnmounted(location.cleanupLocationAutocomplete)
           <CalendarClock :size="22" /><strong>Flexible Reisedauer</strong>
         </button>
       </div>
+      <div v-if="datesKnown === true" class="welcome-date-grid welcome-inline-inputs">
+        <label>Ankunft<input v-model="startDate" type="date"></label>
+        <label>Abreise<input v-model="endDate" type="date" :min="startDate"></label>
+      </div>
+      <label v-else-if="datesKnown === false" class="welcome-days-input welcome-inline-inputs">
+        Planungstage<input v-model.number="daysCount" type="number" min="1" max="14">
+      </label>
     </div>
 
     <div v-else-if="step === 3" class="welcome-question">
       <div class="question-icon"><CalendarDays :size="23" /></div>
-      <template v-if="datesKnown">
-        <h2>Wann findet deine Reise statt?</h2>
-        <div class="welcome-date-grid">
-          <label>Ankunft<input v-model="startDate" type="date"></label>
-          <label>Abreise<input v-model="endDate" type="date" :min="startDate"></label>
-        </div>
-      </template>
-      <template v-else>
-        <h2>Wie viele Tage sollen wir planen?</h2>
-        <label class="welcome-days-input">Planungstage<input v-model.number="daysCount" type="number" min="1" max="14"></label>
-      </template>
+      <h2>Welche Tage möchtest du verplanen?</h2>
+      <p>Du kannst auch nur einzelne Tage deines Aufenthalts auswählen.</p>
+      <div class="welcome-date-options">
+        <button
+          v-for="date in datesBetween"
+          :key="date"
+          :class="{ selected: planningDates.includes(date) }"
+          type="button"
+          @click="togglePlanningDate(date)"
+        >
+          <span>{{ weekdayFor(date) }}</span><strong>{{ formatDate(date) }}</strong>
+        </button>
+      </div>
     </div>
 
     <div v-else-if="step === 4" class="welcome-question">
-      <template v-if="datesKnown">
-        <div class="question-icon"><CalendarDays :size="23" /></div>
-        <h2>Welche Tage möchtest du verplanen?</h2>
-        <p>Du kannst auch nur einzelne Tage deines Aufenthalts auswählen.</p>
-        <div class="welcome-date-options">
-          <button
-            v-for="date in datesBetween"
-            :key="date"
-            :class="{ selected: planningDates.includes(date) }"
-            type="button"
-            @click="togglePlanningDate(date)"
-          >
-            <span>{{ weekdayFor(date) }}</span><strong>{{ formatDate(date) }}</strong>
-          </button>
-        </div>
-      </template>
-      <template v-else>
-        <div class="question-icon"><Sparkles :size="23" /></div>
-        <h2>{{ daysCount }} Tage voller Möglichkeiten</h2>
-        <p>Den genauen Zeitraum kannst du später jederzeit im Kalender ergänzen.</p>
-      </template>
-    </div>
-
-    <div v-else-if="step === 5" class="welcome-question">
       <div class="question-icon"><Sparkles :size="23" /></div>
       <h2>Was möchtest du erleben?</h2>
       <p>Wähle alles aus, was dich auf dieser Reise interessiert.</p>
@@ -291,7 +288,7 @@ onUnmounted(location.cleanupLocationAutocomplete)
 
     <p v-if="error" class="error welcome-interview-error">{{ error }}</p>
     <footer class="welcome-interview-actions">
-      <button class="welcome-back" type="button" :disabled="step === 1" @click="step--"><ArrowLeft :size="18" />Zurück</button>
+      <button class="welcome-back" type="button" :disabled="step === 1" @click="previous"><ArrowLeft :size="18" />Zurück</button>
       <button v-if="step < steps" type="button" :disabled="!ready" @click="next">Weiter<ArrowRight :size="18" /></button>
       <button v-else type="button" :disabled="loading" @click="finish">
         {{ loading ? 'Reise wird erstellt...' : 'Reise planen' }}<ArrowRight :size="18" />

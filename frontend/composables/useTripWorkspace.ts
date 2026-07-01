@@ -12,6 +12,7 @@ export const useTripWorkspace = () => {
   const error = ref('')
   const deletingActivityId = ref<number | null>(null)
   const regeneratingActivityId = ref<number | null>(null)
+  const deletingTripId = ref<number | null>(null)
 
   const requireAuth = async () => {
     hydrateAuth()
@@ -111,6 +112,22 @@ export const useTripWorkspace = () => {
     }
   }
 
+  const deleteTrip = async (tripId: number) => {
+    deletingTripId.value = tripId
+    error.value = ''
+    try {
+      await request<void>(`/trips/${tripId}`, { method: 'DELETE' })
+      trips.value = trips.value.filter(item => item.id !== tripId)
+      if (trip.value?.id === tripId) trip.value = null
+      return true
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Reise konnte nicht entfernt werden.')
+      return false
+    } finally {
+      deletingTripId.value = null
+    }
+  }
+
   const logout = async () => {
     clearAuth()
     await navigateTo('/auth')
@@ -124,11 +141,13 @@ export const useTripWorkspace = () => {
     error,
     deletingActivityId,
     regeneratingActivityId,
+    deletingTripId,
     loadTrips,
     loadTrip,
     updateAvailability,
     removeActivity,
     regenerateActivity,
+    deleteTrip,
     logout
   }
 }
