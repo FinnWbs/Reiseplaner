@@ -4,14 +4,21 @@ import de.travelmate.activity.ActivitySource;
 import de.travelmate.datasource.ExternalActivityCandidate;
 import de.travelmate.interest.InterestType;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.util.EnumMap;
+import jakarta.inject.Inject;
 import java.util.EnumSet;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 @ApplicationScoped
 public class PoiQualityEngine {
+    @Inject
+    PoiEligibilityService eligibility;
+
+    @Inject
+    PoiSignalMatcher matcher;
+
+    @Inject
+    PoiViewpointClassifier viewpoints;
+
     public PoiQualityEvaluation evaluate(ExternalActivityCandidate candidate, InterestType requestedInterest) {
         EnumSet<QualityReasonCode> reasons = EnumSet.noneOf(QualityReasonCode.class);
         if (candidate.name == null || candidate.name.isBlank()) {
@@ -98,17 +105,7 @@ public class PoiQualityEngine {
     }
 
     private double sourceConsensusScore(ExternalActivityCandidate candidate, Set<QualityReasonCode> reasons) {
-        Map<ActivitySource, Double> weights = new EnumMap<>(ActivitySource.class);
-        weights.put(ActivitySource.GEOAPIFY, 0.20);
-        weights.put(ActivitySource.OPEN_STREET_MAP, 0.15);
-        weights.put(ActivitySource.WIKIDATA, 0.20);
-        weights.put(ActivitySource.WIKIPEDIA, 0.20);
-        double score = candidate.externalRefs.entrySet().stream()
-            .mapToDouble(entry -> weights.getOrDefault(entry.getKey(), 0.0))
-            .sum();
-        if (candidate.website != null && !candidate.website.isBlank()) {
-            score += 0.05;
-        }
+        double score = signals().sourceConsensusScore(candidate);
         if (score >= 0.55) {
             reasons.add(QualityReasonCode.HIGH_SOURCE_CONSENSUS);
         }
@@ -180,7 +177,7 @@ public class PoiQualityEngine {
         }
         if (candidate.website != null && !candidate.website.isBlank()) score += 0.15;
         if (candidate.description != null && !candidate.description.isBlank()) score += 0.10;
-        if (candidate.rawTags.containsKey("cuisine")) {
+        if (signals().hasTag(candidate, "cuisine")) {
             score += 0.10;
             reasons.add(QualityReasonCode.HAS_CUISINE);
         }
@@ -260,15 +257,15 @@ public class PoiQualityEngine {
         CanonicalCategory canonicalCategory,
         Set<QualityReasonCode> reasons
     ) {
-        if (requestedInterest == InterestType.NATURE && isFountain(candidate)) {
+        if (requestedInterest == InterestType.NATURE && rules().isFountain(candidate)) {
             reasons.add(QualityReasonCode.HARD_EXCLUDED_NATURE_FOUNTAIN);
             return "fountain_cannot_be_nature";
         }
         if (requestedInterest == InterestType.NATURE && isCemeteryOrBurialSite(candidate)) {
-            reasons.add(isCrematoriumOrFuneralSite(candidate)
+            reasons.add(rules().isCrematoriumOrFuneralSite(candidate)
                 ? QualityReasonCode.BURIAL_SITE_EXCLUDED_FROM_NATURE
                 : QualityReasonCode.CEMETERY_EXCLUDED_FROM_NATURE);
-            return isCrematoriumOrFuneralSite(candidate)
+            return rules().isCrematoriumOrFuneralSite(candidate)
                 ? "burial_site_not_nature_activity"
                 : "cemetery_not_nature_activity";
         }
@@ -295,7 +292,7 @@ public class PoiQualityEngine {
             return "viewpoint_requires_notability_for_sightseeing";
         }
         if (requestedInterest == InterestType.SIGHTSEEING
-            && (isMinorMonument(candidate) || isFountain(candidate))
+            && (isMinorMonument(candidate) || rules().isFountain(candidate))
             && Math.max(notabilityScore, popularityScore) < PoiQualityWeights.MINOR_MONUMENT_NOTABILITY_THRESHOLD) {
             reasons.add(QualityReasonCode.LOW_NOTABILITY_MINOR_MONUMENT);
             return "low_notability_minor_sight";
@@ -304,138 +301,74 @@ public class PoiQualityEngine {
     }
 
     private CanonicalCategory canonicalCategory(ExternalActivityCandidate candidate) {
-        if (matches(candidate, "catering.restaurant", "catering.cafe", "catering.food_court")
-            || hasTagValue(candidate, "amenity", "restaurant", "cafe", "fast_food", "bar", "pub")) {
-            if (hasTagValue(candidate, "amenity", "bar", "pub") || matches(candidate, "catering.bar", "catering.pub")) {
+        if (signals().matches(candidate, "catering.restaurant", "catering.cafe", "catering.food_court")
+            || signals().hasTagValue(candidate, "amenity", "restaurant", "cafe", "fast_food", "bar", "pub")) {
+            if (signals().hasTagValue(candidate, "amenity", "bar", "pub") || signals().matches(candidate, "catering.bar", "catering.pub")) {
                 return CanonicalCategory.NIGHTLIFE;
             }
             return CanonicalCategory.FOOD;
         }
-        if (isShoppingDestination(candidate) || isSingleRetailStore(candidate) || matches(candidate, "commercial", "shop")) {
+        if (isShoppingDestination(candidate) || isSingleRetailStore(candidate) || signals().matches(candidate, "commercial", "shop")) {
             return CanonicalCategory.SHOPPING;
         }
-        if (matches(candidate, "entertainment.museum", "entertainment.culture.gallery", "entertainment.culture.theatre")
-            || hasTagValue(candidate, "tourism", "museum", "gallery")) {
+        if (signals().matches(candidate, "entertainment.museum", "entertainment.culture.gallery", "entertainment.culture.theatre")
+            || signals().hasTagValue(candidate, "tourism", "museum", "gallery")) {
             return CanonicalCategory.CULTURE;
         }
-        if (matches(candidate, "heritage", "tourism.sights.castle", "tourism.sights.place_of_worship", "historic.castle")
-            || hasTag(candidate, "heritage")) {
+        if (signals().matches(candidate, "heritage", "tourism.sights.castle", "tourism.sights.place_of_worship", "historic.castle")
+            || signals().hasTag(candidate, "heritage")) {
             return CanonicalCategory.HERITAGE;
         }
         if (canBeMainNatureActivity(candidate)) return CanonicalCategory.NATURE;
         if (isMinorMonument(candidate)) return CanonicalCategory.MONUMENT;
-        if (matches(candidate, "tourism.sights", "tourism.attraction")) return CanonicalCategory.LANDMARK;
+        if (signals().matches(candidate, "tourism.sights", "tourism.attraction")) return CanonicalCategory.LANDMARK;
         return CanonicalCategory.GENERIC;
     }
 
     private double categoryPriorScore(ExternalActivityCandidate candidate) {
-        if (candidate.isUnescoWorldHeritage || matches(candidate, "heritage.unesco")) return 1.00;
+        if (candidate.isUnescoWorldHeritage || signals().matches(candidate, "heritage.unesco")) return 1.00;
         if (isShoppingDestination(candidate)) return 0.75;
         if (isSingleRetailStore(candidate)) return 0.20;
         if (viewpointSubtype(candidate) == ViewpointSubtype.VIEWPOINT_NATURAL) return 0.75;
         if (isViewpoint(candidate)) return 0.35;
-        if (matches(candidate, "natural.protected_area", "leisure.park.nature_reserve")) return 0.85;
-        if (matches(candidate, "beach")) return 0.80;
-        if (matches(candidate, "entertainment.museum")) return 0.75;
-        if (matches(candidate, "tourism.sights")) return 0.65;
-        if (matches(candidate, "tourism.attraction")) return 0.55;
-        if (matches(candidate, "leisure.park")) return 0.55;
-        if (hasTagValue(candidate, "historic", "memorial", "monument")) return 0.25;
-        if (matches(candidate, "tourism.attraction.artwork") || hasTag(candidate, "artwork_type")) return 0.20;
-        if (isFountain(candidate)) return 0.15;
+        if (signals().matches(candidate, "natural.protected_area", "leisure.park.nature_reserve")) return 0.85;
+        if (signals().matches(candidate, "beach")) return 0.80;
+        if (signals().matches(candidate, "entertainment.museum")) return 0.75;
+        if (signals().matches(candidate, "tourism.sights")) return 0.65;
+        if (signals().matches(candidate, "tourism.attraction")) return 0.55;
+        if (signals().matches(candidate, "leisure.park")) return 0.55;
+        if (signals().hasTagValue(candidate, "historic", "memorial", "monument")) return 0.25;
+        if (signals().matches(candidate, "tourism.attraction.artwork") || signals().hasTag(candidate, "artwork_type")) return 0.20;
+        if (rules().isFountain(candidate)) return 0.15;
         return 0.35;
     }
 
     public boolean hasPositiveNatureEvidence(ExternalActivityCandidate candidate) {
-        if (isViewpoint(candidate)) {
-            return hasNaturalViewpointContext(candidate);
-        }
-        return matches(candidate,
-            "leisure.park", "leisure.park.garden", "leisure.park.nature_reserve",
-            "national_park", "natural.protected_area", "natural.forest", "beach",
-            "natural.mountain", "natural.water", "natural.waterfall", "natural.wood"
-        ) || hasTagValue(candidate, "leisure", "park", "garden", "nature_reserve")
-            || hasTagValue(candidate, "natural", "wood", "forest", "beach", "waterfall")
-            || hasTagValue(candidate, "natural", "peak", "cliff", "hill", "mountain_range", "water")
-            || hasTagValue(candidate, "boundary", "national_park")
-            || hasTag(candidate, "protected_area")
-            || hasTagValue(candidate, "garden:type", "botanical")
-            || hasTagValue(candidate, "garden:type", "botanic")
-            || hasTagValue(candidate, "garden", "botanical")
-            || hasTagValue(candidate, "botanical", "yes")
-            || hasTagValue(candidate, "route", "hiking");
+        return rules().hasPositiveNatureEvidence(candidate);
     }
 
     public boolean hasNatureHardExclusion(ExternalActivityCandidate candidate) {
-        return isFountain(candidate)
-            || isCemeteryOrBurialSite(candidate)
-            || hasUrbanOrInfrastructureViewpointContext(candidate)
-            || isGolfCourse(candidate)
-            || isPrivateGarden(candidate)
-            || isSmallGreenInfrastructure(candidate)
-            || isWeakSubPoiWithoutOwnRelevance(candidate)
-            || isShoppingDestination(candidate)
-            || isSingleRetailStore(candidate)
-            || matches(candidate,
-                "commercial", "shop", "catering", "entertainment.museum", "entertainment.culture.gallery",
-                "tourism.attraction.artwork", "tourism.sights.memorial", "historic.memorial"
-            )
-            || hasTagValue(candidate, "amenity", "restaurant", "cafe", "fast_food", "bar", "pub")
-            || hasTagValue(candidate, "tourism", "museum", "gallery", "artwork")
-            || hasTagValue(candidate, "historic", "memorial", "monument")
-            || hasTag(candidate, "man_made")
-            || hasTagValue(candidate, "building", "yes", "retail", "commercial", "office")
-            || hasTagValue(candidate, "office", "yes")
-            || hasTagValue(candidate, "indoor", "yes")
-            || isPlainAttractionWithoutNatureEvidence(candidate);
+        return rules().hasNatureHardExclusion(candidate);
     }
 
     public boolean canBeMainNatureActivity(ExternalActivityCandidate candidate) {
-        if (isViewpoint(candidate)) {
-            return hasNaturalViewpointContext(candidate) && !hasUrbanOrInfrastructureViewpointContext(candidate);
-        }
-        return hasPositiveNatureEvidence(candidate) && !hasNatureHardExclusion(candidate);
+        return rules().canBeMainNatureActivity(candidate);
     }
 
     public boolean isViewpoint(ExternalActivityCandidate candidate) {
-        String name = normalized(candidate.name);
-        return matches(candidate, "tourism.attraction.viewpoint", "tourism.sights.viewpoint")
-            || hasTagValue(candidate, "tourism", "viewpoint")
-            || name.contains("viewpoint")
-            || name.contains("aussichtspunkt")
-            || name.contains("observation deck")
-            || name.contains("observation tower")
-            || name.contains("viewing platform")
-            || name.contains("belvedere");
+        return viewpointRules().isViewpoint(candidate);
     }
 
     public ViewpointSubtype viewpointSubtype(ExternalActivityCandidate candidate) {
-        if (!isViewpoint(candidate)) return ViewpointSubtype.NONE;
-        if (hasInfrastructureViewpointContext(candidate)) return ViewpointSubtype.VIEWPOINT_INFRASTRUCTURE;
-        if (hasIndoorViewpointContext(candidate)) return ViewpointSubtype.VIEWPOINT_INDOOR;
-        if (hasNaturalViewpointContext(candidate)) return ViewpointSubtype.VIEWPOINT_NATURAL;
-        return ViewpointSubtype.VIEWPOINT_URBAN;
+        return viewpointRules().subtype(candidate);
     }
 
     public boolean hasNaturalViewpointContext(ExternalActivityCandidate candidate) {
-        return matches(candidate,
-            "leisure.park", "leisure.park.garden", "leisure.park.nature_reserve",
-            "national_park", "natural.protected_area", "natural.forest", "natural.wood",
-            "natural.mountain", "natural.water", "natural.waterfall", "beach"
-        ) || hasTagValue(candidate, "leisure", "park", "garden", "nature_reserve")
-            || hasTagValue(candidate, "natural",
-                "peak", "cliff", "hill", "mountain", "mountain_range", "water", "wood", "forest", "beach", "waterfall"
-            )
-            || hasTagValue(candidate, "boundary", "national_park")
-            || hasTag(candidate, "protected_area")
-            || hasTagValue(candidate, "route", "hiking")
-            || hasTagValue(candidate, "garden:type", "botanical", "botanic")
-            || hasTagValue(candidate, "garden", "botanical")
-            || hasTagValue(candidate, "botanical", "yes");
+        return viewpointRules().hasNaturalContext(candidate);
     }
 
     public boolean hasUrbanOrInfrastructureViewpointContext(ExternalActivityCandidate candidate) {
-        return isViewpoint(candidate) && (hasInfrastructureViewpointContext(candidate) || hasIndoorViewpointContext(candidate));
+        return viewpointRules().hasUrbanOrInfrastructureContext(candidate);
     }
 
     public boolean canBeMainSightseeingActivity(
@@ -443,83 +376,23 @@ public class PoiQualityEngine {
         double notabilityScore,
         double popularityScore
     ) {
-        if (!isViewpoint(candidate)) return true;
-        ViewpointSubtype subtype = viewpointSubtype(candidate);
-        if (subtype == ViewpointSubtype.VIEWPOINT_NATURAL) return true;
-        if (subtype == ViewpointSubtype.VIEWPOINT_INFRASTRUCTURE || subtype == ViewpointSubtype.VIEWPOINT_INDOOR) {
-            return hasStrongTouristRelevance(candidate, notabilityScore, popularityScore);
-        }
-        return true;
+        return rules().canBeMainSightseeingActivity(candidate, notabilityScore, popularityScore);
     }
 
     public boolean isCemeteryOrBurialSite(ExternalActivityCandidate candidate) {
-        return matches(candidate, "cemetery", "graveyard", "burial", "crematorium", "funeral")
-            || containsCategoryTerm(candidate, "cemetery", "graveyard", "burial", "crematorium", "funeral")
-            || hasTagValue(candidate, "amenity", "grave_yard", "crematorium", "funeral_hall")
-            || hasTagValue(candidate, "landuse", "cemetery")
-            || hasTag(candidate, "cemetery")
-            || hasTag(candidate, "grave")
-            || hasTag(candidate, "grave_yard")
-            || hasTag(candidate, "funeral")
-            || hasTagValue(candidate, "historic", "cemetery")
-            || normalized(candidate.name).contains("friedhof")
-            || normalized(candidate.name).contains("cemetery")
-            || normalized(candidate.name).contains("graveyard");
+        return rules().isCemeteryOrBurialSite(candidate);
     }
 
     public ShoppingSubtype shoppingSubtype(ExternalActivityCandidate candidate) {
-        String name = normalized(candidate.name);
-        if (matches(candidate, "commercial.shopping_mall")
-            || hasTagValue(candidate, "shop", "mall")
-            || name.contains("shopping center")
-            || name.contains("shopping centre")) {
-            return ShoppingSubtype.SHOPPING_MALL;
-        }
-        if (matches(candidate, "commercial.marketplace")
-            || hasTagValue(candidate, "amenity", "marketplace")
-            || hasTagValue(candidate, "shop", "market", "marketplace")
-            || name.contains("market") || name.contains("mercato") || name.contains("bazaar")) {
-            return ShoppingSubtype.MARKET;
-        }
-        if (matches(candidate, "commercial.department_store")
-            || hasTagValue(candidate, "shop", "department_store")) {
-            return ShoppingSubtype.DEPARTMENT_STORE;
-        }
-        if (hasTagValue(candidate, "shop", "outlet") || name.contains("outlet")) {
-            return ShoppingSubtype.OUTLET;
-        }
-        if (name.contains("galleria") || name.contains("arcade") || name.contains("passage")
-            || name.contains("passagen") || name.contains("galerie commerciale")) {
-            return ShoppingSubtype.SHOPPING_ARCADE;
-        }
-        if ((hasTagValue(candidate, "highway", "pedestrian") || name.contains("shopping street")
-            || name.contains("einkaufsstrasse") || name.contains("einkaufsstraße"))
-            && candidate.nearbyShopDensity >= 6) {
-            return ShoppingSubtype.SHOPPING_STREET;
-        }
-        if (candidate.nearbyShopDensity >= 10 && matches(candidate, "commercial")) {
-            return ShoppingSubtype.SHOPPING_DISTRICT;
-        }
-        if (isRetailStoreSignal(candidate)) {
-            return ShoppingSubtype.SINGLE_RETAIL_STORE;
-        }
-        return ShoppingSubtype.OTHER;
+        return rules().shoppingSubtype(candidate);
     }
 
     public boolean isShoppingDestination(ExternalActivityCandidate candidate) {
-        return Set.of(
-            ShoppingSubtype.SHOPPING_MALL,
-            ShoppingSubtype.MARKET,
-            ShoppingSubtype.SHOPPING_STREET,
-            ShoppingSubtype.SHOPPING_ARCADE,
-            ShoppingSubtype.DEPARTMENT_STORE,
-            ShoppingSubtype.OUTLET,
-            ShoppingSubtype.SHOPPING_DISTRICT
-        ).contains(shoppingSubtype(candidate));
+        return rules().isShoppingDestination(candidate);
     }
 
     public boolean isSingleRetailStore(ExternalActivityCandidate candidate) {
-        return shoppingSubtype(candidate) == ShoppingSubtype.SINGLE_RETAIL_STORE;
+        return rules().isSingleRetailStore(candidate);
     }
 
     public boolean canBeMainShoppingActivity(
@@ -527,12 +400,11 @@ public class PoiQualityEngine {
         double notabilityScore,
         double popularityScore
     ) {
-        if (isShoppingDestination(candidate)) return true;
-        boolean hasStrongReference = candidate.externalRefs.containsKey(ActivitySource.WIKIDATA)
-            && candidate.externalRefs.containsKey(ActivitySource.WIKIPEDIA);
-        return isSingleRetailStore(candidate)
-            && hasStrongReference
-            && (notabilityScore >= 0.75 || popularityScore >= 0.75);
+        return rules().canBeMainShoppingActivity(candidate, notabilityScore, popularityScore);
+    }
+
+    boolean hasStrongIndependentNotability(ExternalActivityCandidate candidate) {
+        return rules().hasStrongIndependentNotability(candidate);
     }
 
     private void addViewpointNatureReason(ExternalActivityCandidate candidate, Set<QualityReasonCode> reasons) {
@@ -550,202 +422,19 @@ public class PoiQualityEngine {
         }
     }
 
-    private boolean hasInfrastructureViewpointContext(ExternalActivityCandidate candidate) {
-        String name = normalized(candidate.name);
-        return containsAny(name,
-            "railway", "train", "train tracks", "station", "platform", "subway", "metro",
-            "airport", "terminal", "parking", "parking deck", "highway", "road infrastructure",
-            "industrial", "port", "harbor", "harbour"
-        )
-            || hasTag(candidate, "railway")
-            || hasTag(candidate, "public_transport")
-            || hasTag(candidate, "aeroway")
-            || hasTag(candidate, "platform")
-            || hasTag(candidate, "subway")
-            || hasTag(candidate, "rail")
-            || hasTag(candidate, "terminal")
-            || hasTagValue(candidate, "amenity", "parking")
-            || hasTag(candidate, "parking")
-            || hasTag(candidate, "highway")
-            || hasTagValue(candidate, "bridge", "yes")
-            || hasTagValue(candidate, "man_made", "bridge");
-    }
-
-    private boolean hasIndoorViewpointContext(ExternalActivityCandidate candidate) {
-        String name = normalized(candidate.name);
-        return containsAny(name,
-            "building", "tower", "skyscraper", "observation deck", "rooftop", "roof terrace",
-            "terrace", "floor", "mall", "shopping center", "shopping centre", "department store",
-            "office", "hotel rooftop", "restaurant viewpoint", "bar viewpoint", "museum viewpoint", "deck"
-        )
-            || name.matches(".*\\b\\d{1,2}f\\b.*")
-            || hasTag(candidate, "level")
-            || hasTag(candidate, "addr:floor")
-            || hasTag(candidate, "building")
-            || hasTagValue(candidate, "indoor", "yes")
-            || hasTag(candidate, "office")
-            || hasTag(candidate, "shop")
-            || hasTagValue(candidate, "amenity", "restaurant", "cafe", "fast_food", "bar", "pub")
-            || hasTagValue(candidate, "tourism", "museum", "gallery")
-            || matches(candidate, "commercial", "shop", "catering", "entertainment.museum", "entertainment.culture.gallery");
-    }
-
-    private boolean hasStrongTouristRelevance(
-        ExternalActivityCandidate candidate,
-        double notabilityScore,
-        double popularityScore
-    ) {
-        return notabilityScore >= 0.70
-            || popularityScore >= 0.80
-            || hasStrongIndependentNotability(candidate)
-            || rawSourceConsensusScore(candidate) >= 0.55;
-    }
-
-    private boolean isFountain(ExternalActivityCandidate candidate) {
-        String name = normalized(candidate.name);
-        return matches(candidate, "amenity.fountain", "tourism.attraction.fountain")
-            || hasTagValue(candidate, "amenity", "fountain")
-            || hasTagValue(candidate, "tourism", "fountain")
-            || (matches(candidate, "natural.water") && containsAny(name, "fountain", "brunnen", "cascade", "kaskade"));
-    }
-
-    private boolean isCrematoriumOrFuneralSite(ExternalActivityCandidate candidate) {
-        return containsCategoryTerm(candidate, "crematorium", "funeral")
-            || hasTagValue(candidate, "amenity", "crematorium", "funeral_hall")
-            || hasTag(candidate, "funeral");
-    }
-
-    private boolean isGolfCourse(ExternalActivityCandidate candidate) {
-        return matches(candidate, "sport.golf", "leisure.golf_course")
-            || hasTagValue(candidate, "leisure", "golf_course")
-            || hasTagValue(candidate, "sport", "golf");
-    }
-
-    private boolean isPrivateGarden(ExternalActivityCandidate candidate) {
-        return hasTagValue(candidate, "access", "private", "no")
-            && (matches(candidate, "leisure.park.garden") || hasTagValue(candidate, "leisure", "garden"));
-    }
-
-    private boolean isSmallGreenInfrastructure(ExternalActivityCandidate candidate) {
-        String name = normalized(candidate.name);
-        return name.contains("traffic island")
-            || name.contains("verkehrsinsel")
-            || name.contains("green strip")
-            || name.contains("gruenstreifen")
-            || name.contains("grünstreifen")
-            || name.contains("courtyard")
-            || name.contains("innenhof")
-            || hasTagValue(candidate, "traffic_calming", "island")
-            || hasTagValue(candidate, "place", "islet")
-            || hasTagValue(candidate, "landuse", "grass")
-            && candidate.geometryAreaM2 != null
-            && candidate.geometryAreaM2 < 2_000;
-    }
-
-    private boolean isWeakSubPoiWithoutOwnRelevance(ExternalActivityCandidate candidate) {
-        String name = normalized(candidate.name);
-        boolean weakSubPoiName = name.contains("erweiterungsteil")
-            || name.contains("erweiterung")
-            || name.contains("annex")
-            || name.contains("annexe")
-            || name.contains("extension")
-            || name.contains("eingang")
-            || name.contains("entrance")
-            || name.contains("parkplatz")
-            || name.contains("parking")
-            || name.contains("teilbereich")
-            || name.contains("section")
-            || name.contains("wing");
-        return weakSubPoiName && !hasStrongIndependentNotability(candidate);
-    }
-
     private boolean isMinorMonument(ExternalActivityCandidate candidate) {
-        return matches(candidate, "tourism.attraction.artwork", "tourism.sights.memorial", "historic.memorial")
-            || hasTagValue(candidate, "historic", "memorial", "monument")
-            || hasTag(candidate, "artwork_type")
-            || normalized(candidate.name).contains("statue")
-            || normalized(candidate.name).contains("denkmal");
+        return rules().isMinorMonument(candidate);
     }
 
-    private boolean isPlainAttractionWithoutNatureEvidence(ExternalActivityCandidate candidate) {
-        boolean attraction = matches(candidate, "tourism.attraction") || hasTagValue(candidate, "tourism", "attraction");
-        boolean explicitNature = hasNaturalViewpointContext(candidate)
-            || hasTagValue(candidate, "natural", "wood", "forest", "beach", "waterfall")
-            || hasTagValue(candidate, "leisure", "park", "garden", "nature_reserve")
-            || hasTagValue(candidate, "garden:type", "botanical", "botanic")
-            || hasTagValue(candidate, "garden", "botanical")
-            || hasTagValue(candidate, "botanical", "yes");
-        return attraction && !explicitNature;
+    private PoiEligibilityService rules() {
+        return eligibility == null ? new PoiEligibilityService() : eligibility;
     }
 
-    private boolean isRetailStoreSignal(ExternalActivityCandidate candidate) {
-        return matches(candidate,
-            "shop", "commercial.clothing", "commercial.gift_and_souvenir",
-            "commercial.fashion", "commercial.shoes", "commercial.jewelry"
-        ) || hasTag(candidate, "shop");
+    private PoiSignalMatcher signals() {
+        return matcher == null ? new PoiSignalMatcher() : matcher;
     }
 
-    boolean hasStrongIndependentNotability(ExternalActivityCandidate candidate) {
-        return (candidate.externalRefs.containsKey(ActivitySource.WIKIDATA)
-            && candidate.externalRefs.containsKey(ActivitySource.WIKIPEDIA)
-            && ScoreNormalizer.logNormalize(candidate.wikipediaPageviews365d == null ? 0 : candidate.wikipediaPageviews365d, 250_000) >= 0.65)
-            || candidate.wikidataSitelinksCount >= 120
-            || candidate.isUnescoWorldHeritage;
-    }
-
-    private boolean containsCategoryTerm(ExternalActivityCandidate candidate, String... terms) {
-        for (String category : candidate.rawCategories) {
-            String normalizedCategory = normalized(category);
-            for (String term : terms) {
-                if (normalizedCategory.contains(normalized(term))) return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean matches(ExternalActivityCandidate candidate, String... prefixes) {
-        for (String category : candidate.rawCategories) {
-            String normalizedCategory = category.toLowerCase(Locale.ROOT);
-            for (String prefix : prefixes) {
-                if (normalizedCategory.equals(prefix) || normalizedCategory.startsWith(prefix + ".")) return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean hasTag(ExternalActivityCandidate candidate, String key) {
-        return candidate.rawTags.containsKey(key);
-    }
-
-    private boolean hasTagValue(ExternalActivityCandidate candidate, String key, String... acceptedValues) {
-        String value = candidate.rawTags.get(key);
-        if (value == null) return false;
-        String normalizedValue = normalized(value);
-        for (String accepted : acceptedValues) {
-            if (normalizedValue.equals(normalized(accepted))) return true;
-        }
-        return false;
-    }
-
-    private double rawSourceConsensusScore(ExternalActivityCandidate candidate) {
-        double score = 0;
-        if (candidate.externalRefs.containsKey(ActivitySource.GEOAPIFY)) score += 0.20;
-        if (candidate.externalRefs.containsKey(ActivitySource.OPEN_STREET_MAP)) score += 0.15;
-        if (candidate.externalRefs.containsKey(ActivitySource.WIKIDATA)) score += 0.20;
-        if (candidate.externalRefs.containsKey(ActivitySource.WIKIPEDIA)) score += 0.20;
-        if (candidate.website != null && !candidate.website.isBlank()) score += 0.05;
-        return ScoreNormalizer.clamp01(score);
-    }
-
-    private boolean containsAny(String value, String... terms) {
-        for (String term : terms) {
-            if (value.contains(term)) return true;
-        }
-        return false;
-    }
-
-    private String normalized(String value) {
-        if (value == null) return "";
-        return value.trim().toLowerCase(Locale.ROOT);
+    private PoiViewpointClassifier viewpointRules() {
+        return viewpoints == null ? new PoiViewpointClassifier() : viewpoints;
     }
 }
