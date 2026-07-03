@@ -14,26 +14,30 @@ public class ActivityEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
-    @Column(name = "external_id", nullable = false)
+    @Column(name = "external_id", nullable = false, columnDefinition = "TEXT")
     public String externalId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     public ActivitySource source;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     public String name;
 
     @Column(columnDefinition = "TEXT")
     public String description;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 120)
     public String city;
 
+    @Column(length = 120)
     public String category;
+
+    @Column(length = 120)
     public String subcategory;
     public Double latitude;
     public Double longitude;
+    @Column(length = 500)
     public String address;
     public Double rating;
 

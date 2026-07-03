@@ -37,6 +37,15 @@ public class ActivityRepository implements PanacheRepository<ActivityEntity> {
         );
     }
 
+    public long countActiveByCityAndInterest(String city, de.travelmate.interest.InterestType interest) {
+        return count(
+            "lower(city) = ?1 and active = true and importVersion = ?2 and primaryInterest = ?3",
+            city.trim().toLowerCase(),
+            ActivityPersistenceService.CURRENT_IMPORT_VERSION,
+            interest
+        );
+    }
+
     public boolean hasFreshMinimumForCity(String city, int minimum, LocalDateTime freshAfter) {
         long count = count("lower(city) = ?1 and lastSyncedAt >= ?2", city.toLowerCase(), freshAfter);
         return count >= minimum;

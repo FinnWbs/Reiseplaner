@@ -84,10 +84,22 @@ public class ActivityImportService {
         Double longitude,
         InterestType interest
     ) {
+        return importInterest(requestedCity, lookupText, placeId, latitude, longitude, interest, null);
+    }
+
+    public ActivityImportResponse importInterest(
+        String requestedCity,
+        String lookupText,
+        String placeId,
+        Double latitude,
+        Double longitude,
+        InterestType interest,
+        ImportDemand demand
+    ) {
         String city = normalizeCity(requestedCity);
         String externalLookup = lookupText == null || lookupText.isBlank() ? city : lookupText.trim();
         List<ExternalActivityCandidate> candidates =
-            new ArrayList<>(geoapify.fetch(externalLookup, placeId, latitude, longitude, Set.of(interest)));
+            new ArrayList<>(geoapify.fetch(externalLookup, placeId, latitude, longitude, Set.of(interest), demand));
         List<String> warnings = new ArrayList<>();
         warnings.addAll(wikidata.enrich(candidates));
         warnings.addAll(wikipedia.enrich(candidates));

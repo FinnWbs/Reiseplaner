@@ -2,6 +2,7 @@ package de.travelmate.sync;
 
 import de.travelmate.activity.ActivityDto;
 import de.travelmate.activity.ActivityImportService;
+import de.travelmate.activity.ImportDemand;
 import de.travelmate.activity.ActivityRepository;
 import de.travelmate.activity.ActivityPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -47,13 +48,26 @@ public class ActivitySyncService {
         Double longitude,
         Set<InterestType> interests
     ) {
+        return syncCity(city, lookupText, placeId, latitude, longitude, interests, null);
+    }
+
+    @Transactional
+    public List<ActivityDto> syncCity(
+        String city,
+        String lookupText,
+        String placeId,
+        Double latitude,
+        Double longitude,
+        Set<InterestType> interests,
+        ImportDemand demand
+    ) {
         Set<InterestType> selected = interests == null || interests.isEmpty() ? InterestType.primaryTypes() : interests;
         List<ActivityDto> latest = activities.findActiveByCity(city).stream().map(ActivityDto::from).toList();
         for (InterestType interest : selected) {
-            if (!needsRefresh(city, interest)) {
+            if (!needsRefresh(city, interest, requiredEligibleCount(interest, demand))) {
                 continue;
             }
-            latest = importer.importInterest(city, lookupText, placeId, latitude, longitude, interest).activities();
+            latest = importer.importInterest(city, lookupText, placeId, latitude, longitude, interest, demand).activities();
             recordSync(city, interest);
         }
         return latest;
@@ -64,13 +78,33 @@ public class ActivitySyncService {
         return selected.stream().anyMatch(interest -> needsRefresh(city, interest));
     }
 
+    public boolean needsRefresh(String city, Set<InterestType> interests, ImportDemand demand) {
+        Set<InterestType> selected = interests == null || interests.isEmpty() ? InterestType.primaryTypes() : interests;
+        return selected.stream().anyMatch(interest -> needsRefresh(city, interest, requiredEligibleCount(interest, demand)));
+    }
+
     private boolean needsRefresh(String city, InterestType interest) {
+        return needsRefresh(city, interest, 0);
+    }
+
+    private boolean needsRefresh(String city, InterestType interest, int requiredEligibleCount) {
+        if (activities != null && requiredEligibleCount > 0
+            && activities.countActiveByCityAndInterest(city, interest) < requiredEligibleCount) {
+            return true;
+        }
+        if (states == null) {
+            return false;
+        }
         return !states.isFresh(
             city,
             interest,
             ActivityPersistenceService.CURRENT_IMPORT_VERSION,
             LocalDateTime.now().minusDays(FRESH_DAYS)
         );
+    }
+
+    private static int requiredEligibleCount(InterestType interest, ImportDemand demand) {
+        return demand == null ? 0 : demand.eligibleTargetFor(interest);
     }
 
     void recordSync(String city, InterestType interest) {

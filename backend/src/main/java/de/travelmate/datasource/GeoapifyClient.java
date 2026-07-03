@@ -40,6 +40,7 @@ public interface GeoapifyClient {
         @QueryParam("filter") String filter,
         @QueryParam("bias") String bias,
         @QueryParam("limit") int limit,
+        @QueryParam("offset") int offset,
         @QueryParam("lang") String language,
         @QueryParam("apiKey") String apiKey
     );

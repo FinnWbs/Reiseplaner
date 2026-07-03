@@ -1,7 +1,9 @@
 package de.travelmate.datasource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import de.travelmate.activity.ActivityImportSettings;
 import de.travelmate.activity.ActivitySource;
+import de.travelmate.activity.ImportDemand;
 import de.travelmate.interest.InterestType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -30,8 +32,8 @@ public class GeoapifyActivityProvider implements ActivityProvider {
     @ConfigProperty(name = "travelmate.geoapify.api-key")
     Optional<String> configuredApiKey;
 
-    @ConfigProperty(name = "travelmate.activity-import.limit", defaultValue = "20")
-    int limit;
+    @Inject
+    ActivityImportSettings settings;
 
     @Inject
     GeoapifyCategoryMapper categoryMapper;
@@ -53,6 +55,17 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         Double selectedLatitude,
         Double selectedLongitude,
         Set<InterestType> requestedInterests
+    ) {
+        return fetch(locationText, selectedPlaceId, selectedLatitude, selectedLongitude, requestedInterests, null);
+    }
+
+    public List<ExternalActivityCandidate> fetch(
+        String locationText,
+        String selectedPlaceId,
+        Double selectedLatitude,
+        Double selectedLongitude,
+        Set<InterestType> requestedInterests,
+        ImportDemand demand
     ) {
         String apiKey = configuredApiKey.orElse("");
         if (apiKey == null || apiKey.isBlank()) {
@@ -90,32 +103,44 @@ public class GeoapifyActivityProvider implements ActivityProvider {
                     continue;
                 }
                 int radius = interest == InterestType.NATURE ? 25000 : 12000;
-                JsonNode features = client.places(
-                    String.join(",", categories),
-                    conditionsFor(interest),
-                    "circle:" + originLongitude + "," + originLatitude + "," + radius,
-                    bias,
-                    Math.min(limit, 20),
-                    "de",
-                    apiKey
-                ).path("features");
-                if (!features.isArray()) {
-                    continue;
-                }
-                for (JsonNode feature : features) {
-                    ExternalActivityCandidate candidate = candidate(feature.path("properties"), locationText);
-                    if (candidate == null || !filtering.isRelevant(candidate, interest) || filtering.isDuplicate(candidate, seen)) {
-                        continue;
+                int rawTarget = rawTargetFor(interest, demand);
+                int maxRaw = Math.min(rawTarget, settings().maxRawPerInterest());
+                int rawFetched = 0;
+                for (int page = 0; page < settings().maxPagesPerInterest() && rawFetched < rawTarget && rawFetched < maxRaw; page++) {
+                    int offset = page * settings().geoapifyPageSize();
+                    int pageLimit = Math.min(settings().geoapifyPageSize(), maxRaw - rawFetched);
+                    JsonNode features = client.places(
+                        String.join(",", categories),
+                        conditionsFor(interest),
+                        "circle:" + originLongitude + "," + originLatitude + "," + radius,
+                        bias,
+                        pageLimit,
+                        offset,
+                        "de",
+                        apiKey
+                    ).path("features");
+                    if (!features.isArray() || features.isEmpty()) {
+                        break;
                     }
-                    candidate.distanceToCenterKm = distanceInKilometers(
-                        originLatitude,
-                        originLongitude,
-                        candidate.latitude,
-                        candidate.longitude
-                    );
-                    candidate.primaryInterest = interest;
-                    candidate.matchedInterests.add(interest);
-                    candidates.add(candidate);
+                    rawFetched += features.size();
+                    for (JsonNode feature : features) {
+                        ExternalActivityCandidate candidate = candidate(feature.path("properties"), locationText);
+                        if (candidate == null || !filtering.isRelevant(candidate, interest) || filtering.isDuplicate(candidate, seen)) {
+                            continue;
+                        }
+                        candidate.distanceToCenterKm = distanceInKilometers(
+                            originLatitude,
+                            originLongitude,
+                            candidate.latitude,
+                            candidate.longitude
+                        );
+                        candidate.primaryInterest = interest;
+                        candidate.matchedInterests.add(interest);
+                        candidates.add(candidate);
+                    }
+                    if (features.size() < pageLimit) {
+                        break;
+                    }
                 }
             }
             populateNearbyShopDensity(candidates);
@@ -236,6 +261,13 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         return interest == InterestType.NATURE ? "named,access" : null;
     }
 
+    private int rawTargetFor(InterestType interest, ImportDemand demand) {
+        if (demand != null && demand.rawTargetFor(interest) > 0) {
+            return demand.rawTargetFor(interest);
+        }
+        return settings().minRawPerInterest();
+    }
+
     private static void copyRawTag(JsonNode raw, ExternalActivityCandidate candidate, String tag) {
         String value = text(raw, tag);
         if (value != null) {
@@ -316,6 +348,10 @@ public class GeoapifyActivityProvider implements ActivityProvider {
             return "unbekannt";
         }
         return reason.replaceAll("apiKey=[^&\\s]+", "apiKey=***");
+    }
+
+    private ActivityImportSettings settings() {
+        return settings == null ? new ActivityImportSettings() : settings;
     }
 
 }

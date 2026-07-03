@@ -72,10 +72,10 @@ public class ActivityPersistenceService {
             activity.name = candidate.name.trim();
             activity.city = city;
             activity.description = blankToNull(candidate.description);
-            activity.subcategory = blankToNull(candidate.rawCategory);
+            activity.subcategory = limitedBlankToNull(candidate.rawCategory, 120);
             activity.latitude = candidate.latitude;
             activity.longitude = candidate.longitude;
-            activity.address = blankToNull(candidate.address);
+            activity.address = limitedBlankToNull(candidate.address, 500);
             activity.rating = candidate.rating;
             activity.primaryInterest = candidate.primaryInterest;
             activity.active = true;
@@ -93,7 +93,7 @@ public class ActivityPersistenceService {
 
             ActivityCategoryMapper.CategoryMapping mapping =
                 categoryMapper.map(candidate.primaryInterest, candidate.rawCategories);
-            activity.category = quality.canonicalCategory().displayName();
+            activity.category = limitedBlankToNull(quality.canonicalCategory().displayName(), 120);
             if (isNew) {
                 activities.persist(activity);
                 activities.flush();
@@ -195,6 +195,14 @@ public class ActivityPersistenceService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static String limitedBlankToNull(String value, int maxLength) {
+        String normalized = blankToNull(value);
+        if (normalized == null || normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength);
     }
 
     private static String reasonCodes(PoiQualityEvaluation quality) {

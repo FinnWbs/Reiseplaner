@@ -216,6 +216,59 @@ class PlanningServiceTest {
         assertTrue(day.activities.stream().anyMatch(item -> item.activity == restaurant));
     }
 
+    @Test
+    void flexibleReallocationUsesOtherValidInterestsWhenNaturePoolIsSmall() {
+        InterestEntity nature = interest(3L, "Natur & Outdoor");
+        nature.code = InterestType.NATURE.name();
+        InterestEntity culture = interest(1L, "Kultur & Museen");
+        culture.code = InterestType.CULTURE.name();
+        InterestEntity food = interest(4L, "Essen & Cafes");
+        food.code = InterestType.FOOD.name();
+
+        ActivityEntity park = primaryActivity(1L, "Park", InterestType.NATURE, nature);
+        List<ActivityEntity> cultureActivities = java.util.stream.IntStream.range(0, 4)
+            .mapToObj(index -> primaryActivity(10L + index, "Museum " + index, InterestType.CULTURE, culture))
+            .toList();
+        List<ActivityEntity> foodActivities = java.util.stream.IntStream.range(0, 4)
+            .mapToObj(index -> primaryActivity(20L + index, "Restaurant " + index, InterestType.FOOD, food))
+            .toList();
+        ActivityEntity[] activities = java.util.stream.Stream.concat(
+            java.util.stream.Stream.of(park),
+            java.util.stream.Stream.concat(cultureActivities.stream(), foodActivities.stream())
+        ).toArray(ActivityEntity[]::new);
+        PlanningService service = serviceWithActivities(activities);
+        service.sync = noRefreshSync();
+        TripEntity trip = tripWithDays(3, de.travelmate.trip.TripPace.BALANCED);
+        trip.selectedInterests = new HashSet<>(Set.of(nature, culture, food));
+
+        service.generatePlan(trip, List.of(1L, 3L, 4L), Set.of(InterestType.NATURE, InterestType.CULTURE, InterestType.FOOD));
+
+        long scheduledNature = scheduledCount(trip, InterestType.NATURE);
+        long scheduledCulture = scheduledCount(trip, InterestType.CULTURE);
+        long scheduledFood = scheduledCount(trip, InterestType.FOOD);
+        assertEquals(9, trip.days.stream().mapToInt(day -> day.activities.size()).sum());
+        assertEquals(1, scheduledNature);
+        assertEquals(8, scheduledCulture + scheduledFood);
+    }
+
+    @Test
+    void roundRobinKeepsLaterDaysFromStayingEmptyWhenPoolIsLimited() {
+        InterestEntity culture = interest(1L, "Kultur & Museen");
+        culture.code = InterestType.CULTURE.name();
+        ActivityEntity[] activities = java.util.stream.IntStream.range(0, 12)
+            .mapToObj(index -> primaryActivity(100L + index, "Museum " + index, InterestType.CULTURE, culture))
+            .toArray(ActivityEntity[]::new);
+        PlanningService service = serviceWithActivities(activities);
+        service.sync = noRefreshSync();
+        TripEntity trip = tripWithDays(6, de.travelmate.trip.TripPace.BALANCED);
+        trip.selectedInterests = new HashSet<>(Set.of(culture));
+
+        service.generatePlan(trip, List.of(1L), Set.of(InterestType.CULTURE));
+
+        assertEquals(12, trip.days.stream().mapToInt(day -> day.activities.size()).sum());
+        assertTrue(trip.days.stream().allMatch(day -> day.activities.size() == 2));
+    }
+
     private ActivityEntity activity(Double rating, double quality) {
         ActivityEntity activity = new ActivityEntity();
         activity.rating = rating;
@@ -252,13 +305,32 @@ class PlanningServiceTest {
     private TripDayEntity emptyDay() {
         TripEntity trip = new TripEntity();
         trip.city = "Berlin";
+        trip.daysCount = 1;
         TripDayEntity day = new TripDayEntity();
         day.id = 1L;
         day.trip = trip;
+        day.dayNumber = 1;
         day.availableFrom = 540;
         day.availableUntil = 1200;
         trip.days.add(day);
         return day;
+    }
+
+    private TripEntity tripWithDays(int days, de.travelmate.trip.TripPace pace) {
+        TripEntity trip = new TripEntity();
+        trip.city = "Berlin";
+        trip.daysCount = days;
+        trip.pace = pace;
+        for (int dayNumber = 1; dayNumber <= days; dayNumber++) {
+            TripDayEntity day = new TripDayEntity();
+            day.id = (long) dayNumber;
+            day.dayNumber = dayNumber;
+            day.trip = trip;
+            day.availableFrom = 540;
+            day.availableUntil = 1200;
+            trip.days.add(day);
+        }
+        return trip;
     }
 
     private TripDayActivityEntity scheduledItem(ActivityEntity activity) {
@@ -299,6 +371,13 @@ class PlanningServiceTest {
         mapping.interest = interest;
         mapping.score = score;
         return mapping;
+    }
+
+    private long scheduledCount(TripEntity trip, InterestType type) {
+        return trip.days.stream()
+            .flatMap(day -> day.activities.stream())
+            .filter(item -> item.activity.primaryInterest == type)
+            .count();
     }
 
     private ActivitySyncService noRefreshSync() {
