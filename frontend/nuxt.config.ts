@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     '~/assets/css/dark.css',
     '~/assets/css/onboarding.css',
     '~/assets/css/theme-blue.css',
+    '~/assets/css/polish.css',
     'leaflet/dist/leaflet.css'
   ],
   runtimeConfig: {
