@@ -82,7 +82,7 @@ const initializeMap = async () => {
   leaflet = await import('leaflet')
   map = leaflet.map(mapElement.value, {
     zoomControl: true,
-    scrollWheelZoom: false
+    scrollWheelZoom: true
   })
   leaflet.tileLayer(config.public.mapTileUrl, {
     attribution: config.public.mapAttribution,

@@ -27,6 +27,22 @@ const interestNames = ref<string[]>([...(props.initialDraft?.interestNames || []
 const pace = ref<'RELAXED' | 'BALANCED' | 'ACTIVE'>(props.initialDraft?.pace || 'BALANCED')
 const dayRhythm = ref<'EARLY' | 'BALANCED' | 'LATE'>(props.initialDraft?.dayRhythm || 'BALANCED')
 const location = useLocationAutocomplete(city)
+const rangeDialogOpen = ref(false)
+const rangeCalendarMonth = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12))
+const rangeSelectionComplete = ref(Boolean(startDate.value && endDate.value))
+const rangeSelectedDate = ref('')
+const rangeError = ref('')
+const rangeAnchor = ref<HTMLElement | null>(null)
+const flexibleAnchor = ref<HTMLElement | null>(null)
+const rangePopoverStyle = ref<Record<string, string>>({})
+const pickerMode = ref<'date' | 'flexible'>('date')
+const flexibleMonth = ref('')
+
+const durationPresets = [
+  { label: 'Ein Wochenende', days: 3 },
+  { label: 'Eine Woche', days: 7 },
+  { label: 'Einen Monat', days: 14 }
+]
 
 const warmCities = ['Barcelona', 'Rom', 'Lissabon', 'Athen']
 const coolCities = ['Berlin', 'Amsterdam', 'Prag', 'Kopenhagen', 'Stockholm']
@@ -43,6 +59,48 @@ const datesBetween = computed(() => {
   }
   return result
 })
+
+const normalizedRange = computed(() => {
+  if (!startDate.value) return { start: '', end: '' }
+  const end = endDate.value || startDate.value
+  return startDate.value <= end
+    ? { start: startDate.value, end }
+    : { start: end, end: startDate.value }
+})
+
+const selectedRangeLabel = computed(() => normalizedRange.value.start
+  ? `${formatDate(normalizedRange.value.start)} bis ${formatDate(normalizedRange.value.end)}`
+  : '')
+
+const rangeMonthLabel = computed(() => new Intl.DateTimeFormat('de-DE', {
+  month: 'long',
+  year: 'numeric'
+}).format(rangeCalendarMonth.value))
+
+const nextRangeCalendarMonth = computed(() => new Date(
+  rangeCalendarMonth.value.getFullYear(),
+  rangeCalendarMonth.value.getMonth() + 1,
+  1,
+  12
+))
+
+const nextRangeMonthLabel = computed(() => new Intl.DateTimeFormat('de-DE', {
+  month: 'long',
+  year: 'numeric'
+}).format(nextRangeCalendarMonth.value))
+
+const flexibleDurationLabel = computed(() =>
+  durationPresets.find(preset => preset.days === daysCount.value)?.label || `${daysCount.value} Tage`
+)
+
+const flexibleMonths = computed(() => Array.from({ length: 6 }, (_, index) => {
+  const date = new Date(rangeCalendarMonth.value.getFullYear(), rangeCalendarMonth.value.getMonth() + index, 1, 12)
+  return {
+    key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+    month: new Intl.DateTimeFormat('de-DE', { month: 'long' }).format(date),
+    year: date.getFullYear()
+  }
+}))
 
 const suggestions = computed(() => {
   if (climate.value === 'WARM') return warmCities
@@ -68,6 +126,20 @@ watch(datesBetween, (dates) => {
   }
 }, { immediate: true })
 
+watch(rangeDialogOpen, (open) => {
+  if (open) {
+    window.addEventListener('keydown', handleRangeDialogKeydown)
+    window.addEventListener('resize', handleRangeWindowChange)
+    window.addEventListener('scroll', handleRangeWindowChange, true)
+    document.addEventListener('click', closeRangeDialog)
+    return
+  }
+  window.removeEventListener('keydown', handleRangeDialogKeydown)
+  window.removeEventListener('resize', handleRangeWindowChange)
+  window.removeEventListener('scroll', handleRangeWindowChange, true)
+  document.removeEventListener('click', closeRangeDialog)
+})
+
 const togglePlanningDate = (date: string) => {
   planningDates.value = planningDates.value.includes(date)
     ? planningDates.value.filter(item => item !== date)
@@ -92,6 +164,138 @@ const chooseDestinationMode = (mode: 'SEARCH' | 'INSPIRE') => {
     city.value = ''
     location.resetLocationAutocomplete()
   }
+}
+
+function datesInRange(from: string, until: string) {
+  if (!from || !until) return []
+  const dates: string[] = []
+  const cursor = new Date(`${from}T12:00:00`)
+  const end = new Date(`${until}T12:00:00`)
+  while (cursor <= end && dates.length < 15) {
+    dates.push(cursor.toISOString().slice(0, 10))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return dates
+}
+
+const positionRangePopover = () => {
+  const anchor = rangeAnchor.value || flexibleAnchor.value
+  if (!anchor) return
+  const rect = anchor.getBoundingClientRect()
+  const width = Math.min(860, window.innerWidth - 32)
+  const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12)
+  rangePopoverStyle.value = {
+    position: 'fixed',
+    top: `${rect.bottom + 12}px`,
+    left: `${left}px`,
+    width: `${width}px`
+  }
+}
+
+const openFixedRangeDialog = async () => {
+  pickerMode.value = 'date'
+  datesKnown.value = true
+  rangeDialogOpen.value = true
+  rangeError.value = ''
+  rangeSelectionComplete.value = Boolean(startDate.value && endDate.value)
+  rangeSelectedDate.value = startDate.value || ''
+  const source = startDate.value || endDate.value
+  if (source) {
+    const date = new Date(`${source}T12:00:00`)
+    rangeCalendarMonth.value = new Date(date.getFullYear(), date.getMonth(), 1, 12)
+  }
+  await nextTick()
+  positionRangePopover()
+}
+
+const openFlexibleDurationDialog = async () => {
+  pickerMode.value = 'flexible'
+  datesKnown.value = false
+  clearFixedRange()
+  rangeDialogOpen.value = true
+  const base = new Date()
+  rangeCalendarMonth.value = new Date(base.getFullYear(), base.getMonth(), 1, 12)
+  if (!flexibleMonth.value) flexibleMonth.value = flexibleMonths.value[0]?.key || ''
+  await nextTick()
+  positionRangePopover()
+}
+
+const closeRangeDialog = () => {
+  rangeDialogOpen.value = false
+  window.removeEventListener('keydown', handleRangeDialogKeydown)
+  window.removeEventListener('resize', handleRangeWindowChange)
+  window.removeEventListener('scroll', handleRangeWindowChange, true)
+}
+
+const handleRangeDialogKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') closeRangeDialog()
+}
+
+const handleRangeWindowChange = () => {
+  if (rangeDialogOpen.value) positionRangePopover()
+}
+
+const moveRangeMonth = (offset: number) => {
+  rangeCalendarMonth.value = new Date(
+    rangeCalendarMonth.value.getFullYear(),
+    rangeCalendarMonth.value.getMonth() + offset,
+    1,
+    12
+  )
+}
+
+const updateDialogRangeEnd = (date: string, complete: boolean) => {
+  if (!startDate.value) {
+    startDate.value = date
+    endDate.value = date
+    rangeSelectionComplete.value = false
+    return
+  }
+  const from = startDate.value <= date ? startDate.value : date
+  const until = startDate.value <= date ? date : startDate.value
+  if (datesInRange(from, until).length > 14) {
+    rangeError.value = 'Ein Reisezeitraum darf maximal 14 Tage umfassen.'
+    return
+  }
+  rangeError.value = ''
+  endDate.value = date
+  rangeSelectionComplete.value = complete
+}
+
+const beginDialogRange = (date: string) => {
+  rangeError.value = ''
+  startDate.value = date
+  endDate.value = ''
+  planningDates.value = []
+  rangeSelectionComplete.value = false
+}
+
+const handleDialogRangeClick = (date: string) => {
+  rangeSelectedDate.value = date
+  if (!startDate.value || rangeSelectionComplete.value) {
+    beginDialogRange(date)
+    return
+  }
+  updateDialogRangeEnd(date, true)
+}
+
+const clearFixedRange = () => {
+  startDate.value = ''
+  endDate.value = ''
+  planningDates.value = []
+  rangeSelectedDate.value = ''
+  rangeSelectionComplete.value = false
+  rangeError.value = ''
+}
+
+const chooseFlexibleDuration = () => {
+  datesKnown.value = false
+  closeRangeDialog()
+  clearFixedRange()
+}
+
+const selectFlexibleDuration = (days: number) => {
+  daysCount.value = days
 }
 
 const next = () => {
@@ -148,7 +352,13 @@ onMounted(() => {
   }
 })
 
-onUnmounted(location.cleanupLocationAutocomplete)
+onUnmounted(() => {
+  location.cleanupLocationAutocomplete()
+  window.removeEventListener('keydown', handleRangeDialogKeydown)
+  window.removeEventListener('resize', handleRangeWindowChange)
+  window.removeEventListener('scroll', handleRangeWindowChange, true)
+  document.removeEventListener('click', closeRangeDialog)
+})
 </script>
 
 <template>
@@ -220,12 +430,18 @@ onUnmounted(location.cleanupLocationAutocomplete)
       <h2>Weißt du schon, wann es losgeht?</h2>
       <p>Du kannst einen festen Zeitraum wählen oder erstmal nur die Reisedauer festlegen.</p>
       <div class="welcome-choice-grid">
-        <button :class="{ selected: datesKnown === true }" type="button" @click="datesKnown = true">
-          <CalendarRange :size="22" /><strong>Fester Zeitraum</strong>
-        </button>
-        <button :class="{ selected: datesKnown === false }" type="button" @click="datesKnown = false">
-          <CalendarClock :size="22" /><strong>Flexible Reisedauer</strong>
-        </button>
+        <div ref="rangeAnchor" class="welcome-range-anchor" @click.stop>
+          <button :class="{ selected: datesKnown === true }" type="button" @click="openFixedRangeDialog">
+            <CalendarRange :size="22" />
+            <span><strong>Fester Zeitraum</strong><small v-if="startDate && endDate">{{ selectedRangeLabel }}</small></span>
+          </button>
+        </div>
+        <div ref="flexibleAnchor" class="welcome-flexible-anchor" @click.stop>
+          <button :class="{ selected: datesKnown === false }" type="button" @click="openFlexibleDurationDialog">
+            <CalendarClock :size="22" />
+            <span><strong>Flexible Reisedauer</strong><small v-if="datesKnown === false">{{ flexibleDurationLabel }}</small></span>
+          </button>
+        </div>
       </div>
       <div v-if="datesKnown === true" class="welcome-date-grid welcome-inline-inputs">
         <label>Ankunft<input v-model="startDate" type="date"></label>
@@ -285,7 +501,92 @@ onUnmounted(location.cleanupLocationAutocomplete)
         <button :class="{ active: dayRhythm === 'LATE' }" type="button" @click="dayRhythm = 'LATE'">Spät</button>
       </div>
     </div>
+    <Teleport to="body">
+      <section
+        v-if="rangeDialogOpen"
+        class="range-picker-popover"
+        :style="rangePopoverStyle"
+        role="dialog"
+        aria-label="Zeitraum auswaehlen"
+        @click.stop
+      >
+        <template v-if="pickerMode === 'date'">
+          <div class="range-picker-popover-calendar">
+            <button class="date-range-arrow" type="button" aria-label="Vorherige Monate" @click="moveRangeMonth(-1)">
+              <ArrowLeft :size="18" />
+            </button>
+            <section class="range-picker-month">
+              <h3>{{ rangeMonthLabel }}</h3>
+              <TravelCalendar
+                :month="rangeCalendarMonth"
+                :trips="[]"
+                :selected-date="rangeSelectedDate"
+                :range-start="startDate"
+                :range-end="endDate"
+                @select-date="handleDialogRangeClick"
+                @range-start="beginDialogRange"
+                @range-hover="updateDialogRangeEnd($event, false)"
+                @range-end="updateDialogRangeEnd($event, true)"
+              />
+            </section>
+            <section class="range-picker-month">
+              <h3>{{ nextRangeMonthLabel }}</h3>
+              <TravelCalendar
+                :month="nextRangeCalendarMonth"
+                :trips="[]"
+                :selected-date="rangeSelectedDate"
+                :range-start="startDate"
+                :range-end="endDate"
+                @select-date="handleDialogRangeClick"
+                @range-start="beginDialogRange"
+                @range-hover="updateDialogRangeEnd($event, false)"
+                @range-end="updateDialogRangeEnd($event, true)"
+              />
+            </section>
+            <button class="date-range-arrow" type="button" aria-label="Naechste Monate" @click="moveRangeMonth(1)">
+              <ArrowRight :size="18" />
+            </button>
+          </div>
 
+          <p v-if="rangeError" class="calendar-range-error">{{ rangeError }}</p>
+          <button class="range-picker-clear" type="button" @click="clearFixedRange">
+            Daten l&ouml;schen
+          </button>
+        </template>
+
+        <div v-else class="flexible-picker-panel">
+          <section class="flexible-picker-section">
+            <h3>Wie lang soll dein Aufenthalt sein?</h3>
+            <div class="flexible-duration-options">
+              <button
+                v-for="preset in durationPresets"
+                :key="preset.label"
+                :class="{ selected: daysCount === preset.days }"
+                type="button"
+                @click="selectFlexibleDuration(preset.days)"
+              >{{ preset.label }}</button>
+            </div>
+          </section>
+
+          <section class="flexible-picker-section">
+            <h3>Wann m&ouml;chtest du reisen?</h3>
+            <div class="flexible-months">
+              <button
+                v-for="month in flexibleMonths"
+                :key="month.key"
+                :class="{ selected: flexibleMonth === month.key }"
+                type="button"
+                @click="flexibleMonth = month.key"
+              >
+                <CalendarDays :size="32" />
+                <strong>{{ month.month }}</strong>
+                <span>{{ month.year }}</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </Teleport>
     <p v-if="error" class="error welcome-interview-error">{{ error }}</p>
     <footer class="welcome-interview-actions">
       <button class="welcome-back" type="button" :disabled="step === 1" @click="previous"><ArrowLeft :size="18" />Zurück</button>

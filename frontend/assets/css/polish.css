@@ -192,6 +192,17 @@ select:focus {
     url("/images/travelmate-journey-bg-blue.png");
 }
 
+.planner-journey-main {
+  align-items: start;
+  padding-top: clamp(18px, 7vh, 76px);
+  padding-bottom: 96px;
+}
+
+.planner-journey-main .welcome-interview {
+  max-height: none;
+  overflow: visible;
+}
+
 .welcome-main {
   gap: 22px;
   padding-top: 28px;
@@ -267,7 +278,9 @@ select:focus {
 
 .destination-mode > button,
 .climate-cards > button,
-.welcome-choice-grid > button {
+.welcome-choice-grid > button,
+.welcome-range-anchor > button,
+.welcome-flexible-anchor > button {
   min-height: 78px;
   border-color: var(--brand-border);
   border-radius: 10px;
@@ -276,17 +289,518 @@ select:focus {
 
 .destination-mode > button:hover,
 .climate-cards > button:hover,
-.welcome-choice-grid > button:hover {
+.welcome-choice-grid > button:hover,
+.welcome-range-anchor > button:hover,
+.welcome-flexible-anchor > button:hover {
   border-color: #91bce0;
   background: #f4f9ff;
 }
 
 .destination-mode > button.active,
 .climate-cards > button.selected,
-.welcome-choice-grid > button.selected {
+.welcome-choice-grid > button.selected,
+.welcome-range-anchor > button.selected,
+.welcome-flexible-anchor > button.selected {
   border-color: var(--brand-interactive);
-  background: var(--brand-selection);
-  box-shadow: inset 0 0 0 1px var(--brand-interactive), 0 8px 20px rgba(47, 133, 207, 0.08);
+  background: #e7f3ff;
+  box-shadow: inset 0 0 0 1px var(--brand-interactive), 0 8px 20px rgba(47, 133, 207, 0.1);
+}
+
+.welcome-choice-grid > button small,
+.welcome-range-anchor > button small,
+.welcome-flexible-anchor > button small {
+  display: block;
+  margin-top: 5px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.welcome-range-anchor,
+.welcome-flexible-anchor {
+  position: relative;
+  min-width: 0;
+}
+
+.welcome-range-anchor > button,
+.welcome-flexible-anchor > button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 78px;
+  padding: 18px;
+  border: 1px solid var(--brand-border);
+  border-radius: 10px;
+  background: #fbfdff;
+  color: var(--brand-text);
+  opacity: 1;
+  text-align: left;
+}
+
+.welcome-range-anchor > button span,
+.welcome-flexible-anchor > button span {
+  display: grid;
+  gap: 2px;
+}
+
+.welcome-range-anchor > button svg,
+.welcome-flexible-anchor > button svg {
+  color: var(--brand-primary);
+}
+
+.welcome-range-anchor > button strong,
+.welcome-flexible-anchor > button strong {
+  color: var(--brand-text);
+}
+
+.welcome-range-anchor > button.selected,
+.welcome-flexible-anchor > button.selected {
+  border-color: var(--brand-interactive) !important;
+  background: #d9ecff !important;
+  color: var(--brand-text) !important;
+  opacity: 1 !important;
+  box-shadow: inset 0 0 0 1px var(--brand-interactive), 0 8px 20px rgba(47, 133, 207, 0.12);
+}
+
+.welcome-range-anchor > button.selected svg,
+.welcome-range-anchor > button.selected strong,
+.welcome-flexible-anchor > button.selected svg,
+.welcome-flexible-anchor > button.selected strong {
+  color: var(--brand-primary) !important;
+}
+
+.welcome-range-anchor > button.selected small,
+.welcome-flexible-anchor > button.selected small {
+  color: #365f82 !important;
+}
+
+.range-picker-popover {
+  position: fixed;
+  z-index: 240;
+  top: calc(100% + 12px);
+  left: 0;
+  display: grid;
+  gap: 24px;
+  width: min(860px, calc(100vw - 40px));
+  padding: 36px 32px 24px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.2);
+}
+
+.range-picker-field {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.range-picker-field > span {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.range-picker-field > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  align-items: center;
+  min-height: 32px;
+}
+
+.range-picker-field strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.range-picker-field strong:first-child svg,
+.range-picker-field strong:last-child svg {
+  color: var(--brand-primary);
+}
+
+.range-picker-field i {
+  width: 1px;
+  height: 18px;
+  background: #d8dee6;
+}
+
+.range-picker-popover-calendar {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) 34px;
+  gap: 34px;
+  align-items: start;
+}
+
+.range-picker-popover .date-range-arrow {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #242424;
+}
+
+.range-picker-popover .date-range-arrow:hover,
+.range-picker-popover .date-range-arrow:focus-visible {
+  background: #f1f1f1;
+  color: #111;
+  transform: none;
+}
+
+.range-picker-month {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.range-picker-month h3 {
+  margin: 0;
+  color: #242424;
+  font-size: 18px;
+  font-weight: 760;
+  text-align: center;
+}
+
+.range-picker-popover .travel-calendar {
+  border: 0;
+  background: transparent;
+}
+
+.range-picker-popover .calendar-weekdays {
+  border: 0;
+  background: transparent;
+}
+
+.range-picker-popover .calendar-weekdays span {
+  padding: 0 2px 12px;
+  color: #777;
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: none;
+}
+
+.range-picker-popover .calendar-grid {
+  border: 0;
+}
+
+.range-picker-popover .calendar-cell {
+  min-height: 38px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #222;
+}
+
+.range-picker-popover .calendar-date-number {
+  display: grid;
+  place-items: center;
+  margin: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  color: #202124;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.range-picker-popover .calendar-cell.outside-month .calendar-date-number {
+  color: #c9c9c9;
+}
+
+.range-picker-popover .calendar-cell:hover,
+.range-picker-popover .calendar-cell:focus-visible {
+  background: #f7f7f7;
+  box-shadow: none;
+}
+
+.range-picker-popover .calendar-cell.range-selected {
+  background: #f4f4f4;
+}
+
+.range-picker-popover .calendar-cell.today .calendar-date-number {
+  background: transparent;
+  color: #202124;
+  box-shadow: none;
+}
+
+.range-picker-popover .calendar-cell.selected .calendar-date-number,
+.range-picker-popover .calendar-cell.range-start .calendar-date-number,
+.range-picker-popover .calendar-cell.range-end .calendar-date-number {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: #222;
+  color: white;
+  box-shadow: none;
+}
+
+.range-picker-popover .calendar-cell.range-end .calendar-date-number {
+  box-shadow: 0 0 0 3px white, 0 0 0 4px #222;
+}
+
+.range-picker-popover .calendar-cell-trips {
+  display: none;
+}
+
+.range-picker-clear {
+  justify-self: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: #202124;
+  font-weight: 760;
+}
+
+.range-picker-clear:hover,
+.range-picker-clear:focus-visible {
+  background: #f3f6f9;
+  color: var(--brand-primary);
+  transform: none;
+}
+
+.flexible-picker-panel {
+  display: grid;
+  gap: 48px;
+  padding: 10px 0 28px;
+}
+
+.flexible-picker-section {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+}
+
+.flexible-picker-section h3 {
+  margin: 0;
+  color: #242424;
+  font-size: 20px;
+  font-weight: 760;
+  text-align: center;
+}
+
+.flexible-duration-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.flexible-duration-options button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid #dedede;
+  border-radius: 999px;
+  background: white;
+  color: #202124;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.flexible-duration-options button:hover,
+.flexible-duration-options button:focus-visible,
+.flexible-duration-options button.selected {
+  border-color: #202124;
+  background: white;
+  color: #202124;
+  box-shadow: inset 0 0 0 1px #202124;
+  transform: none;
+}
+
+.flexible-months {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.flexible-months button {
+  display: grid;
+  place-items: center;
+  gap: 5px;
+  min-height: 136px;
+  padding: 18px 10px;
+  border: 1px solid #dedede;
+  border-radius: 14px;
+  background: white;
+  color: #202124;
+}
+
+.flexible-months button svg {
+  color: #6f6f6f;
+}
+
+.flexible-months button strong {
+  margin-top: 6px;
+  color: #202124;
+  font-size: 15px;
+}
+
+.flexible-months button span {
+  color: #202124;
+  font-size: 13px;
+}
+
+.flexible-months button:hover,
+.flexible-months button:focus-visible,
+.flexible-months button.selected {
+  border-color: #202124;
+  box-shadow: inset 0 0 0 1px #202124;
+  transform: none;
+}
+
+:root.dark-mode .range-picker-popover,
+:root.dark-mode .range-picker-popover .calendar-cell,
+:root.dark-mode .range-picker-popover .date-range-arrow {
+  border-color: var(--brand-border);
+  background: #10263b;
+  color: var(--brand-text);
+}
+
+:root.dark-mode .range-picker-field {
+  border-color: var(--brand-border);
+}
+
+:root.dark-mode .range-picker-field > span,
+:root.dark-mode .range-picker-month h3,
+:root.dark-mode .range-picker-popover .calendar-date-number,
+:root.dark-mode .range-picker-clear {
+  color: var(--brand-text);
+}
+
+:root.dark-mode .range-picker-field strong,
+:root.dark-mode .range-picker-popover .calendar-weekdays span {
+  color: var(--brand-muted);
+}
+
+:root.dark-mode .range-picker-field i {
+  background: var(--brand-border);
+}
+
+:root.dark-mode .flexible-picker-section h3,
+:root.dark-mode .flexible-duration-options button,
+:root.dark-mode .flexible-months button,
+:root.dark-mode .flexible-months button strong,
+:root.dark-mode .flexible-months button span {
+  color: var(--brand-text);
+}
+
+:root.dark-mode .flexible-duration-options button,
+:root.dark-mode .flexible-months button {
+  border-color: var(--brand-border);
+  background: #10263b;
+}
+
+:root.dark-mode .flexible-months button svg {
+  color: var(--brand-muted);
+}
+
+:root.dark-mode .flexible-duration-options button:hover,
+:root.dark-mode .flexible-duration-options button:focus-visible,
+:root.dark-mode .flexible-duration-options button.selected,
+:root.dark-mode .flexible-months button:hover,
+:root.dark-mode .flexible-months button:focus-visible,
+:root.dark-mode .flexible-months button.selected {
+  border-color: #cce7ff;
+  background: #193e66;
+  box-shadow: inset 0 0 0 1px #cce7ff;
+}
+
+:root.dark-mode .range-picker-popover .calendar-cell {
+  background: transparent;
+}
+
+:root.dark-mode .range-picker-popover .calendar-cell:hover,
+:root.dark-mode .range-picker-popover .calendar-cell:focus-visible,
+:root.dark-mode .range-picker-popover .calendar-cell.range-selected {
+  background: #17344f;
+}
+
+:root.dark-mode .range-picker-popover .calendar-cell.today .calendar-date-number {
+  background: transparent;
+  color: var(--brand-text);
+}
+
+:root.dark-mode .range-picker-popover .calendar-cell.selected .calendar-date-number,
+:root.dark-mode .range-picker-popover .calendar-cell.range-start .calendar-date-number,
+:root.dark-mode .range-picker-popover .calendar-cell.range-end .calendar-date-number {
+  background: #e9f6ff;
+  color: #0d2235;
+}
+
+:root.dark-mode .range-picker-popover .calendar-cell.range-end .calendar-date-number {
+  box-shadow: 0 0 0 3px #10263b, 0 0 0 4px #e9f6ff;
+}
+
+:root.dark-mode .calendar-dashboard .calendar-cell.range-selected {
+  background: linear-gradient(180deg, rgba(25, 62, 102, 0.88), rgba(19, 49, 82, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(151, 205, 255, 0.16);
+}
+
+:root.dark-mode .calendar-dashboard .calendar-cell.range-start,
+:root.dark-mode .calendar-dashboard .calendar-cell.range-end {
+  background:
+    radial-gradient(circle at 50% 18px, rgba(207, 232, 255, 0.12) 0 24px, transparent 25px),
+    linear-gradient(180deg, #193e66, #143252);
+  box-shadow: inset 0 0 0 1px rgba(180, 219, 255, 0.22);
+}
+
+:root.dark-mode .calendar-dashboard .calendar-cell.range-start .calendar-date-number,
+:root.dark-mode .calendar-dashboard .calendar-cell.range-end .calendar-date-number {
+  background: #e9f6ff;
+  color: #0d2235;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+:root.dark-mode .calendar-dashboard .calendar-cell.range-selected:not(.range-start):not(.range-end) .calendar-date-number {
+  color: #d9edff;
+}
+
+:root.dark-mode .range-picker-clear:hover,
+:root.dark-mode .range-picker-clear:focus-visible,
+:root.dark-mode .range-picker-popover .date-range-arrow:hover,
+:root.dark-mode .range-picker-popover .date-range-arrow:focus-visible {
+  background: #193e66;
+  color: #cce7ff;
+}
+
+:root.dark-mode .welcome-range-anchor > button,
+:root.dark-mode .welcome-flexible-anchor > button {
+  background: #10263b;
+  color: var(--brand-text);
+}
+
+:root.dark-mode .welcome-range-anchor > button.selected,
+:root.dark-mode .welcome-flexible-anchor > button.selected {
+  border-color: #5aa9e8 !important;
+  background: #193e66 !important;
+  color: #e9f6ff !important;
+}
+
+:root.dark-mode .welcome-range-anchor > button.selected svg,
+:root.dark-mode .welcome-range-anchor > button.selected strong,
+:root.dark-mode .welcome-flexible-anchor > button.selected svg,
+:root.dark-mode .welcome-flexible-anchor > button.selected strong {
+  color: #cce7ff !important;
+}
+
+:root.dark-mode .welcome-range-anchor > button.selected small,
+:root.dark-mode .welcome-flexible-anchor > button.selected small {
+  color: #a9cde9 !important;
 }
 
 .welcome-suggestions button,
@@ -440,7 +954,22 @@ select:focus {
 
 .calendar-dashboard {
   grid-template-columns: minmax(270px, 0.62fr) minmax(640px, 1.7fr);
+  align-items: start;
   gap: 20px;
+}
+
+.calendar-dashboard .calendar-shell,
+.calendar-trips-sidebar {
+  align-self: start;
+}
+
+.calendar-dashboard .travel-calendar,
+.calendar-dashboard .calendar-grid {
+  height: auto;
+}
+
+.calendar-dashboard .calendar-grid {
+  grid-auto-rows: auto;
 }
 
 .calendar-shell,
@@ -491,6 +1020,31 @@ select:focus {
   z-index: 2;
 }
 
+.calendar-dashboard .calendar-cell.range-selected {
+  background:
+    linear-gradient(180deg, rgba(233, 244, 255, 0.98), rgba(220, 237, 253, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(35, 126, 205, 0.12);
+}
+
+.calendar-dashboard .calendar-cell.range-start,
+.calendar-dashboard .calendar-cell.range-end {
+  background:
+    radial-gradient(circle at 50% 18px, rgba(15, 82, 141, 0.12) 0 24px, transparent 25px),
+    linear-gradient(180deg, #dceeff, #cfe6fb);
+  box-shadow: inset 0 0 0 1px rgba(23, 116, 202, 0.2);
+}
+
+.calendar-dashboard .calendar-cell.range-start .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-end .calendar-date-number {
+  background: var(--brand-navy);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(10, 66, 120, 0.22);
+}
+
+.calendar-dashboard .calendar-cell.range-selected:not(.range-start):not(.range-end) .calendar-date-number {
+  color: var(--brand-navy);
+}
+
 .calendar-date-number {
   font-weight: 700;
 }
@@ -506,7 +1060,7 @@ select:focus {
 .trip-group.collapsed {
   grid-template-rows: auto;
   min-height: 0;
-  max-height: 68px;
+  max-height: 80px;
 }
 
 .trip-group:first-child {
@@ -520,6 +1074,11 @@ select:focus {
 .trip-group-heading {
   min-height: 68px;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.trip-group.collapsed .trip-group-heading {
+  min-height: 80px;
+  padding-block: 16px;
 }
 
 .trip-group-heading:hover {
@@ -1533,6 +2092,53 @@ select:focus {
 
   .welcome-question {
     min-height: 0;
+  }
+
+  .range-picker-popover {
+    width: min(860px, calc(100vw - 24px));
+    max-height: min(74vh, 640px);
+    gap: 18px;
+    padding: 20px 14px 16px;
+    overflow-y: auto;
+  }
+
+  .flexible-picker-panel {
+    gap: 28px;
+    padding-bottom: 10px;
+  }
+
+  .flexible-months {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .flexible-months button {
+    min-height: 118px;
+  }
+
+  .range-picker-field > div {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .range-picker-field i {
+    display: none;
+  }
+
+  .range-picker-popover-calendar {
+    grid-template-columns: 34px minmax(0, 1fr) 34px;
+    gap: 8px;
+  }
+
+  .range-picker-popover-calendar .range-picker-month + .range-picker-month {
+    display: none;
+  }
+
+  .range-picker-popover .date-range-arrow {
+    width: 34px;
+  }
+
+  .range-picker-popover .calendar-cell {
+    min-height: 36px;
   }
 
   .welcome-interview-actions {
