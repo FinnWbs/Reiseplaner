@@ -20,6 +20,54 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SpatialLongTripPlanningTest {
     @Test
+    void twoDayFixtureUsesDifferentAreasWhenAvailable() {
+        Fixture fixture = fixture("Berlin", 52.5200, 13.4050, 2, List.of(
+            new ClusterSpec("Mitte", 52.5200, 13.4050, 0.84),
+            new ClusterSpec("Charlottenburg", 52.5048, 13.3050, 0.82)
+        ));
+
+        PlanningService service = serviceWithActivities(fixture.activities());
+        service.generatePlan(fixture.trip(), fixture.interestIds(), fixture.types());
+
+        List<Integer> dayClusters = dominantClustersByDay(fixture.trip());
+        assertFullyPlanned(fixture.trip(), 6);
+        assertEquals(2, dayClusters.size());
+        assertNotEquals(dayClusters.get(0), dayClusters.get(1));
+    }
+
+    @Test
+    void fourDayFixtureUsesAtLeastTwoAreasWhenAvailable() {
+        Fixture fixture = fixture("Berlin", 52.5200, 13.4050, 4, List.of(
+            new ClusterSpec("Mitte", 52.5200, 13.4050, 0.84),
+            new ClusterSpec("Charlottenburg", 52.5048, 13.3050, 0.82),
+            new ClusterSpec("Kreuzberg", 52.4986, 13.4030, 0.82)
+        ));
+
+        PlanningService service = serviceWithActivities(fixture.activities());
+        service.generatePlan(fixture.trip(), fixture.interestIds(), fixture.types());
+
+        List<Integer> dayClusters = dominantClustersByDay(fixture.trip());
+        assertFullyPlanned(fixture.trip(), 12);
+        assertTrue(dayClusters.stream().distinct().count() >= 2);
+    }
+
+    @Test
+    void multiDayFixtureDoesNotRepeatSameAreaMoreThanTwoDaysWhenAlternativesExist() {
+        Fixture fixture = fixture("Berlin", 52.5200, 13.4050, 6, List.of(
+            new ClusterSpec("Mitte", 52.5200, 13.4050, 0.84),
+            new ClusterSpec("Charlottenburg", 52.5048, 13.3050, 0.82),
+            new ClusterSpec("Kreuzberg", 52.4986, 13.4030, 0.82)
+        ));
+
+        PlanningService service = serviceWithActivities(fixture.activities());
+        service.generatePlan(fixture.trip(), fixture.interestIds(), fixture.types());
+
+        List<Integer> dayClusters = dominantClustersByDay(fixture.trip());
+        assertFullyPlanned(fixture.trip(), 18);
+        assertTrue(maxConsecutiveEqual(dayClusters) <= 2);
+    }
+
+    @Test
     void berlinSevenDayFixtureUsesSeveralClusters() {
         Fixture fixture = fixture("Berlin", 52.5200, 13.4050, List.of(
             new ClusterSpec("Mitte", 52.5200, 13.4050, 0.84),
@@ -32,7 +80,7 @@ class SpatialLongTripPlanningTest {
         service.generatePlan(fixture.trip(), fixture.interestIds(), fixture.types());
 
         SpatialDiagnostics diagnostics = service.lastSpatialDiagnostics().orElseThrow();
-        assertFullyPlanned(fixture.trip());
+        assertFullyPlanned(fixture.trip(), 21);
         assertTrue(diagnostics.uniqueSpatialClusters() >= 3);
         assertTrue(diagnostics.dominantClusterShare() <= 0.70);
     }
@@ -51,7 +99,7 @@ class SpatialLongTripPlanningTest {
         service.generatePlan(fixture.trip(), fixture.interestIds(), fixture.types());
 
         SpatialDiagnostics diagnostics = service.lastSpatialDiagnostics().orElseThrow();
-        assertFullyPlanned(fixture.trip());
+        assertFullyPlanned(fixture.trip(), 21);
         assertTrue(diagnostics.uniqueSpatialClusters() >= 3);
         assertTrue(fixture.trip().days.stream()
             .flatMap(day -> day.activities.stream())
@@ -75,12 +123,16 @@ class SpatialLongTripPlanningTest {
         service.generatePlan(fixture.trip(), fixture.interestIds(), fixture.types());
 
         SpatialDiagnostics diagnostics = service.lastSpatialDiagnostics().orElseThrow();
-        assertFullyPlanned(fixture.trip());
+        assertFullyPlanned(fixture.trip(), 21);
         assertTrue(diagnostics.uniqueSpatialClusters() >= 3);
         assertTrue(diagnostics.dominantClusterShare() <= 0.70);
     }
 
     private static Fixture fixture(String city, double centerLat, double centerLon, List<ClusterSpec> clusters) {
+        return fixture(city, centerLat, centerLon, 7, clusters);
+    }
+
+    private static Fixture fixture(String city, double centerLat, double centerLon, int days, List<ClusterSpec> clusters) {
         Map<InterestType, InterestEntity> interests = interests();
         List<ActivityEntity> activities = new ArrayList<>();
         long id = 1;
@@ -116,10 +168,10 @@ class SpatialLongTripPlanningTest {
         trip.city = city;
         trip.latitude = centerLat;
         trip.longitude = centerLon;
-        trip.daysCount = 7;
+        trip.daysCount = days;
         trip.pace = TripPace.BALANCED;
         trip.selectedInterests = new HashSet<>(interests.values());
-        for (int dayNumber = 1; dayNumber <= 7; dayNumber++) {
+        for (int dayNumber = 1; dayNumber <= days; dayNumber++) {
             TripDayEntity day = new TripDayEntity();
             day.id = (long) dayNumber;
             day.dayNumber = dayNumber;
@@ -208,9 +260,45 @@ class SpatialLongTripPlanningTest {
         return mapping;
     }
 
-    private static void assertFullyPlanned(TripEntity trip) {
-        assertEquals(21, trip.days.stream().mapToInt(day -> day.activities.size()).sum());
+    private static void assertFullyPlanned(TripEntity trip, int expectedActivities) {
+        assertEquals(expectedActivities, trip.days.stream().mapToInt(day -> day.activities.size()).sum());
         assertTrue(trip.days.stream().allMatch(day -> day.activities.size() == 3));
+    }
+
+    private static List<Integer> dominantClustersByDay(TripEntity trip) {
+        SpatialClusterer clusterer = new SpatialClusterer();
+        List<ActivityEntity> scheduled = trip.days.stream()
+            .flatMap(day -> day.activities.stream())
+            .map(item -> item.activity)
+            .toList();
+        List<SpatialCluster> clusters = clusterer.clusterActivities(scheduled, 2.0, trip.latitude, trip.longitude);
+        Map<Long, Integer> clusterByActivity = clusterer.clusterByActivityId(clusters);
+        return trip.days.stream()
+            .sorted(java.util.Comparator.comparingInt(day -> day.dayNumber))
+            .map(day -> day.activities.stream()
+                .map(item -> clusterByActivity.get(item.activity.id))
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.groupingBy(
+                    cluster -> cluster,
+                    java.util.stream.Collectors.counting()
+                ))
+                .entrySet().stream()
+                .max(Map.Entry.<Integer, Long>comparingByValue().thenComparing(Map.Entry.comparingByKey()))
+                .map(Map.Entry::getKey)
+                .orElse(-1))
+            .toList();
+    }
+
+    private static int maxConsecutiveEqual(List<Integer> values) {
+        int max = 0;
+        int current = 0;
+        Integer previous = null;
+        for (Integer value : values) {
+            current = value.equals(previous) ? current + 1 : 1;
+            max = Math.max(max, current);
+            previous = value;
+        }
+        return max;
     }
 
     private record ClusterSpec(String name, double lat, double lon, double score) {}

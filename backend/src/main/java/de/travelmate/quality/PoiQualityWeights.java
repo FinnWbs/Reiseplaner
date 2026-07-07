@@ -16,7 +16,5 @@ public final class PoiQualityWeights {
     public static final double MINOR_MONUMENT_NOTABILITY_THRESHOLD = 0.55;
     public static final double DEFAULT_PAGEVIEW_P95 = 250_000;
     public static final double DEFAULT_AREA_P95_M2 = 2_000_000;
-    public static final double CITY_CENTER_PROMINENCE_KM = 8;
-
     private PoiQualityWeights() {}
 }

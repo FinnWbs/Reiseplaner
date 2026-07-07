@@ -269,6 +269,75 @@ class PlanningServiceTest {
         assertTrue(trip.days.stream().allMatch(day -> day.activities.size() == 2));
     }
 
+    @Test
+    void dailyInterestCapSearchesOtherAreasBeforeRepeatingShopping() {
+        InterestEntity culture = interest(1L, "Kultur & Museen");
+        culture.code = InterestType.CULTURE.name();
+        InterestEntity food = interest(2L, "Essen & Cafes");
+        food.code = InterestType.FOOD.name();
+        InterestEntity nature = interest(3L, "Natur & Outdoor");
+        nature.code = InterestType.NATURE.name();
+        InterestEntity shopping = interest(4L, "Shopping & Maerkte");
+        shopping.code = InterestType.SHOPPING.name();
+
+        ActivityEntity[] activities = new ActivityEntity[] {
+            locatedPrimaryActivity(1L, "West Mall", InterestType.SHOPPING, shopping, 52.5000, 13.3000),
+            locatedPrimaryActivity(2L, "West Market", InterestType.SHOPPING, shopping, 52.5010, 13.3010),
+            locatedPrimaryActivity(3L, "West Arcade", InterestType.SHOPPING, shopping, 52.5020, 13.3020),
+            locatedPrimaryActivity(4L, "West Department Store", InterestType.SHOPPING, shopping, 52.5030, 13.3030),
+            locatedPrimaryActivity(5L, "Central Museum", InterestType.CULTURE, culture, 52.5200, 13.4050),
+            locatedPrimaryActivity(6L, "Central Cafe", InterestType.FOOD, food, 52.5205, 13.4055),
+            locatedPrimaryActivity(7L, "Central Park", InterestType.NATURE, nature, 52.5210, 13.4060)
+        };
+        PlanningService service = serviceWithActivities(activities);
+        service.sync = noRefreshSync();
+        TripEntity trip = tripWithDays(1, de.travelmate.trip.TripPace.ACTIVE);
+        trip.latitude = 52.5200;
+        trip.longitude = 13.4050;
+        trip.selectedInterests = new HashSet<>(Set.of(culture, food, nature, shopping));
+
+        service.generatePlan(trip, List.of(1L, 2L, 3L, 4L), Set.of(
+            InterestType.CULTURE,
+            InterestType.FOOD,
+            InterestType.NATURE,
+            InterestType.SHOPPING
+        ));
+
+        assertEquals(4, trip.days.getFirst().activities.size());
+        assertTrue(scheduledCount(trip, InterestType.SHOPPING) <= 2);
+        assertTrue(trip.days.getFirst().activities.stream()
+            .map(item -> item.activity.primaryInterest)
+            .collect(java.util.stream.Collectors.toSet())
+            .size() >= 3);
+    }
+
+    @Test
+    void dailyInterestCapRelaxesWhenOnlyOneInterestCanFillTheDay() {
+        InterestEntity shopping = interest(4L, "Shopping & Maerkte");
+        shopping.code = InterestType.SHOPPING.name();
+        ActivityEntity[] activities = java.util.stream.IntStream.range(0, 4)
+            .mapToObj(index -> locatedPrimaryActivity(
+                300L + index,
+                "Shop " + index,
+                InterestType.SHOPPING,
+                shopping,
+                52.5000 + index * 0.0005,
+                13.3000 + index * 0.0005
+            ))
+            .toArray(ActivityEntity[]::new);
+        PlanningService service = serviceWithActivities(activities);
+        service.sync = noRefreshSync();
+        TripEntity trip = tripWithDays(1, de.travelmate.trip.TripPace.ACTIVE);
+        trip.latitude = 52.5200;
+        trip.longitude = 13.4050;
+        trip.selectedInterests = new HashSet<>(Set.of(shopping));
+
+        service.generatePlan(trip, List.of(4L), Set.of(InterestType.SHOPPING));
+
+        assertEquals(4, trip.days.getFirst().activities.size());
+        assertEquals(4, scheduledCount(trip, InterestType.SHOPPING));
+    }
+
     private ActivityEntity activity(Double rating, double quality) {
         ActivityEntity activity = new ActivityEntity();
         activity.rating = rating;
@@ -362,6 +431,24 @@ class PlanningServiceTest {
         ActivityEntity activity = activity(id, name, null, 1.0);
         activity.primaryInterest = type;
         activity.interestScores.add(mapping(activity, interest, 10));
+        return activity;
+    }
+
+    private ActivityEntity locatedPrimaryActivity(
+        Long id,
+        String name,
+        InterestType type,
+        InterestEntity interest,
+        double lat,
+        double lon
+    ) {
+        ActivityEntity activity = primaryActivity(id, name, type, interest);
+        activity.latitude = lat;
+        activity.longitude = lon;
+        activity.finalScore = 0.8;
+        activity.categoryFitScore = 1;
+        activity.itineraryFitScore = 1;
+        activity.dataQualityScore = 0.8;
         return activity;
     }
 

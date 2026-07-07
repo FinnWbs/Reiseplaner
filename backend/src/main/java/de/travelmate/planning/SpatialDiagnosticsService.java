@@ -270,9 +270,7 @@ public class SpatialDiagnosticsService {
         double averageDistance,
         int repeatedClusterDays
     ) {
-        int expectedClusters = tripDays >= settings().longTripDayThreshold()
-            ? settings().minExpectedClustersForLongTrip()
-            : Math.min(2, tripDays);
+        int expectedClusters = settings().targetDistinctAreasForTrip(tripDays);
         double clusterScore = Math.min(1, clusters / (double) Math.max(1, expectedClusters));
         double dominanceScore = 1 - Math.max(0, dominantClusterShare - settings().maxDominantClusterShare())
             / Math.max(0.01, 1 - settings().maxDominantClusterShare());
@@ -313,9 +311,10 @@ public class SpatialDiagnosticsService {
         if (diversityScore < 0.55) {
             warnings.add(SpatialWarningCode.SPATIAL_DIVERSITY_LOW);
         }
-        if (tripDays >= settings().longTripDayThreshold()
-            && activitiesWithCoordinates >= settings().minExpectedClustersForLongTrip()
-            && clusters < settings().minExpectedClustersForLongTrip()) {
+        int expectedClusters = settings().targetDistinctAreasForTrip(tripDays);
+        if (tripDays > 1
+            && activitiesWithCoordinates >= expectedClusters
+            && clusters < expectedClusters) {
             warnings.add(SpatialWarningCode.MULTI_AREA_IMPORT_RECOMMENDED);
         }
         return List.copyOf(warnings);

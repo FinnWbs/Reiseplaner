@@ -415,6 +415,23 @@ class PoiQualityEngineTest {
         assertTrue(diverse > repeated);
     }
 
+    @Test
+    void centerDistanceDoesNotCreateFoodPopularityAdvantage() {
+        ExternalActivityCandidate central = candidate("Central Restaurant");
+        central.rawCategories.add("catering.restaurant");
+        central.rawTags.put("cuisine", "regional");
+        central.distanceToCenterKm = 0.2;
+        ExternalActivityCandidate outer = candidate("Outer Restaurant");
+        outer.rawCategories.add("catering.restaurant");
+        outer.rawTags.put("cuisine", "regional");
+        outer.distanceToCenterKm = 10.0;
+
+        PoiQualityEvaluation centralEvaluation = engine.evaluate(central, InterestType.FOOD);
+        PoiQualityEvaluation outerEvaluation = engine.evaluate(outer, InterestType.FOOD);
+
+        assertEquals(centralEvaluation.popularityScore(), outerEvaluation.popularityScore(), 0.001);
+    }
+
     private static ExternalActivityCandidate candidate(String name) {
         ExternalActivityCandidate candidate = new ExternalActivityCandidate();
         candidate.source = ActivitySource.GEOAPIFY;

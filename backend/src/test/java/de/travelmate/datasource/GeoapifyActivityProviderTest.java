@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.travelmate.activity.ActivityImportSettings;
 import de.travelmate.activity.ImportDemand;
 import de.travelmate.interest.InterestType;
 import java.util.ArrayList;
@@ -55,6 +56,36 @@ class GeoapifyActivityProviderTest {
         assertTrue(client.limits.stream().anyMatch(limit -> limit > 20));
     }
 
+    @Test
+    void multiAreaRequestsUseAreaCenterForFilterAndBiasWithinOneBudget() throws Exception {
+        FakeGeoapifyClient client = new FakeGeoapifyClient();
+        ActivityImportSettings settings = new ActivityImportSettings();
+        set(settings, "multiAreaEnabled", true);
+        set(settings, "multiAreaMinRawTargetPerArea", 10);
+        set(settings, "maxPagesPerInterest", 1);
+        MultiAreaImportPlanner planner = new MultiAreaImportPlanner();
+        planner.settings = settings;
+        planner.radiusResolver = new ImportRadiusResolver();
+        planner.radiusResolver.settings = settings;
+        planner.reachability = new ReachabilityPolicy();
+        planner.reachability.settings = settings;
+        GeoapifyActivityProvider provider = provider(client);
+        provider.settings = settings;
+        provider.areaPlanner = planner;
+        ImportDemand demand = demand(60);
+
+        provider.fetch("Berlin", null, 52.52, 13.405, Set.of(InterestType.FOOD), demand);
+
+        assertTrue(client.filters.size() > 1);
+        assertEquals(60, client.limits.stream().mapToInt(Integer::intValue).sum());
+        assertTrue(client.biases.stream().distinct().count() > 1);
+        for (int index = 0; index < client.filters.size(); index++) {
+            String filterCenter = client.filters.get(index).substring("circle:".length()).split(",")[0]
+                + "," + client.filters.get(index).substring("circle:".length()).split(",")[1];
+            assertTrue(client.biases.get(index).contains(filterCenter));
+        }
+    }
+
     private static ExternalActivityCandidate candidate(String name, double latitude, double longitude) {
         ExternalActivityCandidate candidate = new ExternalActivityCandidate();
         candidate.name = name;
@@ -73,6 +104,12 @@ class GeoapifyActivityProviderTest {
         return provider;
     }
 
+    private static void set(Object target, String field, Object value) throws Exception {
+        java.lang.reflect.Field declared = target.getClass().getDeclaredField(field);
+        declared.setAccessible(true);
+        declared.set(target, value);
+    }
+
     private static ImportDemand demand(int rawTarget) {
         return new ImportDemand(
             "Berlin",
@@ -84,7 +121,12 @@ class GeoapifyActivityProviderTest {
             53,
             152,
             Map.of(InterestType.FOOD, rawTarget),
-            Map.of(InterestType.FOOD, 18)
+            Map.of(InterestType.FOOD, 18),
+            3,
+            0.55,
+            4,
+            true,
+            true
         );
     }
 
@@ -92,6 +134,8 @@ class GeoapifyActivityProviderTest {
         private static final ObjectMapper MAPPER = new ObjectMapper();
         final List<Integer> offsets = new ArrayList<>();
         final List<Integer> limits = new ArrayList<>();
+        final List<String> filters = new ArrayList<>();
+        final List<String> biases = new ArrayList<>();
 
         @Override
         public JsonNode autocomplete(String text, String type, int limit, String format, String language, String apiKey) {
@@ -116,6 +160,8 @@ class GeoapifyActivityProviderTest {
         ) {
             offsets.add(offset);
             limits.add(limit);
+            filters.add(filter);
+            biases.add(bias);
             var root = MAPPER.createObjectNode();
             var features = root.putArray("features");
             for (int index = 0; index < limit; index++) {

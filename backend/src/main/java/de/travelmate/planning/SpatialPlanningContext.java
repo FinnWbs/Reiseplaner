@@ -54,6 +54,14 @@ public class SpatialPlanningContext {
             && distanceBetweenClusters(cluster.get(), preferred.get()) <= settings.clusterRadiusKm() * 1.75;
     }
 
+    boolean hasPreferredCluster(TripDayEntity day) {
+        return preferredCluster(day).isPresent();
+    }
+
+    boolean isNonCenterCluster(ActivityEntity activity) {
+        return clusterId(activity).filter(cluster -> !isCenterCluster(cluster)).isPresent();
+    }
+
     boolean isSameOrNearDayCluster(TripDayEntity day, ActivityEntity activity) {
         Optional<Integer> cluster = clusterId(activity);
         if (cluster.isEmpty()) {
@@ -108,6 +116,21 @@ public class SpatialPlanningContext {
 
     boolean isCenterCluster(ActivityEntity activity) {
         return clusterId(activity).filter(this::isCenterCluster).isPresent();
+    }
+
+    int preferredClusterUseBeforeDay(List<TripDayEntity> days, int dayNumber) {
+        Optional<Integer> preferred = preferredClusterByDay.entrySet().stream()
+            .filter(entry -> entry.getKey() == dayNumber)
+            .map(Map.Entry::getValue)
+            .findFirst();
+        if (preferred.isEmpty()) {
+            return 0;
+        }
+        return (int) days.stream()
+            .filter(day -> day.dayNumber < dayNumber)
+            .flatMap(day -> day.activities.stream())
+            .filter(item -> clusterId(item.activity).filter(preferred.get()::equals).isPresent())
+            .count();
     }
 
     int uniqueClusters() {

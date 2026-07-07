@@ -51,8 +51,27 @@ public class ImportDemandService {
             eligiblePoolTarget,
             rawPoolTargetTotal,
             Map.copyOf(rawTargetByInterest),
-            Map.copyOf(eligibleTargetByInterest)
+            Map.copyOf(eligibleTargetByInterest),
+            settings().minSpatialClustersForTrip(resolvedTripDays),
+            settings().maxDominantClusterShareForTrip(resolvedTripDays),
+            minOuterDistanceBandCandidates(resolvedTripDays, targetActivities, interests.size()),
+            resolvedTripDays > 1,
+            settings().multiAreaEnabled()
         );
+    }
+
+    private static int minOuterDistanceBandCandidates(int tripDays, int targetActivities, int interestCount) {
+        if (tripDays < 4) {
+            return 0;
+        }
+        int perInterestTarget = Math.max(1, ceil(targetActivities / (double) Math.max(1, interestCount)));
+        if (tripDays >= 11) {
+            return Math.max(6, ceil(perInterestTarget * 0.35));
+        }
+        if (tripDays >= 7) {
+            return Math.max(4, ceil(perInterestTarget * 0.30));
+        }
+        return Math.max(2, ceil(perInterestTarget * 0.25));
     }
 
     private void capTotal(Map<InterestType, Integer> targets, int maxTotal) {

@@ -16,7 +16,7 @@ import java.util.*;
 
 @ApplicationScoped
 public class ActivityPersistenceService {
-    public static final int CURRENT_IMPORT_VERSION = 7;
+    public static final int CURRENT_IMPORT_VERSION = 8;
     @Inject
     ActivityRepository activities;
 

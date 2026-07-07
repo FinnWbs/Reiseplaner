@@ -150,15 +150,12 @@ public class PoiQualityEngine {
         if (areaScore >= 0.45) {
             reasons.add(QualityReasonCode.LARGE_GEO_AREA);
         }
-        double distanceScore = candidate.distanceToCenterKm == null
-            ? 0
-            : ScoreNormalizer.clamp01(1 - candidate.distanceToCenterKm / PoiQualityWeights.CITY_CENTER_PROMINENCE_KM);
-        if (distanceScore >= 0.65) {
-            reasons.add(QualityReasonCode.NEAR_CITY_CENTER);
-        }
         CanonicalCategory category = canonicalCategory(candidate);
+        if (Set.of(CanonicalCategory.FOOD, CanonicalCategory.NIGHTLIFE, CanonicalCategory.SHOPPING).contains(category)) {
+            return 0;
+        }
         double areaWeight = category == CanonicalCategory.NATURE ? 0.75 : 0.35;
-        return ScoreNormalizer.clamp01(areaWeight * areaScore + (1 - areaWeight) * distanceScore);
+        return ScoreNormalizer.clamp01(areaWeight * areaScore);
     }
 
     private double qualityScore(ExternalActivityCandidate candidate, Set<QualityReasonCode> reasons) {

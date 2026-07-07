@@ -1,11 +1,15 @@
 package de.travelmate.planning;
 
 import de.travelmate.activity.ActivityEntity;
+import de.travelmate.activity.ImportDemand;
 import de.travelmate.activity.ActivityPersistenceService;
 import de.travelmate.interest.InterestType;
+import de.travelmate.trip.TripPace;
 import de.travelmate.trip.TripDayActivityEntity;
 import de.travelmate.trip.TripDayEntity;
 import de.travelmate.trip.TripEntity;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -76,6 +80,43 @@ class SpatialDiagnosticsServiceTest {
 
         assertTrue(diagnostics.uniqueSpatialClusters() < 3);
         assertTrue(diagnostics.hasWarning(SpatialWarningCode.MULTI_AREA_IMPORT_RECOMMENDED));
+    }
+
+    @Test
+    void spatialCoverageDetectsCenterOnlyPoolDespiteEnoughCandidates() {
+        SpatialCoverageService service = new SpatialCoverageService();
+        ImportDemand demand = new ImportDemand(
+            "Berlin",
+            Set.of(InterestType.CULTURE),
+            7,
+            TripPace.BALANCED,
+            3,
+            21,
+            53,
+            120,
+            Map.of(InterestType.CULTURE, 120),
+            Map.of(InterestType.CULTURE, 18),
+            3,
+            0.55,
+            4,
+            true,
+            false
+        );
+        java.util.List<ActivityEntity> activities = java.util.stream.IntStream.range(0, 20)
+            .mapToObj(index -> activity(100 + index, "Center " + index, 52.5200 + index * 0.0003, 13.4050))
+            .toList();
+
+        SpatialCoverageReport report = service.analyze(
+            "Berlin",
+            InterestType.CULTURE,
+            activities,
+            demand,
+            52.5200,
+            13.4050
+        );
+
+        assertTrue(report.insufficient());
+        assertTrue(report.warnings().contains(SpatialCoverageWarningCode.MULTI_AREA_IMPORT_RECOMMENDED));
     }
 
     static TripEntity trip(String city, double lat, double lon, int days) {

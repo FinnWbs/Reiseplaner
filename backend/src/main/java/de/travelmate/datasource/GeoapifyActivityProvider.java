@@ -44,6 +44,12 @@ public class GeoapifyActivityProvider implements ActivityProvider {
     @Inject
     ActivityScoringService scoring;
 
+    @Inject
+    MultiAreaImportPlanner areaPlanner;
+
+    @Inject
+    AreaQualityService areaQuality;
+
     @Override
     public List<ExternalActivityCandidate> fetch(String city) {
         return fetch(city, null, null, null, EnumSet.allOf(InterestType.class));
@@ -78,6 +84,7 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         try {
             Double latitude = selectedLatitude;
             Double longitude = selectedLongitude;
+            CityBoundingBox bbox = null;
             if (latitude == null || longitude == null) {
                 JsonNode results = client.geocode(locationText, "city", 1, "json", apiKey).path("results");
                 if (!results.isArray() || results.isEmpty()) {
@@ -87,11 +94,18 @@ public class GeoapifyActivityProvider implements ActivityProvider {
                 JsonNode location = results.get(0);
                 latitude = latitude == null ? location.path("lat").asDouble() : latitude;
                 longitude = longitude == null ? location.path("lon").asDouble() : longitude;
+                bbox = bbox(location.path("bbox"));
             }
 
             double originLatitude = latitude;
             double originLongitude = longitude;
-            String bias = "proximity:" + originLongitude + "," + originLatitude;
+            CitySpatialContext context = CitySpatialContext.from(
+                locationText,
+                originLatitude,
+                originLongitude,
+                bbox,
+                demand
+            );
             List<ExternalActivityCandidate> candidates = new ArrayList<>();
             Set<InterestType> interests = requestedInterests == null || requestedInterests.isEmpty()
                 ? InterestType.primaryTypes()
@@ -102,46 +116,22 @@ public class GeoapifyActivityProvider implements ActivityProvider {
                 if (categories.isEmpty()) {
                     continue;
                 }
-                int radius = interest == InterestType.NATURE ? 25000 : 12000;
-                int rawTarget = rawTargetFor(interest, demand);
-                int maxRaw = Math.min(rawTarget, settings().maxRawPerInterest());
-                int rawFetched = 0;
-                for (int page = 0; page < settings().maxPagesPerInterest() && rawFetched < rawTarget && rawFetched < maxRaw; page++) {
-                    int offset = page * settings().geoapifyPageSize();
-                    int pageLimit = Math.min(settings().geoapifyPageSize(), maxRaw - rawFetched);
-                    JsonNode features = client.places(
-                        String.join(",", categories),
-                        conditionsFor(interest),
-                        "circle:" + originLongitude + "," + originLatitude + "," + radius,
-                        bias,
-                        pageLimit,
-                        offset,
-                        "de",
-                        apiKey
-                    ).path("features");
-                    if (!features.isArray() || features.isEmpty()) {
-                        break;
-                    }
-                    rawFetched += features.size();
-                    for (JsonNode feature : features) {
-                        ExternalActivityCandidate candidate = candidate(feature.path("properties"), locationText);
-                        if (candidate == null || !filtering.isRelevant(candidate, interest) || filtering.isDuplicate(candidate, seen)) {
-                            continue;
-                        }
-                        candidate.distanceToCenterKm = distanceInKilometers(
-                            originLatitude,
-                            originLongitude,
-                            candidate.latitude,
-                            candidate.longitude
-                        );
-                        candidate.primaryInterest = interest;
-                        candidate.matchedInterests.add(interest);
-                        candidates.add(candidate);
-                    }
-                    if (features.size() < pageLimit) {
-                        break;
-                    }
+                MultiAreaImportPlan plan = areaPlanner().plan(context, interest, demand);
+                int beforeInterestFetch = candidates.size();
+                for (ImportArea area : plan.areas()) {
+                    fetchArea(
+                        locationText,
+                        apiKey,
+                        originLatitude,
+                        originLongitude,
+                        candidates,
+                        seen,
+                        interest,
+                        categories,
+                        area
+                    );
                 }
+                logAreaQuality(plan, candidates.subList(beforeInterestFetch, candidates.size()), context);
             }
             populateNearbyShopDensity(candidates);
             return candidates.stream()
@@ -261,11 +251,70 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         return interest == InterestType.NATURE ? "named,access" : null;
     }
 
-    private int rawTargetFor(InterestType interest, ImportDemand demand) {
-        if (demand != null && demand.rawTargetFor(interest) > 0) {
-            return demand.rawTargetFor(interest);
+    private void fetchArea(
+        String locationText,
+        String apiKey,
+        double originLatitude,
+        double originLongitude,
+        List<ExternalActivityCandidate> candidates,
+        Set<String> seen,
+        InterestType interest,
+        List<String> categories,
+        ImportArea area
+    ) {
+        int rawFetched = 0;
+        int maxRaw = Math.min(area.rawTarget(), settings().maxRawPerInterest());
+        for (int page = 0; page < settings().maxPagesPerInterest() && rawFetched < maxRaw; page++) {
+            int offset = page * settings().geoapifyPageSize();
+            int pageLimit = Math.min(settings().geoapifyPageSize(), maxRaw - rawFetched);
+            JsonNode features = client.places(
+                String.join(",", categories),
+                conditionsFor(interest),
+                "circle:" + area.centerLon() + "," + area.centerLat() + "," + area.radiusMeters(),
+                "proximity:" + area.centerLon() + "," + area.centerLat(),
+                pageLimit,
+                offset,
+                "de",
+                apiKey
+            ).path("features");
+            if (!features.isArray() || features.isEmpty()) {
+                break;
+            }
+            rawFetched += features.size();
+            int accepted = 0;
+            for (JsonNode feature : features) {
+                ExternalActivityCandidate candidate = candidate(feature.path("properties"), locationText);
+                if (candidate == null || !filtering.isRelevant(candidate, interest) || filtering.isDuplicate(candidate, seen)) {
+                    continue;
+                }
+                candidate.distanceToCenterKm = distanceInKilometers(
+                    originLatitude,
+                    originLongitude,
+                    candidate.latitude,
+                    candidate.longitude
+                );
+                candidate.primaryInterest = interest;
+                candidate.matchedInterests.add(interest);
+                candidates.add(candidate);
+                accepted++;
+            }
+            LOG.debugf(
+                "Geoapify import page city=%s interest=%s area=%s center=%.5f,%.5f radiusM=%d offset=%d limit=%d rawFetched=%d accepted=%d",
+                locationText,
+                interest,
+                area.label(),
+                area.centerLat(),
+                area.centerLon(),
+                area.radiusMeters(),
+                offset,
+                pageLimit,
+                features.size(),
+                accepted
+            );
+            if (features.size() < pageLimit) {
+                break;
+            }
         }
-        return settings().minRawPerInterest();
     }
 
     private static void copyRawTag(JsonNode raw, ExternalActivityCandidate candidate, String tag) {
@@ -319,6 +368,23 @@ public class GeoapifyActivityProvider implements ActivityProvider {
         return node.path(field).isNumber() ? node.path(field).asDouble() : null;
     }
 
+    private static CityBoundingBox bbox(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        if (node.isArray() && node.size() >= 4) {
+            return new CityBoundingBox(node.get(1).asDouble(), node.get(0).asDouble(), node.get(3).asDouble(), node.get(2).asDouble());
+        }
+        Double lon1 = number(node, "lon1");
+        Double lat1 = number(node, "lat1");
+        Double lon2 = number(node, "lon2");
+        Double lat2 = number(node, "lat2");
+        if (lon1 == null || lat1 == null || lon2 == null || lat2 == null) {
+            return null;
+        }
+        return new CityBoundingBox(Math.min(lat1, lat2), Math.min(lon1, lon2), Math.max(lat1, lat2), Math.max(lon1, lon2));
+    }
+
     private static String firstNonBlank(String first, String second) {
         return first != null && !first.isBlank() ? first : second;
     }
@@ -352,6 +418,38 @@ public class GeoapifyActivityProvider implements ActivityProvider {
 
     private ActivityImportSettings settings() {
         return settings == null ? new ActivityImportSettings() : settings;
+    }
+
+    private void logAreaQuality(
+        MultiAreaImportPlan plan,
+        List<ExternalActivityCandidate> interestCandidates,
+        CitySpatialContext context
+    ) {
+        if (plan.areas().size() <= 1 || interestCandidates.isEmpty()) {
+            return;
+        }
+        AreaQualityService service = areaQuality == null ? new AreaQualityService() : areaQuality;
+        boolean foodRelevant = context.selectedInterests().contains(InterestType.FOOD);
+        for (ImportArea area : plan.areas()) {
+            AreaQualityScore score = service.score(area, interestCandidates, context.selectedInterests(), foodRelevant);
+            LOG.debugf(
+                "Import area quality city=%s interest=%s area=%s score=%.2f daySuitable=%s candidates=%d",
+                plan.city(),
+                plan.interest(),
+                area.label(),
+                score.score(),
+                score.daySuitable(),
+                interestCandidates.size()
+            );
+        }
+    }
+
+    private MultiAreaImportPlanner areaPlanner() {
+        if (areaPlanner == null) {
+            areaPlanner = new MultiAreaImportPlanner();
+            areaPlanner.settings = settings();
+        }
+        return areaPlanner;
     }
 
 }
