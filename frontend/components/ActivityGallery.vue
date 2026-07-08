@@ -132,6 +132,19 @@ const propImages = computed(() => {
 
 const localImages = computed<ActivityImage[]>(() => [])
 
+function resolveImageUrl(url: string) {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  const base = String(config.public.apiBase || '').replace(/\/$/, '')
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`
+}
+
+function isUsableImageUrl(url: string) {
+  if (!url) return false
+  if (url.includes('/undefined/') || url.includes('/null/')) return false
+  return /^https?:\/\//i.test(url) || url.startsWith('/')
+}
+
 const rawImages = computed(() => {
   const merged: ActivityImage[] = []
   const seen = new Set<string>()
@@ -258,19 +271,6 @@ const changeSlide = (offset: number) => {
   activeSlide.value = (activeSlide.value + offset + count) % count
 }
 
-const resolveImageUrl = (url: string) => {
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-  const base = String(config.public.apiBase || '').replace(/\/$/, '')
-  return `${base}${url.startsWith('/') ? url : `/${url}`}`
-}
-
-const isUsableImageUrl = (url: string) => {
-  if (!url) return false
-  if (url.includes('/undefined/') || url.includes('/null/')) return false
-  return /^https?:\/\//i.test(url) || url.startsWith('/')
-}
-
 const imageSource = (url: string) => {
   const version = imageRetryVersions.value[url] || 0
   if (!version) return url
@@ -279,6 +279,28 @@ const imageSource = (url: string) => {
 }
 
 const isImageLoaded = (url: string) => loadedImageUrls.value.includes(url)
+const realImageUrl = (slide: GallerySlide) => slide.realImage?.url || ''
+const hasRealImage = (slide: GallerySlide) => Boolean(realImageUrl(slide))
+const isSlideImageLoaded = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  return Boolean(url && isImageLoaded(url))
+}
+const isSlideImageFailed = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  return Boolean(url && failedImageUrls.value.includes(url))
+}
+const slideImageSource = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  return url ? imageSource(url) : ''
+}
+const markSlideImageLoaded = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  if (url) markImageLoaded(url)
+}
+const markSlideImageFailed = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  if (url) markImageFailed(url)
+}
 
 const requestImages = () => {
   if (!props.activity?.activity?.id) return
@@ -341,26 +363,26 @@ onUnmounted(() => {
           :class="`placeholder-variant-${slide.variant}`"
           >
           <img
-            v-if="!slide.realImage || !isImageLoaded(slide.realImage.url)"
+            v-if="!hasRealImage(slide) || !isSlideImageLoaded(slide)"
             class="gallery-fallback-image"
-            :class="{ 'is-loading-underlay': slide.realImage }"
+            :class="{ 'is-loading-underlay': hasRealImage(slide) }"
             :src="slide.fallbackImage.url"
             :alt="slide.fallbackImage.alt"
             loading="eager"
           >
           <img
-            v-if="slide.realImage"
+            v-if="hasRealImage(slide)"
             class="gallery-real-image"
             :class="{
-              'is-loaded': isImageLoaded(slide.realImage.url),
-              'has-load-error': failedImageUrls.includes(slide.realImage.url)
+              'is-loaded': isSlideImageLoaded(slide),
+              'has-load-error': isSlideImageFailed(slide)
             }"
-            :src="imageSource(slide.realImage.url)"
-            :alt="slide.realImage.alt || slide.fallbackImage.alt"
+            :src="slideImageSource(slide)"
+            :alt="slide.realImage?.alt || slide.fallbackImage.alt"
             loading="eager"
             decoding="async"
-            @load="markImageLoaded(slide.realImage.url)"
-            @error="markImageFailed(slide.realImage.url)"
+            @load="markSlideImageLoaded(slide)"
+            @error="markSlideImageFailed(slide)"
           >
 
           <figcaption>

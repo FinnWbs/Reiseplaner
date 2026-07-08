@@ -63,8 +63,26 @@ watch(selectedActivityId, () => {
   galleryError.value = false
 })
 
-onErrorCaptured(() => {
-  galleryError.value = true
+const componentName = (instance: any) =>
+  instance?.$options?.name || instance?.$options?.__name || instance?.$?.type?.name || instance?.$?.type?.__name || null
+
+const isActivityGalleryError = (instance: any) => {
+  let current = instance
+  while (current) {
+    if (componentName(current) === 'ActivityGallery') return true
+    current = current.$parent || current.parent || null
+  }
+  return false
+}
+
+onErrorCaptured((error, instance, info) => {
+  const galleryRelated = isActivityGalleryError(instance)
+  if (galleryRelated) {
+    if (import.meta.dev) console.error('[DayOrbitCard] Activity gallery failed', error, info)
+    galleryError.value = true
+  } else if (import.meta.dev) {
+    console.warn('[DayOrbitCard] Child component error ignored', error, info)
+  }
   return false
 })
 
