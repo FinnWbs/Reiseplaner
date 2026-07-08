@@ -1518,6 +1518,44 @@
   height: 100%;
 }
 
+.activity-map-frame {
+  position: relative;
+  min-height: 190px;
+  height: 100%;
+}
+
+.activity-map-recenter {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 450;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid rgba(15, 42, 67, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f4f86;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(20, 47, 59, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.activity-map-recenter:hover,
+.activity-map-recenter:focus-visible {
+  border-color: rgba(31, 122, 90, 0.24);
+  background: white;
+  color: #176345;
+  transform: translateY(-1px);
+}
+
+.activity-map-recenter:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .activity-map-empty {
   display: grid;
   place-content: center;

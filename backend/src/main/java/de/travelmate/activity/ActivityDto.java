@@ -1,6 +1,7 @@
 package de.travelmate.activity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import de.travelmate.quality.CanonicalCategory;
 
 public record ActivityDto(
@@ -25,6 +26,7 @@ public record ActivityDto(
     double itineraryFitScore,
     double finalScore,
     String qualityReasonCodes,
+    List<ActivityImageDto> images,
     LocalDateTime lastSyncedAt,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
@@ -52,6 +54,7 @@ public record ActivityDto(
             activity.itineraryFitScore,
             activity.finalScore,
             activity.qualityReasonCodes,
+            activity.images.stream().map(ActivityImageDto::from).toList(),
             activity.lastSyncedAt,
             activity.createdAt,
             activity.updatedAt

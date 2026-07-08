@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>TravelMate Bildlade-Flow Analyse</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.52;
+      font-size: 10.5pt;
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: #08213d;
+      line-height: 1.15;
+      page-break-after: avoid;
+    }
+
+    h1 {
+      margin: 0 0 7mm;
+      font-size: 25pt;
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      margin: 9mm 0 3mm;
+      padding-top: 2mm;
+      border-top: 1px solid #d8e7f5;
+      font-size: 15pt;
+    }
+
+    h3 {
+      margin: 6mm 0 2mm;
+      font-size: 11.5pt;
+    }
+
+    p {
+      margin: 0 0 3.2mm;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 4mm 5mm;
+      padding: 0;
+    }
+
+    li {
+      margin: 1.2mm 0;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 9.2pt;
+      color: #0b4f8f;
+      background: #eef7ff;
+      border-radius: 4px;
+      padding: 0.4mm 1mm;
+    }
+
+    pre {
+      margin: 2.5mm 0 4mm;
+      padding: 3.2mm;
+      border: 1px solid #d8e7f5;
+      border-radius: 9px;
+      background: #f7fbff;
+      color: #0f172a;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 8.7pt;
+      line-height: 1.38;
+      page-break-inside: avoid;
+    }
+
+    .meta {
+      margin-bottom: 8mm;
+      padding: 4mm;
+      border: 1px solid #d8e7f5;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f7fbff, #eef7ff);
+    }
+
+    .meta strong {
+      color: #0b63b6;
+    }
+
+    .callout {
+      margin: 4mm 0;
+      padding: 3.5mm 4mm;
+      border-left: 4px solid #0b63b6;
+      border-radius: 9px;
+      background: #eef7ff;
+    }
+
+    .warning {
+      border-left-color: #d97706;
+      background: #fff8ed;
+    }
+
+    .success {
+      border-left-color: #12815f;
+      background: #edfdf7;
+    }
+
+    .path {
+      display: block;
+      margin: 1mm 0 2mm;
+      color: #475569;
+      font-size: 9pt;
+      word-break: break-all;
+    }
+
+    .rank {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 3mm 0 5mm;
+      page-break-inside: avoid;
+    }
+
+    .rank th,
+    .rank td {
+      border: 1px solid #d8e7f5;
+      padding: 2mm;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .rank th {
+      background: #eef7ff;
+      color: #08213d;
+    }
+
+    .footer-note {
+      margin-top: 10mm;
+      color: #64748b;
+      font-size: 9pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>TravelMate Bildlade-Flow Analyse</h1>
+
+  <div class="meta">
+    <p><strong>Stand:</strong> aktuelle Repository-Analyse ohne Codeänderung</p>
+    <p><strong>Ziel:</strong> erklären, warum echte Aktivitätsbilder kurz sichtbar sein können und danach wieder durch Kategorie-Platzhalter ersetzt werden.</p>
+  </div>
+
+  <div class="callout">
+    <p><strong>Kernaussage:</strong> Der Bildlade-Flow hat aktuell zwei Wahrheiten: lokale Bilder in <code>ActivityGallery</code> und zentrale Bilder im Trip-State aus <code>useTripWorkspace</code>. Wenn echte Bilder nur lokal ankommen, gehen sie beim Wechsel von Aktivität, Tag oder nach einem späteren Trip-Update wieder verloren. Dann greift die Galerie erneut auf Platzhalter zurück.</p>
+  </div>
+
+  <h2>1. Wo entsteht der finale Bild-Slide-State?</h2>
+  <p>Der finale Slide-State entsteht im Frontend in:</p>
+  <span class="path">C:\Users\finnw\Documents\Reiseplaner\frontend\components\ActivityGallery.vue</span>
+  <p>Die Galerie bekommt von <code>DayOrbitCard.vue</code> eine einzelne <code>TripActivity</code>:</p>
+  <pre>&lt;ActivityGallery
+  :key="(selectedActivity || day.activities[0])?.id"
+  :activity="selectedActivity || day.activities[0]"
+  :city="city"
+/&gt;</pre>
+  <p>Intern baut <code>ActivityGallery</code> daraus <code>GallerySlide</code>-Objekte. Ein Slide enthält immer einen Fallback und optional ein echtes Bild:</p>
+  <pre>type GallerySlide = {
+  key: string
+  image: GalleryImage
+  realImage: GalleryImage | null
+  fallbackImage: GalleryImage
+  label: string
+  variant: number
+}</pre>
+  <p>Es gibt zwei Fallback-Orte: normale Kategorie-Platzhalter in <code>ActivityGallery.vue</code> und einen zusätzlichen Notfall-Fallback in <code>DayOrbitCard.vue</code>, falls die Galerie selbst einen Fehler wirft.</p>
+
+  <h2>2. Prioritätslogik in ActivityGallery</h2>
+  <p>Die Galerie sammelt Bilder aus zwei Quellen:</p>
+  <pre>const propImages = computed(() =&gt; {
+  const images = props.activity?.activity?.images
+  return Array.isArray(images) ? images : []
+})
+
+const localImages = computed(() =&gt;
+  Array.isArray(enrichedImages.value) ? enrichedImages.value : []
+)</pre>
+  <p><code>propImages</code> kommen aus dem zentralen Trip-State. <code>localImages</code> kommen aus einem lokalen Galerie-Request.</p>
+  <pre>if (images.length) {
+  return images.map((image, index) =&gt; ({
+    key: `${image.url}-${index}`,
+    image: fallback,
+    realImage: image,
+    fallbackImage: fallback
+  }))
+}
+
+return [{
+  key: `${props.activity.id}-fallback-${categoryName.value}`,
+  realImage: null,
+  fallbackImage: fallback
+}]</pre>
+  <p>Ein echtes Bild gewinnt also nur, solange <code>realImages.length &gt; 0</code> ist. Wird diese Liste wieder leer, wird ein Platzhalter-Slide gebaut.</p>
+
+  <h2>3. Erfolgreich geladene Bilder</h2>
+  <p>Das sichtbare echte Bild registriert seinen Ladeerfolg mit:</p>
+  <pre>@load="markImageLoaded(slide.realImage.url)"
+@error="markImageFailed(slide.realImage.url)"</pre>
+  <p>Der Erfolg wird pro URL gespeichert:</p>
+  <pre>const markImageLoaded = (url: string) =&gt; {
+  if (!loadedImageUrls.value.includes(url)) {
+    loadedImageUrls.value = [...loadedImageUrls.value, url]
+  }
+  imageLoadStatus.value = 'ready'
+}</pre>
+  <p>Diese URL ist meistens eine interne Proxy-URL wie <code>/activities/{activityId}/images/{imageId}/media</code>. Der Zustand lebt aber nur in der aktuellen Galerie-Instanz. Wird die Galerie neu gemountet, sind <code>loadedImageUrls</code> und <code>enrichedImages</code> wieder leer.</p>
+
+  <h2>4. Fehlgeschlagene Bilder</h2>
+  <p>Fehler werden ebenfalls pro URL gespeichert:</p>
+  <pre>const markImageFailed = (url: string) =&gt; {
+  if (loadedImageUrls.value.includes(url)) return
+  if (!failedImageUrls.value.includes(url)) {
+    failedImageUrls.value = [...failedImageUrls.value, url]
+  }
+}</pre>
+  <p>Innerhalb derselben Galerie-Instanz kann ein bereits erfolgreich geladenes Bild nicht mehr als failed gelten. Nach einem Remount ist dieser Schutz aber weg, weil <code>loadedImageUrls</code> neu startet.</p>
+
+  <h2>5. Wo neue Bilder in den zentralen Trip-State geschrieben werden</h2>
+  <p>Der zentrale Merge passiert im Workspace:</p>
+  <span class="path">C:\Users\finnw\Documents\Reiseplaner\frontend\composables\useTripWorkspace.ts</span>
+  <pre>const updateActivityImages = (activityId: number, images: ActivityImage[]) =&gt; {
+  if (!trip.value) return
+  if (!images.length) return
+
+  for (const day of trip.value.days) {
+    for (const item of day.activities) {
+      if (item.activity.id === activityId) {
+        item.activity.images = mergeImages(item.activity.images, images)
+      }
+    }
+  }
+}</pre>
+  <p>Wichtig: <code>ActivityGallery.vue</code> schreibt seine lokal geladenen Bilder aktuell nicht zuverlässig in diesen zentralen Trip-State. Dort steht nur:</p>
+  <pre>enrichedImages.value = incomingImages</pre>
+  <p>Das erklärt, warum Bilder kurz sichtbar sein können, aber nach einem Remount verschwinden.</p>
+
+  <h2>6. Hintergrund-Preloader</h2>
+  <p>Der Preloader lädt den aktiven Tag und zwei Folgetage:</p>
+  <pre>const preloadUpcomingImages = async (activeIndex = 0, daysAhead = 2) =&gt; {
+  const end = Math.min(currentTrip.days.length - 1, start + daysAhead)
+  const activities = currentTrip.days
+    .slice(start, end + 1)
+    .flatMap(day =&gt; day.activities || [])
+}</pre>
+  <p>Eine Aktivität gilt als erfolgreich, wenn mindestens ein Bild vorgeladen werden konnte:</p>
+  <pre>const warmed = await warmActivityImages(safeImages)
+if (warmed) {
+  imagePreloadDone.add(activityId)
+  setImageStatus(activityId, 'ready')
+}</pre>
+  <p>Der Preloader-Status wird aktuell aber nicht direkt für die Galerieentscheidung genutzt. Die Galerie entscheidet anhand von <code>activity.images</code>, <code>enrichedImages</code> und <code>failedImageUrls</code>.</p>
+
+  <h2>7. Doppelte Bildlade-Mechanismen</h2>
+  <p>Es gibt zwei konkurrierende Wege:</p>
+  <ol>
+    <li><code>ActivityGallery.vue</code> ruft beim Mount <code>loadImages()</code> auf.</li>
+    <li><code>useTripWorkspace.ts</code> ruft <code>preloadUpcomingImages()</code> auf.</li>
+  </ol>
+  <p>Auf der Trip-Seite wird der Preloader außerdem mehrfach gestartet:</p>
+  <pre>syncDayFromRoute()
+workspace.preloadUpcomingImages(activeIndex.value)</pre>
+  <p>Dadurch können Galerie und Preloader denselben Backend-Endpunkt fast gleichzeitig treffen.</p>
+
+  <h2>8. Watcher und Remounts</h2>
+  <p>Beim Aktivitätswechsel wird der lokale Galerie-State gelöscht:</p>
+  <pre>watch(() =&gt; props.activity.id, () =&gt; {
+  activeSlide.value = 0
+  enrichedImages.value = null
+  failedImageUrls.value = []
+  loadedImageUrls.value = []
+  imageLoadStatus.value = 'idle'
+  loadImages()
+})</pre>
+  <p>Zusätzlich wird die Galerie über diesen Key neu erzeugt:</p>
+  <pre>:key="(selectedActivity || day.activities[0])?.id"</pre>
+  <p>Das ist aus UI-Sicht nachvollziehbar, aber gefährlich, wenn echte Bilder nur lokal in der Galerie gespeichert sind.</p>
+
+  <h2>9. CSS- und Rendering-Logik</h2>
+  <p>Aktuell liegt das echte Bild über dem Platzhalter:</p>
+  <pre>.gallery-fallback-image {
+  z-index: 1;
+  opacity: 1;
+}
+
+.gallery-real-image {
+  z-index: 2;
+  opacity: 1;
+}</pre>
+  <p>Im aktuellen Stand sieht CSS nicht nach der Hauptursache aus. Der Platzhalter wird sichtbar, wenn das echte Bild nicht mehr im DOM ist oder als failed gilt.</p>
+
+  <h2>10. Backend-Endpunkt für Bild-Enrichment</h2>
+  <p>Der Endpunkt ist:</p>
+  <span class="path">C:\Users\finnw\Documents\Reiseplaner\backend\src\main\java\de\travelmate\activity\ActivityResource.java</span>
+  <pre>@POST
+@Path("/{id}/images")
+public List&lt;ActivityImageDto&gt; enrichImages(@PathParam("id") Long id) {
+    return imageService.ensureImages(id);
+}</pre>
+  <p>Der Service ist grundsätzlich idempotent:</p>
+  <pre>if (!activity.images.isEmpty()) {
+    return activity.images.stream().map(ActivityImageDto::from).toList();
+}</pre>
+  <p>Restrisiko: Bei parallelen Requests können zwei Requests gleichzeitig sehen, dass noch keine Bilder existieren. Wenn einer beim Speichern wegen Parallelität scheitert, landet er im Catch und gibt leer zurück:</p>
+  <pre>} catch (RuntimeException exception) {
+    LOG.warnf(...)
+    return List.of();
+}</pre>
+
+  <h2>11. Interne Media-URL</h2>
+  <p>Das Frontend bekommt meist keine direkte Google-URL, sondern eine interne Proxy-URL:</p>
+  <pre>String url = image.url == null || image.url.isBlank()
+    ? "/activities/" + image.activity.id + "/images/" + image.id + "/media"
+    : image.url;</pre>
+  <p>Der Proxy löst diese URL bei jedem Bildaufruf über Google auf:</p>
+  <pre>return Response.temporaryRedirect(URI.create(url)).build();</pre>
+  <p>Mögliche Fehlerquellen sind Google-Timeouts, 403 durch Key-Restrictions, ungültige Photo-Referenzen oder langsame Redirects. Der Backend-Timeout liegt bei etwa 3 Sekunden, der Frontend-Warmup-Timeout bei 10 Sekunden.</p>
+
+  <h2>12. Wahrscheinlichkeitsbewertung</h2>
+  <table class="rank">
+    <thead>
+      <tr>
+        <th>Ursache</th>
+        <th>Wahrscheinlichkeit</th>
+        <th>Begründung</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Lokaler Galerie-State geht verloren</td>
+        <td>Sehr hoch</td>
+        <td>Galerie speichert per <code>enrichedImages</code> lokal. Beim Remount wird dieser Zustand gelöscht.</td>
+      </tr>
+      <tr>
+        <td>State-Overwrite mit alter Activity ohne Bilder</td>
+        <td>Hoch</td>
+        <td><code>replaceTrip(updated)</code> ersetzt den ganzen Trip. Eine Antwort ohne Bilder kann vorhandene lokale Bilder verdrängen.</td>
+      </tr>
+      <tr>
+        <td>Doppelte Requests / Race Conditions</td>
+        <td>Mittel bis hoch</td>
+        <td>Galerie und Preloader laden parallel denselben Endpoint.</td>
+      </tr>
+      <tr>
+        <td><code>onError</code> nach <code>onLoad</code></td>
+        <td>Mittel</td>
+        <td>Innerhalb einer Instanz geschützt, nach Remount aber wieder möglich.</td>
+      </tr>
+      <tr>
+        <td>CSS versteckt echte Bilder</td>
+        <td>Niedrig im aktuellen Stand</td>
+        <td><code>.gallery-real-image</code> hat aktuell <code>opacity: 1</code> und höheren <code>z-index</code>.</td>
+      </tr>
+      <tr>
+        <td>Leere API-Antwort überschreibt Bilder</td>
+        <td>Mittel</td>
+        <td>Workspace schützt davor, Galerie lokal aber nicht vollständig.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>13. Minimaler Fix-Vorschlag</h2>
+  <ol>
+    <li><strong>Ein Besitzer für Bilddaten:</strong> <code>useTripWorkspace</code> sollte die zentrale Wahrheit für echte Bilder sein.</li>
+    <li><strong>Galerie-Ergebnisse zentral mergen:</strong> Wenn <code>ActivityGallery</code> Bilder selbst lädt, muss sie diese in den zentralen Trip-State zurückgeben oder der Galerie-Request wird entfernt.</li>
+    <li><strong>Trip-Merge schützen:</strong> <code>replaceTrip(updated)</code> darf vorhandene echte Bilder nicht durch <code>images: []</code> ersetzen.</li>
+    <li><strong>Backend-Parallelität absichern:</strong> Nach einem Enrichment-Fehler sollte der Service vorhandene Bilder erneut aus der DB lesen, statt direkt leer zurückzugeben.</li>
+    <li><strong>Anzeige-Regel hart machen:</strong> Wenn echte Bilder vorhanden sind, darf der Platzhalter nie den finalen Slide-State ersetzen.</li>
+  </ol>
+
+  <div class="callout success">
+    <p><strong>Wahrscheinlichste Root Cause:</strong> Echte Bilder werden teilweise nur lokal in <code>ActivityGallery.enrichedImages</code> gehalten. Dieser lokale Zustand wird beim Aktivitätswechsel, Tageswechsel oder Remount gelöscht. Wenn der zentrale Trip-State keine Bilder hat oder später überschrieben wird, zeigt die Galerie wieder Platzhalter.</p>
+  </div>
+
+  <h2>Betroffene Dateien</h2>
+  <ul>
+    <li><span class="path">C:\Users\finnw\Documents\Reiseplaner\frontend\components\ActivityGallery.vue</span></li>
+    <li><span class="path">C:\Users\finnw\Documents\Reiseplaner\frontend\composables\useTripWorkspace.ts</span></li>
+    <li><span class="path">C:\Users\finnw\Documents\Reiseplaner\frontend\components\DayOrbitCard.vue</span></li>
+    <li><span class="path">C:\Users\finnw\Documents\Reiseplaner\frontend\pages\trips\[id].vue</span></li>
+    <li><span class="path">C:\Users\finnw\Documents\Reiseplaner\backend\src\main\java\de\travelmate\activity\ActivityResource.java</span></li>
+    <li><span class="path">C:\Users\finnw\Documents\Reiseplaner\backend\src\main\java\de\travelmate\activity\GooglePlacesImageService.java</span></li>
+    <li><span class="path">C:\Users\finnw\Documents\Reiseplaner\backend\src\main\java\de\travelmate\activity\ActivityImageDto.java</span></li>
+  </ul>
+
+  <h2>Risiken des Fixes</h2>
+  <ul>
+    <li>Wenn Bilder zu aggressiv erhalten werden, können alte Bilder länger im Client bleiben.</li>
+    <li>Ein explizites Entfernen von Bildern bräuchte später ein eigenes Signal.</li>
+    <li>Wenn Galerie und Preloader weiter parallel laden, bleiben unnötige Requests möglich.</li>
+    <li>Backend-Requery nach Parallelfehlern ist sicherer, aber etwas mehr DB-Arbeit.</li>
+  </ul>
+
+  <h2>Empfohlene Tests und Logs</h2>
+  <h3>Frontend</h3>
+  <ul>
+    <li>Log bei Galerie-Mount: Activity-ID, <code>propImages.length</code>, <code>localImages.length</code>, <code>realImages.length</code>.</li>
+    <li>Log bei <code>markImageLoaded</code> und <code>markImageFailed</code>.</li>
+    <li>Log bei <code>replaceTrip</code>: Bilder vor/nach dem Ersetzen je Activity.</li>
+    <li>Test: Bild erscheint, Aktivität wechseln, zurückwechseln, echtes Bild muss bleiben.</li>
+    <li>Test: Tag wechseln und zurück, echtes Bild muss bleiben.</li>
+  </ul>
+
+  <h3>Backend</h3>
+  <ul>
+    <li>Log bei <code>ensureImages</code>: vorhandene Bilder, Google-Match, gespeicherte Bilder.</li>
+    <li>Log bei Exception: danach DB-Requery count.</li>
+    <li>Test: Zwei parallele Requests auf dieselbe Activity dürfen am Ende beide echte Bilder oder mindestens die vorhandenen DB-Bilder zurückgeben.</li>
+  </ul>
+
+  <p class="footer-note">Erstellt aus der aktuellen lokalen Codeanalyse im TravelMate-Repository. Keine Codeänderungen wurden für diese Analyse vorgenommen.</p>
+</body>
+</html>

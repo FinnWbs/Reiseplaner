@@ -3,15 +3,17 @@ import { ArrowLeft, CalendarDays, MapPin, Trash2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const workspace = useTripWorkspace()
-const theme = usePlannerTheme()
 const activeIndex = ref(0)
 const deleteDialogOpen = ref(false)
+const dayViewError = ref('')
 
 const tripId = computed(() => Number(route.params.id))
+const activeDay = computed(() => workspace.trip.value?.days?.[activeIndex.value] || null)
 
 const setActiveIndex = async (index: number, replace = false) => {
   if (!workspace.trip.value || index < 0 || index >= workspace.trip.value.days.length) return
   activeIndex.value = index
+  workspace.preloadUpcomingImages(index)
   const day = workspace.trip.value.days[index]?.dayNumber
   await navigateTo(
     { path: route.path, query: day ? { day } : undefined },
@@ -24,6 +26,8 @@ const syncDayFromRoute = () => {
   const requestedDay = Number(route.query.day)
   const index = workspace.trip.value.days.findIndex(day => day.dayNumber === requestedDay)
   activeIndex.value = index >= 0 ? index : 0
+  dayViewError.value = ''
+  workspace.preloadUpcomingImages(activeIndex.value)
 }
 
 const removeCurrentTrip = async () => {
@@ -40,26 +44,27 @@ const confirmCurrentTripDeletion = async () => {
 
 watch(() => route.query.day, syncDayFromRoute)
 
+onErrorCaptured((error) => {
+  dayViewError.value = error instanceof Error ? error.message : 'Die Tagesansicht konnte nicht geladen werden.'
+  return false
+})
+
 onMounted(async () => {
-  theme.initPlannerTheme()
   if (!Number.isFinite(tripId.value)) {
     await navigateTo('/calendar')
     return
   }
   await workspace.loadTrip(tripId.value)
   syncDayFromRoute()
+  workspace.preloadUpcomingImages(activeIndex.value)
 })
-
-onUnmounted(theme.cleanupPlannerTheme)
 </script>
 
 <template>
   <div class="workspace-page trip-orbit-page">
     <AppNavigation
       :user="workspace.user.value"
-      :is-dark-mode="theme.isDarkMode.value"
       @logout="workspace.logout"
-      @toggle-theme="theme.toggleTheme"
     />
 
     <main class="workspace-main orbit-page-main">
@@ -101,7 +106,23 @@ onUnmounted(theme.cleanupPlannerTheme)
           @update-availability="workspace.updateAvailability"
           @regenerate-activity="workspace.regenerateActivity"
           @remove-activity="workspace.removeActivity"
+          @request-images="workspace.ensureActivityImages"
         />
+
+        <section v-if="dayViewError && activeDay" class="trip-plan-fallback" aria-live="polite">
+          <div>
+            <span class="eyebrow">Tagesplan</span>
+            <h2>Tag {{ activeDay.dayNumber }}</h2>
+            <p>Die große Tagesansicht konnte gerade nicht geladen werden. Deine Stopps sind aber vorhanden.</p>
+          </div>
+          <ul>
+            <li v-for="item in activeDay.activities" :key="item.id">
+              <span>{{ formatMinutes(item.scheduledStart) }}</span>
+              <strong>{{ item.activity.name }}</strong>
+              <small>{{ item.activity.category || 'Aktivität' }}</small>
+            </li>
+          </ul>
+        </section>
 
         <footer class="trip-danger-zone">
           <button

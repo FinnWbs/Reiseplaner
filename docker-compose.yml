@@ -25,6 +25,8 @@ services:
       JWT_PUBLIC_KEY_LOCATION: /run/secrets/jwt_public_key
       JWT_PRIVATE_KEY_LOCATION: /run/secrets/jwt_private_key
       GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+      GOOGLE_PLACES_PROVIDER_ENABLED: ${GOOGLE_PLACES_PROVIDER_ENABLED:-false}
     ports:
       - "8080:8080"
     secrets:

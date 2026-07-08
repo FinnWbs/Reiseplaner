@@ -2,6 +2,8 @@
 import { ArrowLeft, ArrowRight, CalendarClock, CalendarDays, CalendarRange, Compass, MapPin, Search, Sparkles, Sun, Wind } from 'lucide-vue-next'
 import type { TripDraft } from '~/composables/useTripDraft'
 
+type RangePickerSide = 'left' | 'right'
+
 const props = defineProps<{
   initialDraft?: TripDraft | null
   preparedRange?: boolean
@@ -37,11 +39,13 @@ const flexibleAnchor = ref<HTMLElement | null>(null)
 const rangePopoverStyle = ref<Record<string, string>>({})
 const pickerMode = ref<'date' | 'flexible'>('date')
 const flexibleMonth = ref('')
+const rangeStartSide = ref<RangePickerSide | ''>('')
+const rangeEndSide = ref<RangePickerSide | ''>('')
 
 const durationPresets = [
   { label: 'Ein Wochenende', days: 3 },
   { label: 'Eine Woche', days: 7 },
-  { label: 'Einen Monat', days: 14 }
+  { label: 'Zwei Wochen', days: 14 }
 ]
 
 const warmCities = ['Barcelona', 'Rom', 'Lissabon', 'Athen']
@@ -88,6 +92,14 @@ const nextRangeMonthLabel = computed(() => new Intl.DateTimeFormat('de-DE', {
   month: 'long',
   year: 'numeric'
 }).format(nextRangeCalendarMonth.value))
+
+const rangePopoverClass = computed(() => {
+  if (pickerMode.value !== 'date') return ''
+  if (rangeStartSide.value && rangeStartSide.value === rangeEndSide.value) {
+    return `range-picker-popover--single-${rangeStartSide.value}`
+  }
+  return ''
+})
 
 const flexibleDurationLabel = computed(() =>
   durationPresets.find(preset => preset.days === daysCount.value)?.label || `${daysCount.value} Tage`
@@ -184,11 +196,14 @@ const positionRangePopover = () => {
   const rect = anchor.getBoundingClientRect()
   const width = Math.min(860, window.innerWidth - 32)
   const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12)
+  const top = rect.bottom + 12
+  const maxHeight = Math.max(180, window.innerHeight - top - 16)
   rangePopoverStyle.value = {
     position: 'fixed',
-    top: `${rect.bottom + 12}px`,
+    top: `${top}px`,
     left: `${left}px`,
-    width: `${width}px`
+    width: `${width}px`,
+    maxHeight: `${maxHeight}px`
   }
 }
 
@@ -199,6 +214,8 @@ const openFixedRangeDialog = async () => {
   rangeError.value = ''
   rangeSelectionComplete.value = Boolean(startDate.value && endDate.value)
   rangeSelectedDate.value = startDate.value || ''
+  rangeStartSide.value = ''
+  rangeEndSide.value = ''
   const source = startDate.value || endDate.value
   if (source) {
     const date = new Date(`${source}T12:00:00`)
@@ -236,6 +253,8 @@ const handleRangeWindowChange = () => {
 }
 
 const moveRangeMonth = (offset: number) => {
+  rangeStartSide.value = ''
+  rangeEndSide.value = ''
   rangeCalendarMonth.value = new Date(
     rangeCalendarMonth.value.getFullYear(),
     rangeCalendarMonth.value.getMonth() + offset,
@@ -244,10 +263,14 @@ const moveRangeMonth = (offset: number) => {
   )
 }
 
-const updateDialogRangeEnd = (date: string, complete: boolean) => {
+const updateDialogRangeEnd = (date: string, complete: boolean, side?: RangePickerSide) => {
   if (!startDate.value) {
     startDate.value = date
     endDate.value = date
+    if (side) {
+      rangeStartSide.value = side
+      rangeEndSide.value = side
+    }
     rangeSelectionComplete.value = false
     return
   }
@@ -259,24 +282,27 @@ const updateDialogRangeEnd = (date: string, complete: boolean) => {
   }
   rangeError.value = ''
   endDate.value = date
+  if (side) rangeEndSide.value = side
   rangeSelectionComplete.value = complete
 }
 
-const beginDialogRange = (date: string) => {
+const beginDialogRange = (date: string, side?: RangePickerSide) => {
   rangeError.value = ''
   startDate.value = date
   endDate.value = ''
   planningDates.value = []
+  rangeStartSide.value = side || ''
+  rangeEndSide.value = side || ''
   rangeSelectionComplete.value = false
 }
 
-const handleDialogRangeClick = (date: string) => {
+const handleDialogRangeClick = (date: string, side: RangePickerSide) => {
   rangeSelectedDate.value = date
   if (!startDate.value || rangeSelectionComplete.value) {
-    beginDialogRange(date)
+    beginDialogRange(date, side)
     return
   }
-  updateDialogRangeEnd(date, true)
+  updateDialogRangeEnd(date, true, side)
 }
 
 const clearFixedRange = () => {
@@ -286,6 +312,8 @@ const clearFixedRange = () => {
   rangeSelectedDate.value = ''
   rangeSelectionComplete.value = false
   rangeError.value = ''
+  rangeStartSide.value = ''
+  rangeEndSide.value = ''
 }
 
 const chooseFlexibleDuration = () => {
@@ -505,6 +533,7 @@ onUnmounted(() => {
       <section
         v-if="rangeDialogOpen"
         class="range-picker-popover"
+        :class="rangePopoverClass"
         :style="rangePopoverStyle"
         role="dialog"
         aria-label="Zeitraum auswaehlen"
@@ -515,7 +544,7 @@ onUnmounted(() => {
             <button class="date-range-arrow" type="button" aria-label="Vorherige Monate" @click="moveRangeMonth(-1)">
               <ArrowLeft :size="18" />
             </button>
-            <section class="range-picker-month">
+            <section class="range-picker-month range-picker-month-left">
               <h3>{{ rangeMonthLabel }}</h3>
               <TravelCalendar
                 :month="rangeCalendarMonth"
@@ -523,13 +552,13 @@ onUnmounted(() => {
                 :selected-date="rangeSelectedDate"
                 :range-start="startDate"
                 :range-end="endDate"
-                @select-date="handleDialogRangeClick"
-                @range-start="beginDialogRange"
-                @range-hover="updateDialogRangeEnd($event, false)"
-                @range-end="updateDialogRangeEnd($event, true)"
+                @select-date="handleDialogRangeClick($event, 'left')"
+                @range-start="beginDialogRange($event, 'left')"
+                @range-hover="updateDialogRangeEnd($event, false, 'left')"
+                @range-end="updateDialogRangeEnd($event, true, 'left')"
               />
             </section>
-            <section class="range-picker-month">
+            <section class="range-picker-month range-picker-month-right">
               <h3>{{ nextRangeMonthLabel }}</h3>
               <TravelCalendar
                 :month="nextRangeCalendarMonth"
@@ -537,10 +566,10 @@ onUnmounted(() => {
                 :selected-date="rangeSelectedDate"
                 :range-start="startDate"
                 :range-end="endDate"
-                @select-date="handleDialogRangeClick"
-                @range-start="beginDialogRange"
-                @range-hover="updateDialogRangeEnd($event, false)"
-                @range-end="updateDialogRangeEnd($event, true)"
+                @select-date="handleDialogRangeClick($event, 'right')"
+                @range-start="beginDialogRange($event, 'right')"
+                @range-hover="updateDialogRangeEnd($event, false, 'right')"
+                @range-end="updateDialogRangeEnd($event, true, 'right')"
               />
             </section>
             <button class="date-range-arrow" type="button" aria-label="Naechste Monate" @click="moveRangeMonth(1)">

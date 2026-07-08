@@ -4,6 +4,7 @@ export type ActivityImage = {
   url: string
   alt: string
   credit?: string
+  source?: string
 }
 
 export type TripActivity = {

@@ -13,15 +13,40 @@ const props = defineProps<{
 const selectedActivityId = ref<number | null>(null)
 const activityContextMenu = ref<{ x: number; y: number; item: TripActivity } | null>(null)
 const activityLongPressId = ref<number | null>(null)
+const galleryError = ref(false)
+const contentRef = ref<HTMLElement | null>(null)
 let activityLongPressTimer: ReturnType<typeof setTimeout> | null = null
 let activityLongPressOrigin: { x: number; y: number } | null = null
 const selectedActivity = computed(() =>
   props.day.activities.find(item => item.id === selectedActivityId.value) || props.day.activities[0] || null
 )
 
+const normalizeText = (value: unknown) => String(value || '')
+  .normalize('NFD')
+  .replace(/\p{M}/gu, '')
+  .toLowerCase()
+
+const fallbackCategory = computed(() => {
+  const activity = selectedActivity.value?.activity
+  const value = normalizeText(`${activity?.category || ''} ${activity?.subcategory || ''}`)
+  if (/night|club|bar|pub|nacht/.test(value)) return 'nightlife'
+  if (/food|essen|restaurant|cafe|cafes|market|markt|catering/.test(value)) return 'food'
+  if (/park|natur|garden|garten|forest|wald|beach|strand/.test(value)) return 'nature'
+  if (/shop|shopping|commercial|mall|markt|markte/.test(value)) return 'shopping'
+  if (/sport|stadium|fitness/.test(value)) return 'sport'
+  if (/heritage|historic|historisch|monument|castle|schloss|geschichte/.test(value)) return 'history'
+  return 'culture'
+})
+
+const fallbackImageUrl = computed(() => `/images/activity-fallbacks/${fallbackCategory.value}-01.png`)
+
 watch(() => props.day.id, () => {
   selectedActivityId.value = props.day.activities[0]?.id || null
   activityContextMenu.value = null
+  galleryError.value = false
+  nextTick(() => {
+    if (contentRef.value) contentRef.value.scrollTop = 0
+  })
 })
 
 watch(() => props.day.activities, (activities) => {
@@ -34,11 +59,21 @@ watch(() => props.day.activities, (activities) => {
   }
 }, { immediate: true, deep: true })
 
+watch(selectedActivityId, () => {
+  galleryError.value = false
+})
+
+onErrorCaptured(() => {
+  galleryError.value = true
+  return false
+})
+
 const emit = defineEmits<{
   select: []
   updateAvailability: [day: TripDay]
   regenerateActivity: [dayId: number, itemId: number]
   removeActivity: [dayId: number, itemId: number]
+  requestImages: [activityId: number]
 }>()
 
 const getActivityMenuPosition = (x: number, y: number) => {
@@ -166,7 +201,7 @@ onUnmounted(() => {
 
     <template v-if="active">
       <div class="orbit-active-layout">
-        <div class="orbit-day-content">
+        <div ref="contentRef" class="orbit-day-content">
           <div v-if="day.activities.length > 0" class="day-activity-experience">
             <div class="compact-timeline">
               <CompactActivityRow
@@ -185,10 +220,39 @@ onUnmounted(() => {
               />
             </div>
             <ActivityGallery
-              v-if="selectedActivity"
-              :activity="selectedActivity"
+              v-if="day.activities.length && !galleryError"
+              :key="(selectedActivity || day.activities[0])?.id"
+              :activity="selectedActivity || day.activities[0]"
               :city="city"
+              @request-images="$emit('requestImages', $event)"
             />
+            <section
+              v-else
+              class="activity-gallery gallery-fallback-only"
+              aria-label="Bildplatzhalter"
+            >
+              <div class="activity-gallery-stage">
+                <figure class="activity-gallery-slide">
+                  <img
+                    class="gallery-fallback-image"
+                    :src="fallbackImageUrl"
+                    :alt="`Bildplatzhalter für ${selectedActivity?.activity.name || 'Aktivität'}`"
+                    loading="eager"
+                  >
+                  <figcaption>
+                    <div>
+                      <span class="gallery-kicker">Galerie</span>
+                      <strong>{{ selectedActivity?.activity.name || 'Aktivität' }}</strong>
+                      <small>TravelMate Standardbild</small>
+                    </div>
+                    <span class="gallery-counter">1 / 1</span>
+                  </figcaption>
+                </figure>
+                <div class="gallery-badge">
+                  Galerie
+                </div>
+              </div>
+            </section>
           </div>
           <div v-else class="empty-day">
             <Sparkles :size="27" />

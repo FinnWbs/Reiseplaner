@@ -6,7 +6,6 @@ export default defineNuxtConfig({
     '~/assets/css/planner.css',
     '~/assets/css/schedule.css',
     '~/assets/css/workspace.css',
-    '~/assets/css/dark.css',
     '~/assets/css/onboarding.css',
     '~/assets/css/theme-blue.css',
     '~/assets/css/polish.css',
