@@ -195,6 +195,24 @@ class PlanningServiceTest {
     }
 
     @Test
+    void generatePlanDoesNotUseInactiveCatalogActivityAsAutomaticCandidate() {
+        InterestEntity sightseeing = interest(6L, "Sightseeing");
+        sightseeing.code = InterestType.SIGHTSEEING.name();
+        ActivityEntity catalogHighlight = primaryActivity(9L, "Brandenburger Tor", InterestType.SIGHTSEEING, sightseeing);
+        catalogHighlight.active = false;
+        catalogHighlight.importVersion = 0;
+
+        PlanningService service = serviceWithActivities(catalogHighlight);
+        service.sync = noRefreshSync();
+        TripDayEntity day = emptyDay();
+        day.trip.selectedInterests = new HashSet<>(Set.of(sightseeing));
+
+        service.generatePlan(day.trip, List.of(6L), Set.of(InterestType.SIGHTSEEING));
+
+        assertTrue(day.activities.isEmpty());
+    }
+
+    @Test
     void generatePlanReallocatesWhenNatureHasOnlyOldInvalidCandidates() {
         InterestEntity nature = interest(3L, "Natur & Outdoor");
         nature.code = InterestType.NATURE.name();

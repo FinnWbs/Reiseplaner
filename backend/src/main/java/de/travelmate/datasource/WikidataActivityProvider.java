@@ -9,11 +9,12 @@ import java.util.List;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
-public class WikidataActivityProvider {
+public class WikidataActivityProvider implements ActivityEnricher {
     @Inject
     @RestClient
     WikidataClient client;
 
+    @Override
     public List<String> enrich(List<ExternalActivityCandidate> candidates) {
         List<String> warnings = new ArrayList<>();
         for (ExternalActivityCandidate candidate : candidates) {

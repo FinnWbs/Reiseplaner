@@ -39,6 +39,9 @@ public class AttractionCatalogService {
     @Inject
     TripDayActivityRepository tripActivities;
 
+    @Inject
+    AttractionCatalogEntrySource entrySource;
+
     public AttractionCatalogResponse listForTrip(TripEntity trip) {
         List<AttractionCatalogEntry> entries = entriesForTrip(trip);
         if (entries.isEmpty()) {
@@ -102,6 +105,9 @@ public class AttractionCatalogService {
     }
 
     private List<AttractionCatalogEntry> entriesForTrip(TripEntity trip) {
+        if (entrySource != null) {
+            return entrySource.entriesForTrip(trip);
+        }
         List<AttractionCatalogEntry> seedEntries = seeds.findByCity(trip.city);
         if (!seedEntries.isEmpty()) {
             return seedEntries;

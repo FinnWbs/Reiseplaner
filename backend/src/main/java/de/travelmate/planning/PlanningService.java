@@ -19,7 +19,6 @@ import java.util.*;
 @ApplicationScoped
 public class PlanningService {
     private static final Logger LOG = Logger.getLogger(PlanningService.class);
-    private static final int SLOT_GAP_MINUTES = 30;
 
     @Inject
     ActivityRepository activities;
@@ -48,6 +47,15 @@ public class PlanningService {
     @Inject
     SpatialPlanningSettings spatialSettings;
 
+    @Inject
+    InterestQuotaAllocator quotaAllocator;
+
+    @Inject
+    DayScheduler dayScheduler;
+
+    @Inject
+    SlotSelectionPolicy slotSelectionPolicy;
+
     private SpatialDiagnostics lastSpatialDiagnostics;
 
     public void generatePlan(TripEntity trip, List<Long> interestIds) {
@@ -74,9 +82,9 @@ public class PlanningService {
         removeUnlockedActivities(trip);
 
         Set<Long> alreadyUsed = usedActivityIds(trip);
-        Map<InterestType, Integer> availableByInterest = availableByInterest(scored, selectedTypes, alreadyUsed);
-        Map<InterestType, Integer> scheduledByInterest = scheduledByInterest(trip);
-        Map<InterestType, Integer> quotas = reallocatedQuotas(
+        Map<InterestType, Integer> availableByInterest = quotaAllocator().availableByInterest(scored, selectedTypes, alreadyUsed);
+        Map<InterestType, Integer> scheduledByInterest = quotaAllocator().scheduledByInterest(trip);
+        Map<InterestType, Integer> quotas = quotaAllocator().reallocatedQuotas(
             selectedTypes,
             trip.days.size() * trip.pace.activitiesPerDay(),
             availableByInterest,
@@ -85,9 +93,6 @@ public class PlanningService {
         List<TripDayEntity> orderedDays = trip.days.stream()
             .sorted(Comparator.comparingInt(day -> day.dayNumber))
             .toList();
-        for (TripDayEntity day : orderedDays) {
-            scheduleLockedActivities(day);
-        }
         SpatialPlanningContext spatialContext = spatialContextFor(trip, scored, orderedDays);
         int target = trip.pace.activitiesPerDay();
         for (int slotIndex = 0; slotIndex < target; slotIndex++) {
@@ -95,7 +100,7 @@ public class PlanningService {
                 if (day.activities.size() > slotIndex || day.activities.size() >= target) {
                     continue;
                 }
-                SlotChoice choice = nextBalancedChoice(
+                PlanSlotChoice choice = slotSelection().nextBalancedChoice(
                     day,
                     scored,
                     selectedTypes,
@@ -151,23 +156,7 @@ public class PlanningService {
     }
 
     public void scheduleDay(TripDayEntity day, boolean lockItems) {
-        day.activities.sort(Comparator.comparingInt(item -> item.position));
-        int cursor = day.availableFrom;
-        for (int index = 0; index < day.activities.size(); index++) {
-            TripDayActivityEntity item = day.activities.get(index);
-            ActivityTimeRules.TimeProfile profile = timeRules.profile(item.activity);
-            int start = Math.max(cursor, Math.max(day.availableFrom, profile.earliestStart()));
-            if (start < profile.preferredStart() && profile.preferredStart() + item.durationMinutes <= day.availableUntil) {
-                start = profile.preferredStart();
-            }
-            start = Math.min(start, 1440 - item.durationMinutes);
-            item.position = index + 1;
-            item.scheduledStart = start;
-            if (lockItems) {
-                item.locked = true;
-            }
-            cursor = start + item.durationMinutes + SLOT_GAP_MINUTES;
-        }
+        scheduler().scheduleDay(day, lockItems);
     }
 
     public Optional<ActivityEntity> replacementFor(
@@ -194,257 +183,6 @@ public class PlanningService {
     ) {
         return !usedActivityIds.contains(activity.id)
             && timeRules.fitsAt(activity, item.scheduledStart, item.durationMinutes);
-    }
-
-    private SlotChoice nextBalancedChoice(
-        TripDayEntity day,
-        List<ScoredActivity> scored,
-        Set<InterestType> selectedTypes,
-        Map<InterestType, Integer> quotas,
-        Map<InterestType, Integer> scheduledByInterest,
-        Set<Long> alreadyUsed,
-        SpatialPlanningContext spatialContext,
-        List<TripDayEntity> orderedDays
-    ) {
-        Set<InterestType> usedToday = day.activities.stream()
-            .map(item -> item.activity.primaryInterest)
-            .filter(Objects::nonNull)
-            .collect(java.util.stream.Collectors.toSet());
-        Map<InterestType, Integer> dayInterestCounts = day.activities.stream()
-            .map(item -> item.activity.primaryInterest)
-            .filter(Objects::nonNull)
-            .collect(java.util.stream.Collectors.toMap(
-                type -> type,
-                ignored -> 1,
-                Integer::sum,
-                () -> new EnumMap<>(InterestType.class)
-            ));
-        List<InterestType> orderedTypes = selectedTypes.stream()
-            .sorted(Comparator.comparingInt((InterestType type) ->
-                quotas.getOrDefault(type, 0) - scheduledByInterest.getOrDefault(type, 0)
-            ).reversed().thenComparing(Enum::name))
-            .toList();
-
-        for (ChoiceConstraint constraint : choiceConstraints()) {
-            for (SpatialCandidateMode mode : spatialModes(day, spatialContext)) {
-                SlotChoice choice = firstChoice(
-                    day,
-                    scored,
-                    orderedTypes,
-                    usedToday,
-                    dayInterestCounts,
-                    alreadyUsed,
-                    constraint,
-                    quotas,
-                    scheduledByInterest,
-                    spatialContext,
-                    orderedDays,
-                    mode
-                );
-                if (choice != null) return choice;
-            }
-        }
-        return null;
-    }
-
-    private SlotChoice firstChoice(
-        TripDayEntity day,
-        List<ScoredActivity> scored,
-        List<InterestType> orderedTypes,
-        Set<InterestType> usedToday,
-        Map<InterestType, Integer> dayInterestCounts,
-        Set<Long> alreadyUsed,
-        ChoiceConstraint constraint,
-        Map<InterestType, Integer> quotas,
-        Map<InterestType, Integer> scheduledByInterest,
-        SpatialPlanningContext spatialContext,
-        List<TripDayEntity> orderedDays,
-        SpatialCandidateMode mode
-    ) {
-        for (InterestType type : orderedTypes) {
-            if (constraint.requireNewDayCategory() && usedToday.contains(type)) continue;
-            if (constraint.enforceQuota() && quotas.getOrDefault(type, 0) <= scheduledByInterest.getOrDefault(type, 0)) continue;
-            if (constraint.respectDailyInterestCap()
-                && dayInterestCounts.getOrDefault(type, 0) >= settings().maxSameInterestPerDay()) {
-                continue;
-            }
-            Optional<EvaluatedSlotChoice> choice = scored.stream()
-                .filter(item -> item.activity().primaryInterest == type && !alreadyUsed.contains(item.activity().id))
-                .filter(item -> matchesSpatialMode(mode, day, item.activity(), spatialContext))
-                .filter(item -> !shouldDelayLateActivity(day, item.activity(), orderedTypes.size()))
-                .map(item -> slotFor(day, item.activity())
-                    .map(slot -> new EvaluatedSlotChoice(
-                        slot,
-                        spatialPlanningScore(item, day, spatialContext, orderedDays)
-                    ))
-                    .orElse(null))
-                .filter(Objects::nonNull)
-                .max(Comparator.comparingDouble(EvaluatedSlotChoice::planningScore)
-                    .thenComparing(item -> item.choice().activity().name == null ? "" : item.choice().activity().name));
-            if (choice.isPresent()) return choice.get().choice();
-        }
-        return null;
-    }
-
-    private List<ChoiceConstraint> choiceConstraints() {
-        return List.of(
-            new ChoiceConstraint(true, true, true),
-            new ChoiceConstraint(true, false, true),
-            new ChoiceConstraint(false, true, true),
-            new ChoiceConstraint(false, false, true),
-            new ChoiceConstraint(false, false, false)
-        );
-    }
-
-    private List<SpatialCandidateMode> spatialModes(TripDayEntity day, SpatialPlanningContext spatialContext) {
-        if (spatialContext == null || spatialContext.uniqueClusters() < 2 || !spatialContext.hasPreferredCluster(day)) {
-            return List.of(SpatialCandidateMode.ANY);
-        }
-        return List.of(
-            SpatialCandidateMode.PREFERRED,
-            SpatialCandidateMode.NEAR_PREFERRED,
-            SpatialCandidateMode.OTHER_NON_CENTER,
-            SpatialCandidateMode.CENTER,
-            SpatialCandidateMode.ANY
-        );
-    }
-
-    private boolean matchesSpatialMode(
-        SpatialCandidateMode mode,
-        TripDayEntity day,
-        ActivityEntity activity,
-        SpatialPlanningContext spatialContext
-    ) {
-        if (mode == SpatialCandidateMode.ANY || spatialContext == null) {
-            return true;
-        }
-        return switch (mode) {
-            case PREFERRED -> spatialContext.isPreferredCluster(day, activity);
-            case NEAR_PREFERRED -> spatialContext.isNearPreferredCluster(day, activity);
-            case OTHER_NON_CENTER -> spatialContext.isNonCenterCluster(activity);
-            case CENTER -> spatialContext.isCenterCluster(activity);
-            case ANY -> true;
-        };
-    }
-
-    private boolean shouldDelayLateActivity(TripDayEntity day, ActivityEntity activity, int selectedTypeCount) {
-        if (selectedTypeCount <= 1 || day.trip == null || day.trip.pace == null) {
-            return false;
-        }
-        ActivityTimeRules.TimeProfile profile = timeRules.profile(activity);
-        return profile.preferredStart() >= 1080
-            && day.activities.size() < Math.max(0, day.trip.pace.activitiesPerDay() - 1);
-    }
-
-    private double spatialPlanningScore(
-        ScoredActivity scored,
-        TripDayEntity day,
-        SpatialPlanningContext spatialContext,
-        List<TripDayEntity> orderedDays
-    ) {
-        double adjusted = scored.totalScore();
-        if (spatialContext == null || spatialContext.uniqueClusters() < 2) {
-            return adjusted;
-        }
-        ActivityEntity activity = scored.activity();
-        if (spatialContext.clusterId(activity).isEmpty()) {
-            return Math.max(0, adjusted - 0.02);
-        }
-        if (spatialContext.isPreferredCluster(day, activity)) {
-            adjusted += day.activities.isEmpty() ? 0.85 : 0.35;
-        } else if (spatialContext.isNearPreferredCluster(day, activity)) {
-            adjusted += day.activities.isEmpty() ? 0.30 : 0.12;
-        } else if (spatialContext.preferredCluster(day).isPresent()) {
-            adjusted -= day.activities.isEmpty() ? 0.22 : 0.08;
-        }
-        if (day.activities.isEmpty()) {
-            adjusted += spatialContext.wasClusterUsedBeforeDay(activity, orderedDays, day.dayNumber) ? -0.05 : 0.05;
-        } else if (spatialContext.isSameOrNearDayCluster(day, activity)) {
-            adjusted += 0.18;
-        } else if (spatialContext.isFarFromDayCluster(day, activity)) {
-            adjusted -= 0.12;
-        }
-        if (spatialContext.isCenterCluster(activity)) {
-            int allowedCenterActivities = Math.min(3, Math.max(1, orderedDays.size() / 3))
-                * Math.max(1, day.trip.pace.activitiesPerDay());
-            if (!spatialContext.isPreferredCluster(day, activity)) {
-                adjusted -= 0.18;
-            }
-            if (spatialContext.centerClusterUseBeforeDay(orderedDays, day.dayNumber) >= allowedCenterActivities) {
-                adjusted -= 0.30;
-            }
-        }
-        return Math.max(0, adjusted);
-    }
-
-    private Map<InterestType, Integer> reallocatedQuotas(
-        Set<InterestType> selectedTypes,
-        int slots,
-        Map<InterestType, Integer> availableByInterest,
-        Map<InterestType, Integer> scheduledByInterest
-    ) {
-        Map<InterestType, Integer> desired = quotas(selectedTypes, slots);
-        Map<InterestType, Integer> result = new EnumMap<>(InterestType.class);
-        int assigned = 0;
-        for (InterestType type : selectedTypes) {
-            int capacity = availableByInterest.getOrDefault(type, 0) + scheduledByInterest.getOrDefault(type, 0);
-            int quota = Math.min(desired.getOrDefault(type, 0), capacity);
-            result.put(type, quota);
-            assigned += quota;
-        }
-        int surplus = slots - assigned;
-        while (surplus > 0) {
-            Optional<InterestType> receiver = selectedTypes.stream()
-                .filter(type -> result.getOrDefault(type, 0)
-                    < availableByInterest.getOrDefault(type, 0) + scheduledByInterest.getOrDefault(type, 0))
-                .sorted(Comparator.comparingInt((InterestType type) ->
-                    availableByInterest.getOrDefault(type, 0) + scheduledByInterest.getOrDefault(type, 0)
-                        - result.getOrDefault(type, 0)
-                ).reversed().thenComparing(Enum::name))
-                .findFirst();
-            if (receiver.isEmpty()) {
-                break;
-            }
-            result.merge(receiver.get(), 1, Integer::sum);
-            surplus--;
-        }
-        return result;
-    }
-
-    private Map<InterestType, Integer> availableByInterest(
-        List<ScoredActivity> scored,
-        Set<InterestType> selectedTypes,
-        Set<Long> alreadyUsed
-    ) {
-        Map<InterestType, Integer> available = new EnumMap<>(InterestType.class);
-        scored.stream()
-            .map(ScoredActivity::activity)
-            .filter(activity -> activity.primaryInterest != null)
-            .filter(activity -> selectedTypes.contains(activity.primaryInterest))
-            .filter(activity -> !alreadyUsed.contains(activity.id))
-            .forEach(activity -> available.merge(activity.primaryInterest, 1, Integer::sum));
-        return available;
-    }
-
-    private Map<InterestType, Integer> quotas(Set<InterestType> selectedTypes, int slots) {
-        Map<InterestType, Integer> quotas = new EnumMap<>(InterestType.class);
-        if (selectedTypes.isEmpty()) return quotas;
-        List<InterestType> ordered = selectedTypes.stream().sorted(Comparator.comparing(Enum::name)).toList();
-        int base = slots / ordered.size();
-        int remainder = slots % ordered.size();
-        for (int index = 0; index < ordered.size(); index++) {
-            quotas.put(ordered.get(index), base + (index < remainder ? 1 : 0));
-        }
-        return quotas;
-    }
-
-    private Map<InterestType, Integer> scheduledByInterest(TripEntity trip) {
-        Map<InterestType, Integer> counts = new EnumMap<>(InterestType.class);
-        trip.days.stream().flatMap(day -> day.activities.stream())
-            .map(item -> item.activity.primaryInterest)
-            .filter(Objects::nonNull)
-            .forEach(type -> counts.merge(type, 1, Integer::sum));
-        return counts;
     }
 
     private Set<InterestType> selectedTypes(TripEntity trip, Set<InterestType> requestedTypes) {
@@ -476,36 +214,10 @@ public class PlanningService {
             tripActivities.delete(item);
         }
         tripActivities.flush();
-        trip.days.forEach(this::renumber);
+        trip.days.forEach(day -> scheduler().renumber(day));
     }
 
-    private void scheduleLockedActivities(TripDayEntity day) {
-        day.activities.sort(Comparator.comparingInt(item -> item.position));
-        int cursor = day.availableFrom;
-        for (TripDayActivityEntity item : day.activities) {
-            cursor = Math.max(cursor, item.scheduledStart + item.durationMinutes + SLOT_GAP_MINUTES);
-        }
-    }
-
-    private Optional<SlotChoice> slotFor(TripDayEntity day, ActivityEntity activity) {
-        ActivityTimeRules.TimeProfile profile = timeRules.profile(activity);
-        int cursor = day.activities.stream()
-            .mapToInt(item -> item.scheduledStart + item.durationMinutes + SLOT_GAP_MINUTES)
-            .max()
-            .orElse(day.availableFrom);
-        int start = Math.max(cursor, Math.max(day.availableFrom, profile.earliestStart()));
-        if (start < profile.preferredStart()
-            && profile.preferredStart() >= day.availableFrom
-            && profile.preferredStart() + profile.durationMinutes() <= day.availableUntil) {
-            start = profile.preferredStart();
-        }
-        int latestEnd = Math.min(day.availableUntil, profile.latestEnd());
-        return start + profile.durationMinutes() <= latestEnd
-            ? Optional.of(new SlotChoice(activity, start, profile.durationMinutes()))
-            : Optional.empty();
-    }
-
-    private void addScheduledActivity(TripDayEntity day, SlotChoice choice) {
+    private void addScheduledActivity(TripDayEntity day, PlanSlotChoice choice) {
         TripDayActivityEntity item = new TripDayActivityEntity();
         item.tripDay = day;
         item.activity = choice.activity();
@@ -524,13 +236,6 @@ public class PlanningService {
             }
         }
         return used;
-    }
-
-    private void renumber(TripDayEntity day) {
-        day.activities.sort(Comparator.comparingInt(item -> item.position));
-        for (int i = 0; i < day.activities.size(); i++) {
-            day.activities.get(i).position = i + 1;
-        }
     }
 
     private String locationLookupText(TripEntity trip) {
@@ -567,6 +272,24 @@ public class PlanningService {
 
     private SpatialPlanningSettings settings() {
         return spatialSettings == null ? new SpatialPlanningSettings() : spatialSettings;
+    }
+
+    private InterestQuotaAllocator quotaAllocator() {
+        return quotaAllocator == null ? new InterestQuotaAllocator() : quotaAllocator;
+    }
+
+    private DayScheduler scheduler() {
+        return dayScheduler == null ? new DayScheduler() : dayScheduler;
+    }
+
+    private SlotSelectionPolicy slotSelection() {
+        if (slotSelectionPolicy == null) {
+            SlotSelectionPolicy fallback = new SlotSelectionPolicy();
+            fallback.spatialSettings = settings();
+            fallback.dayScheduler = scheduler();
+            return fallback;
+        }
+        return slotSelectionPolicy;
     }
 
     private void logSpatialDiagnostics(
@@ -617,18 +340,4 @@ public class PlanningService {
         return dominant;
     }
 
-    private record SlotChoice(ActivityEntity activity, int start, int duration) {}
-    private record EvaluatedSlotChoice(SlotChoice choice, double planningScore) {}
-    private record ChoiceConstraint(
-        boolean requireNewDayCategory,
-        boolean enforceQuota,
-        boolean respectDailyInterestCap
-    ) {}
-    private enum SpatialCandidateMode {
-        PREFERRED,
-        NEAR_PREFERRED,
-        OTHER_NON_CENTER,
-        CENTER,
-        ANY
-    }
 }

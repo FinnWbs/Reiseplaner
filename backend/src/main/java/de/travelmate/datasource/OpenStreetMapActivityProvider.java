@@ -5,7 +5,7 @@ import java.util.List;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
-public class OpenStreetMapActivityProvider implements ActivityProvider {
+public class OpenStreetMapActivityProvider implements ActivityCandidateSource {
     @ConfigProperty(name = "travelmate.providers.osm.enabled", defaultValue = "false")
     boolean enabled;
 
