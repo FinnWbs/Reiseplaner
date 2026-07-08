@@ -1,4 +1,4 @@
-CREATE TABLE catalog_cities (
+CREATE TABLE IF NOT EXISTS catalog_cities (
   id BIGSERIAL PRIMARY KEY,
   city_key VARCHAR(180) NOT NULL,
   city_name VARCHAR(180) NOT NULL,
@@ -15,10 +15,10 @@ CREATE TABLE catalog_cities (
   CONSTRAINT uq_catalog_city_key_country_version UNIQUE (city_key, country_code, source_version)
 );
 
-CREATE INDEX idx_catalog_cities_lookup
+CREATE INDEX IF NOT EXISTS idx_catalog_cities_lookup
   ON catalog_cities(city_key, country_code, source_version, generated_at DESC);
 
-CREATE TABLE catalog_attractions (
+CREATE TABLE IF NOT EXISTS catalog_attractions (
   id BIGSERIAL PRIMARY KEY,
   catalog_city_id BIGINT NOT NULL REFERENCES catalog_cities(id) ON DELETE CASCADE,
   catalog_id VARCHAR(220) NOT NULL,
@@ -41,8 +41,8 @@ CREATE TABLE catalog_attractions (
   CONSTRAINT uq_catalog_attraction_city_catalog UNIQUE (catalog_city_id, catalog_id)
 );
 
-CREATE INDEX idx_catalog_attractions_city_rank
+CREATE INDEX IF NOT EXISTS idx_catalog_attractions_city_rank
   ON catalog_attractions(catalog_city_id, rank_order);
 
-CREATE INDEX idx_catalog_attractions_wikidata
+CREATE INDEX IF NOT EXISTS idx_catalog_attractions_wikidata
   ON catalog_attractions(wikidata_id);

@@ -14,28 +14,14 @@ const emit = defineEmits<{
   updateAvailability: [day: TripDay]
   regenerateActivity: [dayId: number, itemId: number]
   removeActivity: [dayId: number, itemId: number]
+  requestImages: [activityId: number]
 }>()
 
-const pointerStart = ref<number | null>(null)
-const stage = ref<HTMLElement | null>(null)
 const activeDay = computed(() => props.trip.days[props.activeIndex])
 
 const setActive = (index: number) => {
   if (index < 0 || index >= props.trip.days.length || index === props.activeIndex) return
   emit('change', index)
-  nextTick(() => stage.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-}
-
-const onPointerDown = (event: PointerEvent) => {
-  pointerStart.value = event.clientX
-}
-
-const onPointerUp = (event: PointerEvent) => {
-  if (pointerStart.value == null) return
-  const distance = event.clientX - pointerStart.value
-  pointerStart.value = null
-  if (Math.abs(distance) < 45) return
-  setActive(props.activeIndex + (distance < 0 ? 1 : -1))
 }
 
 const onKeydown = (event: KeyboardEvent) => {
@@ -62,13 +48,9 @@ const onKeydown = (event: KeyboardEvent) => {
     </div>
 
     <div
-      ref="stage"
       class="day-orbit-stage"
       tabindex="0"
       aria-label="Tagesansicht. Mit Pfeiltasten zwischen Tagen wechseln."
-      @pointerdown="onPointerDown"
-      @pointerup="onPointerUp"
-      @pointercancel="pointerStart = null"
     >
       <div v-if="activeDay" class="orbit-card-position is-active">
         <DayOrbitCard
@@ -80,6 +62,7 @@ const onKeydown = (event: KeyboardEvent) => {
           @update-availability="$emit('updateAvailability', $event)"
           @regenerate-activity="(dayId, itemId) => $emit('regenerateActivity', dayId, itemId)"
           @remove-activity="(dayId, itemId) => $emit('removeActivity', dayId, itemId)"
+          @request-images="$emit('requestImages', $event)"
         />
       </div>
     </div>

@@ -3,7 +3,6 @@ import type { TripDraft } from '~/composables/useTripDraft'
 
 const route = useRoute()
 const planner = useTripPlanner()
-const theme = usePlannerTheme()
 const tripDraft = useTripDraft()
 const preparedDraft = ref<TripDraft | null>(null)
 const ready = ref(false)
@@ -15,7 +14,6 @@ const completeInterview = async (draft: TripDraft) => {
 }
 
 onMounted(async () => {
-  theme.initPlannerTheme()
   await planner.initialize()
 
   if (route.query.draft === '1') {
@@ -34,7 +32,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   planner.cleanupLocationAutocomplete()
-  theme.cleanupPlannerTheme()
 })
 </script>
 
@@ -43,9 +40,7 @@ onUnmounted(() => {
     <AppNavigation
       v-if="planner.isLoggedIn.value"
       :user="planner.user.value"
-      :is-dark-mode="theme.isDarkMode.value"
       @logout="planner.logout"
-      @toggle-theme="theme.toggleTheme"
     />
 
     <main class="planner-journey-main">

@@ -88,6 +88,10 @@ public class ActivityEntity {
     @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ActivityExternalRefEntity> externalRefs = new ArrayList<>();
 
+    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC, id ASC")
+    public List<ActivityImageEntity> images = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false)
     public LocalDateTime createdAt = LocalDateTime.now();
 

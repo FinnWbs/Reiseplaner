@@ -3,7 +3,6 @@ import { ArrowLeft, ArrowRight, CalendarCheck, CalendarPlus, ChevronDown, Chevro
 import type { Trip } from '~/types/trip'
 
 const workspace = useTripWorkspace()
-const theme = usePlannerTheme()
 const tripDraft = useTripDraft()
 const currentMonth = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12))
 const selectedDate = ref('')
@@ -210,7 +209,6 @@ const handleEscape = (event: KeyboardEvent) => {
 }
 
 onMounted(async () => {
-  theme.initPlannerTheme()
   await workspace.loadTrips()
   window.addEventListener('click', closeContextMenu)
   window.addEventListener('keydown', handleEscape)
@@ -218,7 +216,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   clearLongPress()
-  theme.cleanupPlannerTheme()
   window.removeEventListener('click', closeContextMenu)
   window.removeEventListener('keydown', handleEscape)
 })
@@ -228,9 +225,7 @@ onUnmounted(() => {
   <div class="workspace-page calendar-page">
     <AppNavigation
       :user="workspace.user.value"
-      :is-dark-mode="theme.isDarkMode.value"
       @logout="workspace.logout"
-      @toggle-theme="theme.toggleTheme"
     />
 
     <main class="workspace-main">
