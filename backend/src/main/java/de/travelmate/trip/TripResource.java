@@ -1,5 +1,6 @@
 package de.travelmate.trip;
 
+import de.travelmate.catalog.AttractionCatalogResponse;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -98,5 +99,21 @@ public class TripResource {
     @Path("/{id}/days/{dayId}/activities")
     public TripDto addActivity(@PathParam("id") Long id, @PathParam("dayId") Long dayId, @Valid ReplaceTripActivityRequest request) {
         return trips.addActivity(id, dayId, request);
+    }
+
+    @GET
+    @Path("/{id}/catalog-attractions")
+    public AttractionCatalogResponse catalogAttractions(@PathParam("id") Long id) {
+        return trips.catalogAttractions(id);
+    }
+
+    @POST
+    @Path("/{id}/days/{dayId}/catalog-attractions/{catalogId}")
+    public TripDto addCatalogAttraction(
+        @PathParam("id") Long id,
+        @PathParam("dayId") Long dayId,
+        @PathParam("catalogId") String catalogId
+    ) {
+        return trips.addCatalogAttraction(id, dayId, catalogId);
     }
 }

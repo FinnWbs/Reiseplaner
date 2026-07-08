@@ -58,6 +58,33 @@ export type Trip = {
   days: TripDay[]
 }
 
+export type CatalogAttraction = {
+  catalogId: string
+  name: string
+  city: string
+  wikidataId?: string
+  wikipediaProject?: string
+  wikipediaTitle?: string
+  primaryInterest: string
+  category: string
+  latitude?: number
+  longitude?: number
+  rank: number
+  description?: string
+  publicAttractionScore?: number
+  pageviews?: number
+  sitelinkCount?: number
+  source?: string
+  alreadyPlanned: boolean
+  plannedDayNumbers: number[]
+}
+
+export type CatalogAttractionResponse = {
+  supported: boolean
+  message: string
+  items: CatalogAttraction[]
+}
+
 export type LocationSuggestion = {
   id: string
   city: string

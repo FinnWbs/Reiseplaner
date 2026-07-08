@@ -1,4 +1,4 @@
-import type { Trip, TripDay } from '~/types/trip'
+import type { CatalogAttractionResponse, Trip, TripDay } from '~/types/trip'
 
 const workspaceErrorMessage = (err: any, fallback: string) =>
   err?.data?.message || err?.data?.error || err?.response?._data?.message || err?.message || fallback
@@ -13,6 +13,10 @@ export const useTripWorkspace = () => {
   const deletingActivityId = ref<number | null>(null)
   const regeneratingActivityId = ref<number | null>(null)
   const deletingTripId = ref<number | null>(null)
+  const catalog = ref<CatalogAttractionResponse | null>(null)
+  const catalogLoading = ref(false)
+  const catalogError = ref('')
+  const addingCatalogId = ref<string | null>(null)
 
   const requireAuth = async () => {
     hydrateAuth()
@@ -112,6 +116,39 @@ export const useTripWorkspace = () => {
     }
   }
 
+  const loadCatalogAttractions = async () => {
+    if (!trip.value) return
+    catalogLoading.value = true
+    catalogError.value = ''
+    try {
+      catalog.value = await request<CatalogAttractionResponse>(`/trips/${trip.value.id}/catalog-attractions`)
+    } catch (err: any) {
+      catalogError.value = workspaceErrorMessage(err, 'Highlights konnten nicht geladen werden.')
+    } finally {
+      catalogLoading.value = false
+    }
+  }
+
+  const addCatalogAttraction = async (dayId: number, catalogId: string) => {
+    if (!trip.value) return
+    addingCatalogId.value = catalogId
+    catalogError.value = ''
+    error.value = ''
+    try {
+      replaceTrip(await request<Trip>(
+        `/trips/${trip.value.id}/days/${dayId}/catalog-attractions/${encodeURIComponent(catalogId)}`,
+        { method: 'POST', body: {} }
+      ))
+      await loadCatalogAttractions()
+    } catch (err: any) {
+      const message = workspaceErrorMessage(err, 'Highlight konnte nicht hinzugefuegt werden.')
+      catalogError.value = message
+      error.value = message
+    } finally {
+      addingCatalogId.value = null
+    }
+  }
+
   const deleteTrip = async (tripId: number) => {
     deletingTripId.value = tripId
     error.value = ''
@@ -142,11 +179,17 @@ export const useTripWorkspace = () => {
     deletingActivityId,
     regeneratingActivityId,
     deletingTripId,
+    catalog,
+    catalogLoading,
+    catalogError,
+    addingCatalogId,
     loadTrips,
     loadTrip,
+    loadCatalogAttractions,
     updateAvailability,
     removeActivity,
     regenerateActivity,
+    addCatalogAttraction,
     deleteTrip,
     logout
   }

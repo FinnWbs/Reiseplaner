@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays, MapPin, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, CalendarDays, MapPin, Sparkles, Trash2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const workspace = useTripWorkspace()
 const theme = usePlannerTheme()
 const activeIndex = ref(0)
 const deleteDialogOpen = ref(false)
+const catalogOpen = ref(false)
 
 const tripId = computed(() => Number(route.params.id))
 
@@ -36,6 +37,13 @@ const confirmCurrentTripDeletion = async () => {
   const trip = workspace.trip.value
   if (!trip) return
   if (await workspace.deleteTrip(trip.id)) await navigateTo('/calendar')
+}
+
+const openCatalog = async () => {
+  catalogOpen.value = true
+  if (!workspace.catalog.value) {
+    await workspace.loadCatalogAttractions()
+  }
 }
 
 watch(() => route.query.day, syncDayFromRoute)
@@ -84,9 +92,15 @@ onUnmounted(theme.cleanupPlannerTheme)
               </template>
             </p>
           </div>
-          <div class="orbit-heading-count">
-            <strong>{{ activeIndex + 1 }}</strong>
-            <span>von {{ workspace.trip.value.days.length }} Tagen</span>
+          <div class="orbit-heading-actions">
+            <button class="catalog-open-button" type="button" @click="openCatalog">
+              <Sparkles :size="17" />
+              Highlights entdecken
+            </button>
+            <div class="orbit-heading-count">
+              <strong>{{ activeIndex + 1 }}</strong>
+              <span>von {{ workspace.trip.value.days.length }} Tagen</span>
+            </div>
           </div>
         </header>
 
@@ -111,6 +125,19 @@ onUnmounted(theme.cleanupPlannerTheme)
             @click="removeCurrentTrip"
           ><Trash2 :size="17" />{{ workspace.deletingTripId.value ? 'Wird gelöscht...' : 'Reise löschen' }}</button>
         </footer>
+
+        <AttractionCatalogPanel
+          :open="catalogOpen"
+          :trip="workspace.trip.value"
+          :catalog="workspace.catalog.value"
+          :loading="workspace.catalogLoading.value"
+          :error="workspace.catalogError.value"
+          :adding-catalog-id="workspace.addingCatalogId.value"
+          :default-day-id="workspace.trip.value.days[activeIndex]?.id"
+          @close="catalogOpen = false"
+          @refresh="workspace.loadCatalogAttractions"
+          @add="workspace.addCatalogAttraction"
+        />
       </template>
 
       <section v-else class="empty-journeys">

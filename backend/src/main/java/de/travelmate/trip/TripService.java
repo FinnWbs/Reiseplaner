@@ -1,5 +1,7 @@
 package de.travelmate.trip;
 
+import de.travelmate.catalog.AttractionCatalogResponse;
+import de.travelmate.catalog.AttractionCatalogService;
 import de.travelmate.planning.PlanningService;
 import de.travelmate.interest.InterestRepository;
 import de.travelmate.interest.InterestType;
@@ -28,6 +30,9 @@ public class TripService {
 
     @Inject
     TripScheduleService scheduleService;
+
+    @Inject
+    AttractionCatalogService catalog;
 
     @Inject
     TripDateValidator dateValidator;
@@ -193,6 +198,18 @@ public class TripService {
     public TripDto addActivity(Long tripId, Long dayId, ReplaceTripActivityRequest request) {
         TripEntity trip = requireMine(tripId);
         scheduleService.addActivity(trip, dayId, request);
+        return TripDto.from(trip);
+    }
+
+    @Transactional
+    public AttractionCatalogResponse catalogAttractions(Long tripId) {
+        return catalog.listForTrip(requireMine(tripId));
+    }
+
+    @Transactional
+    public TripDto addCatalogAttraction(Long tripId, Long dayId, String catalogId) {
+        TripEntity trip = requireMine(tripId);
+        catalog.addToDay(trip, dayId, catalogId);
         return TripDto.from(trip);
     }
 
