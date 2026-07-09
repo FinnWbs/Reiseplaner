@@ -57,6 +57,9 @@ public class TripService {
         trip.placeId = blankToNull(request.placeId());
         trip.startDate = request.startDate();
         trip.endDate = request.endDate();
+        trip.preferredMonth = request.startDate() == null
+            ? blankToNull(request.preferredMonth())
+            : null;
         trip.pace = request.pace() == null ? TripPace.BALANCED : request.pace();
         trip.dayRhythm = request.dayRhythm() == null ? DayRhythm.BALANCED : request.dayRhythm();
         trip.destinationSource = request.destinationSource() == null
@@ -173,6 +176,7 @@ public class TripService {
 
         trip.startDate = request.startDate();
         trip.endDate = request.endDate();
+        trip.preferredMonth = null;
         while (trip.days.size() > planningDates.size()) {
             trip.days.remove(trip.days.size() - 1);
         }

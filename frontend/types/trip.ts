@@ -54,6 +54,7 @@ export type Trip = {
   status: string
   startDate?: string
   endDate?: string
+  preferredMonth?: string
   pace: 'RELAXED' | 'BALANCED' | 'ACTIVE'
   dayRhythm: 'EARLY' | 'BALANCED' | 'LATE'
   destinationSource: 'KNOWN' | 'SUGGESTED'

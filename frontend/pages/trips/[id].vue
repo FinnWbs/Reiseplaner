@@ -9,6 +9,23 @@ const dayViewError = ref('')
 
 const tripId = computed(() => Number(route.params.id))
 const activeDay = computed(() => workspace.trip.value?.days?.[activeIndex.value] || null)
+const flexibleDurationLabel = computed(() => {
+  const days = workspace.trip.value?.daysCount || 0
+  if (days === 3) return 'Ein Wochenende'
+  if (days === 7) return 'Eine Woche'
+  if (days === 14) return 'Zwei Wochen'
+  return `${days} Tage`
+})
+const preferredMonthLabel = computed(() => {
+  const value = workspace.trip.value?.preferredMonth
+  if (!value) return ''
+  const [year, month] = value.split('-').map(Number)
+  return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' })
+    .format(new Date(year, month - 1, 1, 12))
+})
+const flexibleTripLabel = computed(() =>
+  [flexibleDurationLabel.value, preferredMonthLabel.value].filter(Boolean).join(' · ')
+)
 
 const setActiveIndex = async (index: number, replace = false) => {
   if (!workspace.trip.value || index < 0 || index >= workspace.trip.value.days.length) return
@@ -78,6 +95,10 @@ onMounted(async () => {
               <template v-if="workspace.trip.value.startDate">
                 <span>&middot;</span><CalendarDays :size="16" />
                 {{ formatDate(workspace.trip.value.startDate) }} bis {{ formatDate(workspace.trip.value.endDate) }}
+              </template>
+              <template v-else>
+                <span>&middot;</span><CalendarDays :size="16" />
+                {{ flexibleTripLabel }}
               </template>
             </p>
           </div>

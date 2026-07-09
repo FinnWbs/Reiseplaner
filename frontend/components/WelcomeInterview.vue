@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight, CalendarClock, CalendarDays, CalendarRange, Compass, MapPin, Search, Sparkles, Sun, Wind } from 'lucide-vue-next'
 import type { TripDraft } from '~/composables/useTripDraft'
+import type { LocationSuggestion } from '~/types/trip'
 
 type RangePickerSide = 'left' | 'right'
 
@@ -32,13 +33,12 @@ const location = useLocationAutocomplete(city)
 const rangeDialogOpen = ref(false)
 const rangeCalendarMonth = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12))
 const rangeSelectionComplete = ref(Boolean(startDate.value && endDate.value))
+const rangePreviewEnd = ref('')
 const rangeSelectedDate = ref('')
 const rangeError = ref('')
-const rangeAnchor = ref<HTMLElement | null>(null)
-const flexibleAnchor = ref<HTMLElement | null>(null)
 const rangePopoverStyle = ref<Record<string, string>>({})
 const pickerMode = ref<'date' | 'flexible'>('date')
-const flexibleMonth = ref('')
+const flexibleMonth = ref(props.initialDraft?.preferredMonth || '')
 const rangeStartSide = ref<RangePickerSide | ''>('')
 const rangeEndSide = ref<RangePickerSide | ''>('')
 
@@ -48,8 +48,21 @@ const durationPresets = [
   { label: 'Zwei Wochen', days: 14 }
 ]
 
-const warmCities = ['Barcelona', 'Rom', 'Lissabon', 'Athen']
-const coolCities = ['Berlin', 'Amsterdam', 'Prag', 'Kopenhagen', 'Stockholm']
+const suggestedCities: Record<'WARM' | 'COOL', LocationSuggestion[]> = {
+  WARM: [
+    { id: 'suggested-barcelona-es', city: 'Barcelona', country: 'Spanien', countryCode: 'ES' },
+    { id: 'suggested-rome-it', city: 'Rom', country: 'Italien', countryCode: 'IT' },
+    { id: 'suggested-lisbon-pt', city: 'Lissabon', country: 'Portugal', countryCode: 'PT' },
+    { id: 'suggested-athens-gr', city: 'Athen', country: 'Griechenland', countryCode: 'GR' }
+  ],
+  COOL: [
+    { id: 'suggested-berlin-de', city: 'Berlin', country: 'Deutschland', countryCode: 'DE' },
+    { id: 'suggested-amsterdam-nl', city: 'Amsterdam', country: 'Niederlande', countryCode: 'NL' },
+    { id: 'suggested-prague-cz', city: 'Prag', country: 'Tschechien', countryCode: 'CZ' },
+    { id: 'suggested-copenhagen-dk', city: 'Kopenhagen', country: 'Dänemark', countryCode: 'DK' },
+    { id: 'suggested-stockholm-se', city: 'Stockholm', country: 'Schweden', countryCode: 'SE' }
+  ]
+}
 const interests = ['Kultur', 'Geschichte', 'Natur', 'Food', 'Shopping', 'Nightlife', 'Sport']
 
 const datesBetween = computed(() => {
@@ -105,6 +118,17 @@ const flexibleDurationLabel = computed(() =>
   durationPresets.find(preset => preset.days === daysCount.value)?.label || `${daysCount.value} Tage`
 )
 
+const flexibleMonthLabel = computed(() => {
+  if (!flexibleMonth.value) return ''
+  const [year, month] = flexibleMonth.value.split('-').map(Number)
+  return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' })
+    .format(new Date(year, month - 1, 1, 12))
+})
+
+const flexibleSummaryLabel = computed(() =>
+  [flexibleDurationLabel.value, flexibleMonthLabel.value].filter(Boolean).join(' · ')
+)
+
 const flexibleMonths = computed(() => Array.from({ length: 6 }, (_, index) => {
   const date = new Date(rangeCalendarMonth.value.getFullYear(), rangeCalendarMonth.value.getMonth() + index, 1, 12)
   return {
@@ -115,8 +139,8 @@ const flexibleMonths = computed(() => Array.from({ length: 6 }, (_, index) => {
 }))
 
 const suggestions = computed(() => {
-  if (climate.value === 'WARM') return warmCities
-  if (climate.value === 'COOL') return coolCities
+  if (climate.value === 'WARM') return suggestedCities.WARM
+  if (climate.value === 'COOL') return suggestedCities.COOL
   return []
 })
 const ready = computed(() => {
@@ -124,7 +148,7 @@ const ready = computed(() => {
   if (step.value === 2) {
     return datesKnown.value
       ? Boolean(startDate.value && endDate.value && endDate.value >= startDate.value)
-      : datesKnown.value === false && daysCount.value >= 1 && daysCount.value <= 14
+      : datesKnown.value === false && daysCount.value >= 1 && daysCount.value <= 14 && Boolean(flexibleMonth.value)
   }
   if (step.value === 3) return !datesKnown.value || planningDates.value.length > 0
   if (step.value === 4) return interestNames.value.length > 0
@@ -164,8 +188,13 @@ const toggleInterest = (interest: string) => {
     : [...interestNames.value, interest]
 }
 
-const selectSuggestedCity = (suggestion: string) => {
-  city.value = suggestion
+const selectSuggestedCity = (suggestion: LocationSuggestion) => {
+  location.selectLocation(suggestion)
+}
+
+const chooseClimate = (value: 'WARM' | 'COOL') => {
+  climate.value = value
+  city.value = ''
   location.resetLocationAutocomplete()
 }
 
@@ -191,19 +220,15 @@ function datesInRange(from: string, until: string) {
 }
 
 const positionRangePopover = () => {
-  const anchor = rangeAnchor.value || flexibleAnchor.value
-  if (!anchor) return
-  const rect = anchor.getBoundingClientRect()
   const width = Math.min(860, window.innerWidth - 32)
-  const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12)
-  const top = rect.bottom + 12
-  const maxHeight = Math.max(180, window.innerHeight - top - 16)
+  const maxHeight = Math.max(280, window.innerHeight - 96)
   rangePopoverStyle.value = {
     position: 'fixed',
-    top: `${top}px`,
-    left: `${left}px`,
+    top: '50%',
+    left: '50%',
     width: `${width}px`,
-    maxHeight: `${maxHeight}px`
+    maxHeight: `${maxHeight}px`,
+    transform: 'translate(-50%, -50%)'
   }
 }
 
@@ -216,6 +241,7 @@ const openFixedRangeDialog = async () => {
   rangeSelectedDate.value = startDate.value || ''
   rangeStartSide.value = ''
   rangeEndSide.value = ''
+  rangePreviewEnd.value = ''
   const source = startDate.value || endDate.value
   if (source) {
     const date = new Date(`${source}T12:00:00`)
@@ -263,33 +289,37 @@ const moveRangeMonth = (offset: number) => {
   )
 }
 
-const updateDialogRangeEnd = (date: string, complete: boolean, side?: RangePickerSide) => {
-  if (!startDate.value) {
-    startDate.value = date
-    endDate.value = date
-    if (side) {
-      rangeStartSide.value = side
-      rangeEndSide.value = side
-    }
-    rangeSelectionComplete.value = false
-    return
-  }
+const isValidDialogRangeEnd = (date: string) => {
+  if (!startDate.value) return false
   const from = startDate.value <= date ? startDate.value : date
   const until = startDate.value <= date ? date : startDate.value
   if (datesInRange(from, until).length > 14) {
     rangeError.value = 'Ein Reisezeitraum darf maximal 14 Tage umfassen.'
-    return
+    return false
   }
   rangeError.value = ''
-  endDate.value = date
+  return true
+}
+
+const previewDialogRangeEnd = (date: string, side?: RangePickerSide) => {
+  if (rangeSelectionComplete.value || !isValidDialogRangeEnd(date)) return
+  rangePreviewEnd.value = date
   if (side) rangeEndSide.value = side
-  rangeSelectionComplete.value = complete
+}
+
+const completeDialogRange = (date: string, side?: RangePickerSide) => {
+  if (!isValidDialogRangeEnd(date)) return
+  endDate.value = date
+  rangePreviewEnd.value = ''
+  if (side) rangeEndSide.value = side
+  rangeSelectionComplete.value = true
 }
 
 const beginDialogRange = (date: string, side?: RangePickerSide) => {
   rangeError.value = ''
   startDate.value = date
   endDate.value = ''
+  rangePreviewEnd.value = ''
   planningDates.value = []
   rangeStartSide.value = side || ''
   rangeEndSide.value = side || ''
@@ -302,12 +332,13 @@ const handleDialogRangeClick = (date: string, side: RangePickerSide) => {
     beginDialogRange(date, side)
     return
   }
-  updateDialogRangeEnd(date, true, side)
+  completeDialogRange(date, side)
 }
 
 const clearFixedRange = () => {
   startDate.value = ''
   endDate.value = ''
+  rangePreviewEnd.value = ''
   planningDates.value = []
   rangeSelectedDate.value = ''
   rangeSelectionComplete.value = false
@@ -328,6 +359,7 @@ const selectFlexibleDuration = (days: number) => {
 
 const next = () => {
   if (!ready.value || step.value >= steps) return
+  closeRangeDialog()
   if (step.value === 2 && datesKnown.value === false) {
     step.value = 4
     return
@@ -337,6 +369,7 @@ const next = () => {
 
 const previous = () => {
   if (step.value <= 1) return
+  closeRangeDialog()
   if (step.value === 4 && datesKnown.value === false) {
     step.value = 2
     return
@@ -353,6 +386,7 @@ const finish = () => emit('complete', {
   longitude: location.selectedLocation.value?.longitude,
   placeId: location.selectedLocation.value?.placeId,
   destinationSource: destinationMode.value === 'SEARCH' ? 'KNOWN' : 'SUGGESTED',
+  preferredMonth: datesKnown.value ? undefined : flexibleMonth.value,
   datesKnown: Boolean(datesKnown.value),
   startDate: datesKnown.value ? startDate.value : '',
   endDate: datesKnown.value ? endDate.value : '',
@@ -366,7 +400,7 @@ const finish = () => emit('complete', {
 onMounted(() => {
   if (!props.initialDraft?.city) return
   destinationMode.value = props.initialDraft.destinationSource === 'SUGGESTED' ? 'INSPIRE' : 'SEARCH'
-  if (props.initialDraft.placeId || props.initialDraft.latitude != null) {
+  if (props.initialDraft.placeId || props.initialDraft.latitude != null || props.initialDraft.country) {
     location.selectedLocation.value = {
       id: props.initialDraft.placeId || `${props.initialDraft.city}-${props.initialDraft.countryCode || ''}`,
       city: props.initialDraft.city,
@@ -434,21 +468,21 @@ onUnmounted(() => {
 
       <div v-else class="inspiration-picker">
         <div class="climate-cards">
-          <button :class="{ selected: climate === 'WARM' }" type="button" @click="climate = 'WARM'; city = ''">
+          <button :class="{ selected: climate === 'WARM' }" type="button" @click="chooseClimate('WARM')">
             <Sun :size="23" /><span><strong>Sonne & Wärme</strong><small>Lebendige Städte und milde Abende</small></span>
           </button>
-          <button :class="{ selected: climate === 'COOL' }" type="button" @click="climate = 'COOL'; city = ''">
+          <button :class="{ selected: climate === 'COOL' }" type="button" @click="chooseClimate('COOL')">
             <Wind :size="23" /><span><strong>Kühl & urban</strong><small>Kultur, Architektur und klare Luft</small></span>
           </button>
         </div>
         <div v-if="climate" class="welcome-suggestions">
           <button
             v-for="suggestion in suggestions"
-            :key="suggestion"
-            :class="{ selected: city === suggestion }"
+            :key="suggestion.id"
+            :class="{ selected: location.selectedLocation.value?.id === suggestion.id }"
             type="button"
             @click="selectSuggestedCity(suggestion)"
-          >{{ suggestion }}</button>
+          ><strong>{{ suggestion.city }}</strong><small>{{ suggestion.country }}</small></button>
         </div>
       </div>
     </div>
@@ -458,26 +492,19 @@ onUnmounted(() => {
       <h2>Weißt du schon, wann es losgeht?</h2>
       <p>Du kannst einen festen Zeitraum wählen oder erstmal nur die Reisedauer festlegen.</p>
       <div class="welcome-choice-grid">
-        <div ref="rangeAnchor" class="welcome-range-anchor" @click.stop>
+        <div class="welcome-range-anchor" @click.stop>
           <button :class="{ selected: datesKnown === true }" type="button" @click="openFixedRangeDialog">
             <CalendarRange :size="22" />
             <span><strong>Fester Zeitraum</strong><small v-if="startDate && endDate">{{ selectedRangeLabel }}</small></span>
           </button>
         </div>
-        <div ref="flexibleAnchor" class="welcome-flexible-anchor" @click.stop>
+        <div class="welcome-flexible-anchor" @click.stop>
           <button :class="{ selected: datesKnown === false }" type="button" @click="openFlexibleDurationDialog">
             <CalendarClock :size="22" />
-            <span><strong>Flexible Reisedauer</strong><small v-if="datesKnown === false">{{ flexibleDurationLabel }}</small></span>
+            <span><strong>Flexible Reisedauer</strong><small v-if="datesKnown === false">{{ flexibleSummaryLabel }}</small></span>
           </button>
         </div>
       </div>
-      <div v-if="datesKnown === true" class="welcome-date-grid welcome-inline-inputs">
-        <label>Ankunft<input v-model="startDate" type="date"></label>
-        <label>Abreise<input v-model="endDate" type="date" :min="startDate"></label>
-      </div>
-      <label v-else-if="datesKnown === false" class="welcome-days-input welcome-inline-inputs">
-        Planungstage<input v-model.number="daysCount" type="number" min="1" max="14">
-      </label>
     </div>
 
     <div v-else-if="step === 3" class="welcome-question">
@@ -533,9 +560,10 @@ onUnmounted(() => {
       <section
         v-if="rangeDialogOpen"
         class="range-picker-popover"
-        :class="rangePopoverClass"
+        :class="[rangePopoverClass, pickerMode === 'date' ? 'range-picker-popover--date' : 'range-picker-popover--flexible']"
         :style="rangePopoverStyle"
         role="dialog"
+        aria-modal="true"
         aria-label="Zeitraum auswaehlen"
         @click.stop
       >
@@ -552,10 +580,10 @@ onUnmounted(() => {
                 :selected-date="rangeSelectedDate"
                 :range-start="startDate"
                 :range-end="endDate"
+                :range-preview-end="rangePreviewEnd"
+                :range-complete="rangeSelectionComplete"
                 @select-date="handleDialogRangeClick($event, 'left')"
-                @range-start="beginDialogRange($event, 'left')"
-                @range-hover="updateDialogRangeEnd($event, false, 'left')"
-                @range-end="updateDialogRangeEnd($event, true, 'left')"
+                @range-hover="previewDialogRangeEnd($event, 'left')"
               />
             </section>
             <section class="range-picker-month range-picker-month-right">
@@ -566,10 +594,10 @@ onUnmounted(() => {
                 :selected-date="rangeSelectedDate"
                 :range-start="startDate"
                 :range-end="endDate"
+                :range-preview-end="rangePreviewEnd"
+                :range-complete="rangeSelectionComplete"
                 @select-date="handleDialogRangeClick($event, 'right')"
-                @range-start="beginDialogRange($event, 'right')"
-                @range-hover="updateDialogRangeEnd($event, false, 'right')"
-                @range-end="updateDialogRangeEnd($event, true, 'right')"
+                @range-hover="previewDialogRangeEnd($event, 'right')"
               />
             </section>
             <button class="date-range-arrow" type="button" aria-label="Naechste Monate" @click="moveRangeMonth(1)">

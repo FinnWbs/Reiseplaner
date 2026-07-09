@@ -77,6 +77,18 @@ class TripServiceTest {
         assertTrue(trips.persisted == null);
     }
 
+    @Test
+    void createPersistsPreferredMonthForFlexibleTrips() {
+        InterestEntity culture = interest(1L, InterestType.CULTURE);
+        CapturingTripRepository trips = new CapturingTripRepository();
+        TripService service = service(new TestPlanningService(), trips, culture);
+
+        TripDto created = service.create(request(List.of(1L), null, "2026-08"));
+
+        assertEquals("2026-08", created.preferredMonth());
+        assertEquals("2026-08", trips.persisted.preferredMonth);
+    }
+
     private static TripService service(
         TestPlanningService planning,
         CapturingTripRepository trips,
@@ -92,6 +104,14 @@ class TripServiceTest {
     }
 
     private static CreateTripRequest request(List<Long> interestIds, List<InterestType> interestTypes) {
+        return request(interestIds, interestTypes, null);
+    }
+
+    private static CreateTripRequest request(
+        List<Long> interestIds,
+        List<InterestType> interestTypes,
+        String preferredMonth
+    ) {
         return new CreateTripRequest(
             "Berlin",
             2,
@@ -99,6 +119,7 @@ class TripServiceTest {
             interestTypes,
             null,
             null,
+            preferredMonth,
             List.of(),
             TripPace.BALANCED,
             DayRhythm.BALANCED,

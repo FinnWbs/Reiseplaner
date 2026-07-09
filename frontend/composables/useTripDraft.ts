@@ -10,6 +10,7 @@ export type TripDraft = {
   datesKnown: boolean
   startDate: string
   endDate: string
+  preferredMonth?: string
   daysCount: number
   planningDates: string[]
   interestNames: string[]
