@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TravelMate – Architektur und Datenfluss</title>
+  <style>
+    @page { size: A4; margin: 16mm; }
+    :root { --ink:#102f4c; --blue:#1177c5; --light:#eaf5ff; --line:#cbddeb; --muted:#5d7182; --green:#1d916b; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:10.6pt/1.47 Inter, Arial, sans-serif; color:var(--ink); }
+    h1,h2,h3 { margin:0; color:var(--ink); line-height:1.16; }
+    h1 { font-size:28pt; letter-spacing:-.035em; }
+    h2 { font-size:17pt; margin-top:18pt; padding-top:5pt; border-top:2px solid var(--blue); }
+    h3 { font-size:12.5pt; margin:13pt 0 4pt; }
+    p { margin:6pt 0; }
+    ul,ol { margin:6pt 0 9pt 18pt; padding:0; }
+    li { margin:2pt 0; }
+    .cover { min-height:250mm; display:flex; flex-direction:column; justify-content:center; }
+    .eyebrow { font-weight:800; color:var(--blue); text-transform:uppercase; letter-spacing:.12em; font-size:8.5pt; }
+    .lead { font-size:15pt; line-height:1.4; max-width:500pt; margin-top:14pt; }
+    .meta { color:var(--muted); margin-top:12pt; }
+    .callout { border-left:4px solid var(--blue); background:var(--light); padding:10pt 12pt; margin:10pt 0; border-radius:0 8pt 8pt 0; }
+    .diagram { margin:11pt 0 14pt; border:1px solid var(--line); border-radius:12pt; padding:9pt; background:#fbfdff; break-inside:avoid; }
+    .diagram svg { display:block; width:100%; height:auto; }
+    table { width:100%; border-collapse:collapse; margin:8pt 0 12pt; font-size:9.2pt; }
+    th { text-align:left; background:var(--ink); color:#fff; font-weight:700; }
+    th, td { border:1px solid var(--line); padding:6pt; vertical-align:top; }
+    tr:nth-child(even) td { background:#f7fbff; }
+    code { font-family:"Cascadia Code", Consolas, monospace; font-size:8.2pt; background:#edf4f9; padding:1pt 3pt; border-radius:3pt; word-break:break-word; }
+    pre { margin:8pt 0; padding:9pt; background:#0f253b; color:#eef8ff; border-radius:8pt; font:7.8pt/1.35 "Cascadia Code", Consolas, monospace; white-space:pre-wrap; }
+    .columns { display:grid; grid-template-columns:1fr 1fr; gap:10pt; }
+    .card { border:1px solid var(--line); padding:9pt; border-radius:9pt; background:#fff; break-inside:avoid; }
+    .flow { counter-reset:step; list-style:none; margin-left:0; }
+    .flow li { position:relative; padding:7pt 7pt 7pt 31pt; margin:5pt 0; border:1px solid var(--line); border-radius:7pt; background:#fff; }
+    .flow li::before { counter-increment:step; content:counter(step); position:absolute; left:7pt; top:7pt; width:17pt; height:17pt; border-radius:50%; background:var(--blue); color:#fff; font-weight:800; font-size:8pt; line-height:17pt; text-align:center; }
+    .small { color:var(--muted); font-size:8.8pt; }
+    .quote { margin:12pt 0; padding:12pt; border-radius:10pt; background:linear-gradient(135deg,#eaf5ff,#f8fcff); font-size:12pt; font-weight:650; }
+    .page-break { break-before:page; }
+    .footer { position:fixed; bottom:-8mm; left:0; right:0; color:var(--muted); font-size:8pt; text-align:center; }
+    @media print { .page-break { break-before:page; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="cover">
+      <p class="eyebrow">Projektpräsentation</p>
+      <h1>TravelMate<br>Architektur &amp; Datenfluss</h1>
+      <p class="lead">Wie aus einer Stadt, einem Zeitraum und persönlichen Interessen ein strukturierter, datenbasierter Reiseplan entsteht.</p>
+      <div class="callout"><strong>Kernidee:</strong> Das Frontend sammelt Präferenzen. Das Backend übernimmt Datenbeschaffung, Qualitätsbewertung, Planung und Speicherung.</div>
+      <p class="meta">Stack: Nuxt 3 · Java 21 / Quarkus · PostgreSQL · Docker Compose</p>
+    </section>
+
+    <section class="page-break">
+      <h2>1. Architektur in einem Satz</h2>
+      <p>TravelMate nimmt Reisepräferenzen im Nuxt-Frontend entgegen, erstellt daraus über ein Java-/Quarkus-Backend einen regelbasierten Plan, reichert Orte bei Bedarf über externe Datenquellen an und speichert die Ergebnisse zentral in PostgreSQL.</p>
+      <div class="diagram">
+        <svg viewBox="0 0 920 350" role="img" aria-label="Systemarchitektur von TravelMate">
+          <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1177c5"/></marker></defs>
+          <style>.b{stroke:#1177c5;stroke-width:2;rx:14;fill:#fff}.s{font:700 16px Arial;fill:#102f4c}.t{font:13px Arial;fill:#5d7182}.a{stroke:#1177c5;stroke-width:2;marker-end:url(#arrow)}</style>
+          <rect class="b" x="34" y="135" width="145" height="78"/><text class="s" x="106" y="166" text-anchor="middle">Nutzer</text><text class="t" x="106" y="188" text-anchor="middle">Browser</text>
+          <rect class="b" x="250" y="112" width="166" height="123" fill="#eaf5ff"/><text class="s" x="333" y="152" text-anchor="middle">Nuxt 3</text><text class="t" x="333" y="176" text-anchor="middle">UI, Seiten, Komponenten</text><text class="t" x="333" y="196" text-anchor="middle">Composables</text>
+          <rect class="b" x="490" y="112" width="175" height="123" fill="#eaf5ff"/><text class="s" x="577" y="152" text-anchor="middle">Quarkus Backend</text><text class="t" x="577" y="176" text-anchor="middle">REST, Planung, Import</text><text class="t" x="577" y="196" text-anchor="middle">Qualitätslogik</text>
+          <rect class="b" x="742" y="112" width="145" height="123"/><text class="s" x="814" y="152" text-anchor="middle">PostgreSQL</text><text class="t" x="814" y="176" text-anchor="middle">Reisen, Tage, POIs</text><text class="t" x="814" y="196" text-anchor="middle">Cache &amp; Referenzen</text>
+          <path class="a" d="M179 174 H240"/><text class="t" x="210" y="158" text-anchor="middle">Interaktion</text>
+          <path class="a" d="M416 174 H480"/><text class="t" x="448" y="158" text-anchor="middle">REST + JWT</text>
+          <path class="a" d="M665 174 H732"/><text class="t" x="698" y="158" text-anchor="middle">JPA</text>
+          <rect class="b" x="348" y="280" width="104" height="48"/><text class="s" x="400" y="309" text-anchor="middle">Geoapify</text>
+          <rect class="b" x="474" y="280" width="145" height="48"/><text class="s" x="547" y="309" text-anchor="middle">Wikidata/Wikipedia</text>
+          <rect class="b" x="642" y="280" width="130" height="48"/><text class="s" x="707" y="309" text-anchor="middle">Google Places</text>
+          <path class="a" d="M530 236 L430 274"/><path class="a" d="M570 236 L550 274"/><path class="a" d="M620 236 L695 274"/>
+        </svg>
+      </div>
+
+      <h2>2. Die Schichten des Projekts</h2>
+      <table>
+        <thead><tr><th>Schicht</th><th>Aufgabe</th><th>Beispiele</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td>Eingaben, Darstellung und Interaktion</td><td>Interview, Kalender, Tagesplan, Karte, Galerie</td></tr>
+          <tr><td>Composables</td><td>Gemeinsame Frontend-Logik und API-Zugriffe</td><td><code>useTripWorkspace</code>, <code>useTripImages</code>, <code>useLocationAutocomplete</code></td></tr>
+          <tr><td>REST-API</td><td>Klare Schnittstelle zwischen Browser und Backend</td><td><code>/trips</code>, <code>/locations</code>, <code>/activities</code></td></tr>
+          <tr><td>Backend-Services</td><td>Validierung, Import, Qualitätsbewertung und Planung</td><td><code>TripService</code>, <code>PlanningService</code>, <code>ActivitySyncService</code></td></tr>
+          <tr><td>Datenbank</td><td>Dauerhafte Speicherung und Cache</td><td>Reisen, Tage, Aktivitäten, Bilder, externe Referenzen</td></tr>
+          <tr><td>Externe Quellen</td><td>Orte, Hintergrunddaten und Bilder</td><td>Geoapify, Wikidata, Wikipedia, Google Places</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>3. Datenfluss: Eine neue Reise planen</h2>
+      <div class="diagram">
+        <svg viewBox="0 0 920 475" role="img" aria-label="Ablauf einer Reiseplanung">
+          <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1177c5"/></marker></defs>
+          <style>.line{stroke:#1177c5;stroke-width:2;marker-end:url(#a2)}.h{font:700 15px Arial;fill:#102f4c}.v{font:13px Arial;fill:#5d7182}.node{fill:#fff;stroke:#cbddeb;stroke-width:1.5;rx:8}</style>
+          <text class="h" x="85" y="29" text-anchor="middle">Nutzer</text><text class="h" x="255" y="29" text-anchor="middle">Frontend</text><text class="h" x="460" y="29" text-anchor="middle">Backend</text><text class="h" x="650" y="29" text-anchor="middle">Datenbank</text><text class="h" x="834" y="29" text-anchor="middle">Externe Quellen</text>
+          <rect class="node" x="174" y="62" width="162" height="44"/><text class="v" x="255" y="89" text-anchor="middle">Ziel, Zeitraum, Interessen</text><path class="line" d="M92 84H164"/>
+          <rect class="node" x="365" y="130" width="190" height="46"/><text class="v" x="460" y="158" text-anchor="middle">POST /trips + JWT</text><path class="line" d="M336 84V153H355"/>
+          <rect class="node" x="572" y="198" width="155" height="46"/><text class="v" x="650" y="226" text-anchor="middle">Trip + Tage speichern</text><path class="line" d="M555 153V221H562"/>
+          <rect class="node" x="365" y="267" width="190" height="49"/><text class="v" x="460" y="288" text-anchor="middle">Cache prüfen, Import</text><text class="v" x="460" y="305" text-anchor="middle">bei Bedarf</text><path class="line" d="M650 244V290H565"/>
+          <rect class="node" x="758" y="267" width="150" height="49"/><text class="v" x="833" y="288" text-anchor="middle">Geoapify + Wiki</text><text class="v" x="833" y="305" text-anchor="middle">POI-Daten</text><path class="line" d="M555 290H748"/>
+          <rect class="node" x="365" y="351" width="190" height="49"/><text class="v" x="460" y="372" text-anchor="middle">Qualität, Cluster,</text><text class="v" x="460" y="389" text-anchor="middle">Tagesplanung</text><path class="line" d="M833 316V375H565"/>
+          <rect class="node" x="174" y="420" width="162" height="44"/><text class="v" x="255" y="447" text-anchor="middle">Plan, Karte, Galerie</text><path class="line" d="M365 375V442H346"/>
+        </svg>
+      </div>
+      <ol class="flow">
+        <li>Der Nutzer wählt Ziel, Zeitraum, Interessen, Tempo und Tagesrhythmus.</li>
+        <li>Das Frontend sendet den Erstellungswunsch an das Backend.</li>
+        <li>Das Backend erstellt Reise und Reisetage und prüft den lokalen Ortsbestand.</li>
+        <li>Nur falls Daten fehlen oder veraltet sind, startet ein externer Import.</li>
+        <li>Die Planungslogik wählt passende, hochwertige und räumlich sinnvolle Aktivitäten.</li>
+        <li>Das Backend liefert den vollständigen Reiseplan als DTO zurück; Nuxt aktualisiert Karte, Liste und Galerie.</li>
+      </ol>
+
+      <h3>Wie ein API-Call formuliert ist</h3>
+      <pre>POST /trips
+Authorization: Bearer &lt;JWT&gt;
+
+{
+  "city": "Kopenhagen", "daysCount": 3,
+  "interestIds": [1, 4, 5],
+  "startDate": "2026-07-10", "endDate": "2026-07-12",
+  "planningDates": ["2026-07-10", "2026-07-11", "2026-07-12"],
+  "pace": "BALANCED", "dayRhythm": "BALANCED",
+  "country": "Dänemark", "countryCode": "DK",
+  "latitude": 55.6761, "longitude": 12.5683
+}</pre>
+      <p class="small">Bei einer flexiblen Reise bleiben konkrete Start- und Enddaten leer. Stattdessen werden Tagesanzahl und optional ein Wunschmonat übertragen.</p>
+    </section>
+
+    <section class="page-break">
+      <h2>4. Was passiert im Backend mit den Daten?</h2>
+      <div class="columns">
+        <div class="card"><h3>1. Request entgegennehmen</h3><p><code>TripResource</code> nimmt den REST-Request entgegen. <code>TripService</code> validiert die Daten und erstellt Reise sowie Reisetage.</p></div>
+        <div class="card"><h3>2. Cache-Entscheidung</h3><p><code>ActivitySyncService</code> prüft für Stadt und Interessen Import-Version, Aktualität, Menge und räumliche Abdeckung.</p></div>
+        <div class="card"><h3>3. Orte importieren</h3><p>Geoapify liefert POIs. Ein Mapper überführt Rohdaten in ein internes Kandidatenmodell: Name, Adresse, Koordinaten, Kategorien und Referenzen.</p></div>
+        <div class="card"><h3>4. Wissen anreichern</h3><p>Wikidata ergänzt Referenzen und Bekanntheit. Wikipedia ergänzt, wenn verfügbar, Beschreibungstexte.</p></div>
+        <div class="card"><h3>5. Qualität bewerten</h3><p>Ungeeignete Orte werden ausgeschlossen. Übrig bleiben Kandidaten mit Kategorie-Fit, Bekanntheit, Datenqualität und sinnvoller räumlicher Lage.</p></div>
+        <div class="card"><h3>6. Plan erzeugen</h3><p>Quoten, Interessen, räumliche Cluster, Vielfalt, Tageszeit und Tempo werden kombiniert. So entstehen abwechslungsreiche Tagespläne.</p></div>
+      </div>
+
+      <h3>Wann werden externe Quellen angefragt?</h3>
+      <table>
+        <thead><tr><th>Zeitpunkt</th><th>Quelle</th><th>Zweck</th></tr></thead>
+        <tbody>
+          <tr><td>Während der Stadteingabe</td><td>Geoapify Autocomplete</td><td>Stadtvorschläge, Land, Koordinaten und Place-ID</td></tr>
+          <tr><td>Bei neuer Reise, wenn Cache nicht genügt</td><td>Geoapify Places</td><td>Aktivitätskandidaten für die gewählten Interessen</td></tr>
+          <tr><td>Direkt nach dem Import</td><td>Wikidata und Wikipedia</td><td>Relevanzsignale, Referenzen und Beschreibungen</td></tr>
+          <tr><td>Beim Öffnen von Highlights</td><td>Wikidata + Wikimedia Pageviews</td><td>Touristisch relevante Highlights, mit Cache</td></tr>
+          <tr><td>Beim Anzeigen einer Aktivität ohne Bild</td><td>Google Places</td><td>Nachträgliche Bildanreicherung</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>5. Bilddatenfluss – bewusst nachgelagert</h2>
+      <p>Bilder sind kein Blocker für die Reiseerstellung. Der Plan ist sofort nutzbar; echte Bilder werden gezielt nachgeladen.</p>
+      <div class="diagram">
+        <svg viewBox="0 0 920 355" role="img" aria-label="Bildladeprozess in TravelMate">
+          <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1177c5"/></marker></defs>
+          <style>.line{stroke:#1177c5;stroke-width:2;marker-end:url(#a3)}.h{font:700 15px Arial;fill:#102f4c}.v{font:13px Arial;fill:#5d7182}.node{fill:#fff;stroke:#cbddeb;stroke-width:1.5;rx:8}</style>
+          <text class="h" x="130" y="34" text-anchor="middle">Galerie</text><text class="h" x="355" y="34" text-anchor="middle">Frontend-Workspace</text><text class="h" x="610" y="34" text-anchor="middle">Backend</text><text class="h" x="830" y="34" text-anchor="middle">Google Places</text>
+          <rect class="node" x="42" y="67" width="175" height="48"/><text class="v" x="130" y="96" text-anchor="middle">Kein echtes Bild vorhanden</text>
+          <rect class="node" x="270" y="135" width="170" height="48"/><text class="v" x="355" y="163" text-anchor="middle">POST /activities/{id}/images</text>
+          <rect class="node" x="525" y="203" width="170" height="48"/><text class="v" x="610" y="231" text-anchor="middle">Match prüfen, Bilder speichern</text>
+          <rect class="node" x="755" y="203" width="150" height="48"/><text class="v" x="830" y="231" text-anchor="middle">Textsuche + Fotos</text>
+          <rect class="node" x="270" y="290" width="170" height="42"/><text class="v" x="355" y="316" text-anchor="middle">Trip-State aktualisieren</text>
+          <path class="line" d="M217 91L260 155"/><path class="line" d="M440 159L515 223"/><path class="line" d="M695 227H745"/><path class="line" d="M830 251L695 308H450"/><path class="line" d="M270 311L218 311V112"/>
+        </svg>
+      </div>
+      <ul>
+        <li>Der aktive Tag wird zuerst behandelt; anschließend werden die zwei folgenden Tage vorgeladen.</li>
+        <li>Ein gemeinsamer In-Flight-Status verhindert doppelte Bildanfragen für dieselbe Aktivität.</li>
+        <li>Das Backend speichert bis zu drei Google-Bildreferenzen pro Aktivität.</li>
+        <li>Beim tatsächlichen Rendern löst ein sicherer Backend-Endpunkt die Foto-URL auf und leitet den Browser temporär weiter.</li>
+        <li>Falls kein Match zustande kommt oder ein Bild temporär nicht erreichbar ist, bleibt ein Kategorie-Platzhalter sichtbar.</li>
+      </ul>
+
+      <h2>6. Planänderungen ohne Neuplanung</h2>
+      <table>
+        <thead><tr><th>Nutzeraktion</th><th>API-Aufruf</th><th>Reaktion im Backend</th></tr></thead>
+        <tbody>
+          <tr><td>Aktivität löschen</td><td><code>DELETE /trips/{id}/days/{dayId}/activities/{itemId}</code></td><td>Eintrag entfernen und Tagesplan aktualisieren</td></tr>
+          <tr><td>Aktivität ersetzen</td><td><code>PUT /trips/{id}/days/{dayId}/activities/{itemId}</code></td><td>Passende Alternative auswählen</td></tr>
+          <tr><td>Aktivität neu generieren</td><td><code>POST .../regenerate</code></td><td>Beste freie Alternative suchen</td></tr>
+          <tr><td>Aktivitäten oder Tage verschieben</td><td><code>PUT /trips/{id}/schedule</code></td><td>Reihenfolge, Zieltag und Zeiten speichern</td></tr>
+          <tr><td>Zeitfenster ändern</td><td><code>PUT .../availability</code></td><td>Tageszeiten validieren und neu berechnen</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>7. Präsentationsfazit</h2>
+      <p class="quote">„TravelMate trennt bewusst zwischen schneller Nutzeroberfläche und datenintensiver Hintergrundlogik. Das Frontend sammelt Präferenzen und zeigt Ergebnisse. Das Backend entscheidet, ob Ortsdaten bereits lokal vorhanden sind, importiert bei Bedarf neue POIs, bewertet sie nach Qualität und räumlicher Eignung und baut daraus einen Tagesplan. Zusätzliche Daten wie Bilder und Highlights werden erst nachgeladen, wenn sie für die aktuelle Ansicht wirklich relevant sind.“</p>
+      <h3>Die drei Kernbotschaften</h3>
+      <ol>
+        <li><strong>Schnell:</strong> Plan und Interaktion bleiben nutzbar, während Zusatzdaten im Hintergrund nachgeladen werden.</li>
+        <li><strong>Qualitätsorientiert:</strong> Nicht jeder gefundene Ort wird genutzt; TravelMate filtert, bewertet und plant regelbasiert.</li>
+        <li><strong>Effizient:</strong> Lokale Persistenz und Caching reduzieren wiederholte externe API-Anfragen.</li>
+      </ol>
+      <p class="small">Technische Grundlage: Nuxt 3, Java 21/Quarkus, PostgreSQL, Docker Compose. Externe Daten: Geoapify, Wikidata, Wikipedia, Google Places und OpenStreetMap-Kartenkacheln.</p>
+    </section>
+  </main>
+  <div class="footer">TravelMate · Architektur und Datenfluss</div>
+</body>
+</html>
