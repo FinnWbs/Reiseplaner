@@ -249,7 +249,6 @@ onUnmounted(() => {
           <h1>Plane weniger. Erlebe mehr.</h1>
           <p>Termine, Reiseideen und Tagespläne an einem Ort.</p>
         </div>
-        <NuxtLink class="button-link calendar-create-link" to="/planner"><Plus :size="18" />Neue Reise</NuxtLink>
       </section>
 
       <p v-if="workspace.error.value" class="error workspace-error">{{ workspace.error.value }}</p>

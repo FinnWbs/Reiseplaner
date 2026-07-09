@@ -245,6 +245,14 @@ select:focus {
   box-shadow: 0 26px 70px rgba(10, 45, 87, 0.15);
 }
 
+/* Step 4 contains six category chips with icons. Give the desktop interview
+   enough room to keep the complete choice set on one intentional line. */
+@media (min-width: 900px) {
+  .planner-journey-main .welcome-interview {
+    width: min(calc(100% - 32px), 900px);
+  }
+}
+
 .welcome-interview-header {
   letter-spacing: 0.07em;
 }
@@ -395,6 +403,20 @@ select:focus {
   overscroll-behavior: contain;
 }
 
+.range-picker-popover .calendar-range-error {
+  position: absolute;
+  right: 32px;
+  bottom: 66px;
+  left: 32px;
+  z-index: 3;
+  margin: 0;
+  border: 1px solid rgba(196, 68, 56, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 242, 239, 0.96);
+  box-shadow: 0 12px 28px rgba(161, 60, 50, 0.08);
+  pointer-events: none;
+}
+
 .range-picker-popover--flexible {
   padding-block: 40px 34px;
 }
@@ -481,6 +503,8 @@ select:focus {
 }
 
 .range-picker-popover .travel-calendar {
+  --calendar-marker-size: 32px;
+  --calendar-band-height: 38px;
   border: 0;
   background: transparent;
 }
@@ -503,25 +527,44 @@ select:focus {
 }
 
 .range-picker-popover .calendar-cell {
+  position: relative;
   min-height: 38px;
   padding: 0;
   border-color: transparent;
   border-radius: 0;
   background: transparent;
   color: #222;
+  isolation: isolate;
+}
+
+.range-picker-popover .calendar-cell::before,
+.calendar-dashboard .calendar-cell::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: var(--calendar-band-height, 30px);
+  border-radius: 0;
+  opacity: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .range-picker-popover .calendar-date-number {
   display: grid;
   place-items: center;
   margin: auto;
-  width: 32px;
-  height: 32px;
+  width: var(--calendar-marker-size);
+  height: var(--calendar-marker-size);
   border-radius: 50%;
   background: transparent;
   color: #202124;
   font-size: 15px;
   font-weight: 650;
+  position: relative;
+  z-index: 1;
 }
 
 .range-picker-popover .calendar-cell.outside-month .calendar-date-number {
@@ -530,18 +573,18 @@ select:focus {
 
 .range-picker-popover .calendar-cell:hover,
 .range-picker-popover .calendar-cell:focus-visible {
-  background: #eaf4ff;
+  background: transparent;
   box-shadow: none;
 }
 
-.range-picker-popover .calendar-cell.range-selected {
-  background: rgba(203, 227, 249, 0.72);
-  box-shadow: none;
+.range-picker-popover .calendar-cell.range-selected::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.18);
 }
 
-.range-picker-popover .calendar-cell.range-preview {
-  background: rgba(218, 235, 250, 0.46);
-  box-shadow: none;
+.range-picker-popover .calendar-cell.range-preview::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.1);
 }
 
 .range-picker-popover .calendar-cell.today .calendar-date-number {
@@ -556,31 +599,45 @@ select:focus {
 .range-picker-popover .calendar-cell.range-pending-start .calendar-date-number {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  background: var(--brand-navy);
+  width: var(--calendar-marker-size);
+  height: var(--calendar-marker-size);
+  background: #1769aa;
   color: white;
-  box-shadow: 0 8px 18px rgba(10, 66, 120, 0.22);
+  box-shadow: 0 8px 18px rgba(23, 105, 170, 0.22);
 }
 
-.range-picker-popover .calendar-cell.range-start,
-.range-picker-popover .calendar-cell.range-end,
-.range-picker-popover .calendar-cell.range-pending-start {
-  background: rgba(203, 227, 249, 0.72);
-  box-shadow: none;
+.range-picker-popover .calendar-cell.range-start::before,
+.range-picker-popover .calendar-cell.range-end::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.18);
+}
+
+.range-picker-popover .calendar-cell.range-start::before {
+  left: calc(50% - (var(--calendar-marker-size) / 2));
+  border-radius: 999px 0 0 999px;
+}
+
+.range-picker-popover .calendar-cell.range-end::before {
+  right: calc(50% - (var(--calendar-marker-size) / 2));
+  border-radius: 0 999px 999px 0;
+}
+
+.range-picker-popover .calendar-cell.range-start.range-end::before {
+  left: calc(50% - (var(--calendar-marker-size) / 2));
+  right: calc(50% - (var(--calendar-marker-size) / 2));
+  border-radius: 999px;
 }
 
 .range-picker-popover .calendar-cell.range-selected:not(.range-start):not(.range-end) .calendar-date-number {
   color: var(--brand-navy);
 }
 
-.range-picker-popover .calendar-cell.outside-month.range-selected,
-.range-picker-popover .calendar-cell.outside-month.range-preview,
-.range-picker-popover .calendar-cell.outside-month.range-start,
-.range-picker-popover .calendar-cell.outside-month.range-end,
-.range-picker-popover .calendar-cell.outside-month.range-pending-start {
-  background: transparent;
-  box-shadow: none;
+.range-picker-popover .calendar-cell.outside-month.range-selected::before,
+.range-picker-popover .calendar-cell.outside-month.range-preview::before,
+.range-picker-popover .calendar-cell.outside-month.range-start::before,
+.range-picker-popover .calendar-cell.outside-month.range-end::before,
+.range-picker-popover .calendar-cell.outside-month.range-pending-start::before {
+  opacity: 0;
 }
 
 .range-picker-popover .calendar-cell.outside-month.selected .calendar-date-number,
@@ -607,6 +664,19 @@ select:focus {
   box-shadow: none;
 }
 
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-selected::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-preview::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-start::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-end::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-pending-start::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-selected::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-preview::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-start::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-end::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-pending-start::before {
+  opacity: 0;
+}
+
 .range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-selected .calendar-date-number,
 .range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-start .calendar-date-number,
 .range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-end .calendar-date-number,
@@ -629,28 +699,28 @@ select:focus {
   color: #c9c9c9;
 }
 
-.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-selected,
-.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-pending-start,
-.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-selected,
-.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-pending-start {
-  background: rgba(203, 227, 249, 0.72);
-  box-shadow: none;
+.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-selected::before,
+.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-pending-start::before,
+.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-selected::before,
+.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-pending-start::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.18);
 }
 
-.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-preview,
-.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-preview {
-  background: rgba(218, 235, 250, 0.46);
-  box-shadow: none;
+.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-preview::before,
+.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-preview::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.1);
 }
 
-.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-start,
-.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-end,
-.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-pending-start,
-.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-start,
-.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-end,
-.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-pending-start {
-  background: rgba(203, 227, 249, 0.72);
-  box-shadow: none;
+.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-start::before,
+.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-end::before,
+.range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-pending-start::before,
+.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-start::before,
+.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-end::before,
+.range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-pending-start::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.18);
 }
 
 .range-picker-popover--single-left .range-picker-month-left .calendar-cell.outside-month.range-selected .calendar-date-number,
@@ -664,9 +734,9 @@ select:focus {
 .range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-start .calendar-date-number,
 .range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-end .calendar-date-number,
 .range-picker-popover--single-right .range-picker-month-right .calendar-cell.outside-month.range-pending-start .calendar-date-number {
-  background: var(--brand-navy);
+  background: #1769aa;
   color: white;
-  box-shadow: 0 8px 18px rgba(10, 66, 120, 0.22);
+  box-shadow: 0 8px 18px rgba(23, 105, 170, 0.22);
 }
 
 .range-picker-popover .calendar-cell-trips {
@@ -939,44 +1009,38 @@ select:focus {
   border-radius: 999px;
 }
 
+.welcome-interests button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.welcome-interests button svg {
+  flex: 0 0 auto;
+  color: var(--brand-primary);
+}
+
+.welcome-interests button span {
+  line-height: 1;
+}
+
 .welcome-interests button.selected,
 .welcome-suggestions button.selected {
   background: var(--brand-primary);
   color: white;
 }
 
-.welcome-suggestions button {
-  justify-items: start;
-  min-width: 128px;
-  border-radius: 14px;
-  text-align: left;
-}
-
-.welcome-suggestions button small {
-  color: #6b7d90;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.welcome-suggestions button.selected small {
-  color: rgba(255, 255, 255, 0.78);
+.welcome-interests button.selected svg {
+  color: currentColor;
 }
 
 .welcome-suggestions button {
-  justify-items: start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 128px;
   border-radius: 14px;
-  text-align: left;
-}
-
-.welcome-suggestions button small {
-  color: #6b7d90;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.welcome-suggestions button.selected small {
-  color: rgba(255, 255, 255, 0.78);
+  text-align: center;
 }
 
 .destination-mode > button:hover,
@@ -1184,29 +1248,60 @@ select:focus {
   z-index: 2;
 }
 
-.calendar-dashboard .calendar-cell.range-selected {
-  background: rgba(211, 232, 251, 0.72);
-  box-shadow: none;
+.calendar-dashboard .travel-calendar {
+  --calendar-marker-size: 23px;
+  --calendar-band-height: 29px;
 }
 
-.calendar-dashboard .calendar-cell.range-preview {
-  background: rgba(226, 239, 251, 0.58);
-  box-shadow: none;
+.calendar-dashboard .calendar-cell {
+  position: relative;
+  isolation: isolate;
 }
 
-.calendar-dashboard .calendar-cell.range-start,
-.calendar-dashboard .calendar-cell.range-end,
-.calendar-dashboard .calendar-cell.range-pending-start {
-  background: rgba(199, 225, 249, 0.82);
-  box-shadow: none;
+.calendar-dashboard .calendar-date-number,
+.calendar-dashboard .calendar-cell-trips {
+  position: relative;
+  z-index: 1;
+}
+
+.calendar-dashboard .calendar-cell.range-selected::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.16);
+}
+
+.calendar-dashboard .calendar-cell.range-preview::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.09);
+}
+
+.calendar-dashboard .calendar-cell.range-start::before,
+.calendar-dashboard .calendar-cell.range-end::before {
+  opacity: 1;
+  background: rgba(47, 133, 207, 0.16);
+}
+
+.calendar-dashboard .calendar-cell.range-start::before {
+  left: calc(50% - (var(--calendar-marker-size) / 2));
+  border-radius: 999px 0 0 999px;
+}
+
+.calendar-dashboard .calendar-cell.range-end::before {
+  right: calc(50% - (var(--calendar-marker-size) / 2));
+  border-radius: 0 999px 999px 0;
+}
+
+.calendar-dashboard .calendar-cell.range-start.range-end::before {
+  left: calc(50% - (var(--calendar-marker-size) / 2));
+  right: calc(50% - (var(--calendar-marker-size) / 2));
+  border-radius: 999px;
 }
 
 .calendar-dashboard .calendar-cell.range-start .calendar-date-number,
 .calendar-dashboard .calendar-cell.range-end .calendar-date-number,
 .calendar-dashboard .calendar-cell.range-pending-start .calendar-date-number {
-  background: var(--brand-navy);
+  background: #1769aa;
   color: #fff;
-  box-shadow: 0 8px 18px rgba(10, 66, 120, 0.22);
+  box-shadow: 0 8px 18px rgba(23, 105, 170, 0.22);
 }
 
 .calendar-dashboard .calendar-cell.range-selected:not(.range-start):not(.range-end) .calendar-date-number {
@@ -1571,7 +1666,12 @@ select:focus {
   border: 1px solid var(--brand-border);
   background: rgba(255, 255, 255, 0.82);
   color: var(--brand-muted);
+  cursor: grab;
   text-align: left;
+}
+
+.day-switcher button:active {
+  cursor: grabbing;
 }
 
 .day-switcher button span {
@@ -1604,6 +1704,16 @@ select:focus {
   background: #eef6ff;
   color: var(--brand-primary);
   box-shadow: inset 0 0 0 2px rgba(31, 134, 223, 0.28);
+}
+
+.day-switcher-ghost {
+  border-style: dashed !important;
+  opacity: 0.52;
+}
+
+.day-switcher-dragging {
+  cursor: grabbing;
+  box-shadow: 0 18px 34px rgba(15, 75, 130, 0.18) !important;
 }
 
 .day-orbit-stage {
@@ -2729,4 +2839,228 @@ select:focus {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* Datepicker range refinement: TravelMate-blue layers, no dark reference styling */
+.range-picker-popover .travel-calendar,
+.calendar-dashboard .travel-calendar {
+  --range-active-blue: #2f85cf;
+  --range-active-blue-strong: #1f74bb;
+  --range-active-shadow: rgba(47, 133, 207, 0.24);
+  --range-band: rgba(47, 133, 207, 0.16);
+  --range-preview-band: rgba(47, 133, 207, 0.08);
+  --range-text: #12314d;
+  --range-muted: #b9c7d4;
+}
+
+.range-picker-popover .travel-calendar {
+  --calendar-marker-size: 34px;
+  --calendar-band-height: 28px;
+}
+
+.calendar-dashboard .travel-calendar {
+  --calendar-marker-size: 26px;
+  --calendar-band-height: 26px;
+}
+
+.range-picker-popover .date-range-arrow,
+.range-picker-popover .range-picker-clear {
+  color: var(--brand-primary);
+}
+
+.range-picker-popover .range-picker-month h3 {
+  color: var(--brand-text);
+}
+
+.range-picker-popover .calendar-cell,
+.calendar-dashboard .calendar-cell {
+  position: relative;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0;
+  isolation: isolate;
+}
+
+.range-picker-popover .calendar-cell::before,
+.calendar-dashboard .calendar-cell::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: var(--calendar-band-height);
+  border-radius: 0;
+  background: transparent;
+  opacity: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.range-picker-popover .calendar-date-number,
+.calendar-dashboard .calendar-date-number {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--calendar-marker-size);
+  height: var(--calendar-marker-size);
+  margin: auto;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--range-text);
+  box-shadow: none;
+  transform: none !important;
+}
+
+.range-picker-popover .calendar-cell.outside-month .calendar-date-number,
+.calendar-dashboard .calendar-cell.outside-month .calendar-date-number {
+  color: var(--range-muted);
+  opacity: 0.72;
+}
+
+.range-picker-popover .calendar-cell:hover,
+.range-picker-popover .calendar-cell:focus-visible,
+.calendar-dashboard .calendar-cell:hover,
+.calendar-dashboard .calendar-cell:focus-visible {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0;
+}
+
+.range-picker-popover .calendar-cell:focus-visible .calendar-date-number,
+.calendar-dashboard .calendar-cell:focus-visible .calendar-date-number {
+  box-shadow: 0 0 0 3px rgba(47, 133, 207, 0.2);
+}
+
+.range-picker-popover .calendar-cell.range-preview::before,
+.calendar-dashboard .calendar-cell.range-preview::before {
+  opacity: 1;
+  background: var(--range-preview-band);
+}
+
+.range-picker-popover .calendar-cell.range-selected::before,
+.range-picker-popover .calendar-cell.range-start::before,
+.range-picker-popover .calendar-cell.range-end::before,
+.calendar-dashboard .calendar-cell.range-selected::before,
+.calendar-dashboard .calendar-cell.range-start::before,
+.calendar-dashboard .calendar-cell.range-end::before {
+  opacity: 1;
+  background: var(--range-band);
+}
+
+.range-picker-popover .calendar-cell.range-preview:nth-child(7n + 1)::before,
+.range-picker-popover .calendar-cell.range-selected:nth-child(7n + 1)::before,
+.calendar-dashboard .calendar-cell.range-preview:nth-child(7n + 1)::before,
+.calendar-dashboard .calendar-cell.range-selected:nth-child(7n + 1)::before {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.range-picker-popover .calendar-cell.range-preview:nth-child(7n)::before,
+.range-picker-popover .calendar-cell.range-selected:nth-child(7n)::before,
+.calendar-dashboard .calendar-cell.range-preview:nth-child(7n)::before,
+.calendar-dashboard .calendar-cell.range-selected:nth-child(7n)::before {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.range-picker-popover .calendar-cell.range-start::before,
+.calendar-dashboard .calendar-cell.range-start::before {
+  left: calc(50% - (var(--calendar-marker-size) / 2));
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.range-picker-popover .calendar-cell.range-end::before,
+.calendar-dashboard .calendar-cell.range-end::before {
+  right: calc(50% - (var(--calendar-marker-size) / 2));
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.range-picker-popover .calendar-cell.range-start.range-end::before,
+.range-picker-popover .calendar-cell.range-pending-start::before,
+.calendar-dashboard .calendar-cell.range-start.range-end::before,
+.calendar-dashboard .calendar-cell.range-pending-start::before {
+  left: calc(50% - (var(--calendar-marker-size) / 2));
+  right: calc(50% - (var(--calendar-marker-size) / 2));
+  opacity: 0;
+}
+
+.range-picker-popover .calendar-cell.range-start .calendar-date-number,
+.range-picker-popover .calendar-cell.range-end .calendar-date-number,
+.range-picker-popover .calendar-cell.range-pending-start .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-start .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-end .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-pending-start .calendar-date-number {
+  background: var(--range-active-blue);
+  color: #fff;
+  box-shadow: 0 8px 18px var(--range-active-shadow);
+}
+
+.range-picker-popover .calendar-cell.range-start:focus-visible .calendar-date-number,
+.range-picker-popover .calendar-cell.range-end:focus-visible .calendar-date-number,
+.range-picker-popover .calendar-cell.range-pending-start:focus-visible .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-start:focus-visible .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-end:focus-visible .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-pending-start:focus-visible .calendar-date-number {
+  box-shadow:
+    0 8px 18px var(--range-active-shadow),
+    0 0 0 3px rgba(47, 133, 207, 0.22);
+}
+
+.range-picker-popover .calendar-cell.range-selected:not(.range-start):not(.range-end) .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-selected:not(.range-start):not(.range-end) .calendar-date-number {
+  color: var(--range-text);
+}
+
+.range-picker-popover .calendar-cell.selected:not(.range-start):not(.range-end):not(.range-pending-start) .calendar-date-number,
+.calendar-dashboard .calendar-cell.selected:not(.range-start):not(.range-end):not(.range-pending-start) .calendar-date-number {
+  background: transparent;
+  color: var(--range-active-blue-strong);
+  box-shadow: none;
+}
+
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-selected::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-preview::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-start::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-end::before,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-pending-start::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-selected::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-preview::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-start::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-end::before,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-pending-start::before {
+  opacity: 0;
+}
+
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-start .calendar-date-number,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-end .calendar-date-number,
+.range-picker-popover--single-left .range-picker-month-right .calendar-cell.range-pending-start .calendar-date-number,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-start .calendar-date-number,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-end .calendar-date-number,
+.range-picker-popover--single-right .range-picker-month-left .calendar-cell.range-pending-start .calendar-date-number {
+  background: transparent;
+  color: var(--range-muted);
+  box-shadow: none;
+}
+
+/* Calendar page: keep the range marker circle on the same layer as the range bar */
+.calendar-dashboard .calendar-cell.range-start .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-end .calendar-date-number,
+.calendar-dashboard .calendar-cell.range-pending-start .calendar-date-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  margin: 0;
+  transform: translate(-50%, -50%) !important;
+}
+
+.calendar-dashboard .calendar-cell.range-preview::before,
+.calendar-dashboard .calendar-cell.range-selected::before,
+.calendar-dashboard .calendar-cell.range-start::before,
+.calendar-dashboard .calendar-cell.range-end::before {
+  height: var(--calendar-band-height);
 }

@@ -138,6 +138,7 @@ export const useTripWorkspace = () => {
         body: {
           days: trip.value.days.map(day => ({
             dayId: day.id,
+            dayNumber: day.dayNumber,
             activityItemIds: day.activities.map(item => item.id),
             ...(options.includeTimings
               ? {
@@ -169,6 +170,28 @@ export const useTripWorkspace = () => {
       .filter((item): item is TripActivity => Boolean(item))
     if (reordered.length !== day.activities.length) return
     day.activities = reordered
+    normalizeClientSchedule()
+    await persistSchedule()
+  }
+
+  const reorderDays = async (dayIds: number[]) => {
+    if (!trip.value || savingSchedule.value) return
+    const dayById = new Map(trip.value.days.map(day => [day.id, day]))
+    const reordered = dayIds
+      .map(dayId => dayById.get(dayId))
+      .filter((day): day is TripDay => Boolean(day))
+    if (reordered.length !== trip.value.days.length) return
+
+    const dateSlots = [...trip.value.days]
+      .sort((a, b) => a.dayNumber - b.dayNumber)
+      .map(day => ({ travelDate: day.travelDate, weekday: day.weekday }))
+
+    trip.value.days = reordered
+    trip.value.days.forEach((day, index) => {
+      day.dayNumber = index + 1
+      day.travelDate = dateSlots[index]?.travelDate
+      day.weekday = dateSlots[index]?.weekday
+    })
     normalizeClientSchedule()
     await persistSchedule()
   }
@@ -246,6 +269,7 @@ export const useTripWorkspace = () => {
     removeActivity,
     regenerateActivity,
     reorderActivities,
+    reorderDays,
     updateActivityTiming,
     moveActivityToDay,
     addCatalogAttraction: catalogActions.addCatalogAttraction,

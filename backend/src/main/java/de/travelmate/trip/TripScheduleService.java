@@ -68,6 +68,7 @@ public class TripScheduleService {
         }
 
         List<Long> requestedItems = validateScheduleRequest(request, dayById, itemById);
+        reorderDaysIfComplete(trip, request, dayById);
         moveItemsToTemporaryPositivePositions(requestedItems);
         persistRequestedSchedule(request, dayById, itemById);
         tripActivities.getEntityManager().flush();
@@ -178,6 +179,41 @@ public class TripScheduleService {
 
     static int temporaryPositionFor(int index) {
         return TEMPORARY_POSITION_OFFSET + index;
+    }
+
+    private void reorderDaysIfComplete(
+        TripEntity trip,
+        UpdateScheduleRequest request,
+        Map<Long, TripDayEntity> dayById
+    ) {
+        if (request.days().size() != trip.days.size()) return;
+
+        List<TripDayEntity> orderedDays = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        for (ScheduleDayRequest dayRequest : request.days()) {
+            TripDayEntity day = dayById.get(dayRequest.dayId());
+            if (day == null || !seen.add(day.id)) return;
+            orderedDays.add(day);
+        }
+        if (orderedDays.size() != trip.days.size()) return;
+
+        List<TripDayEntity> currentSlots = trip.days.stream()
+            .sorted(Comparator.comparingInt(day -> day.dayNumber))
+            .toList();
+        List<Integer> dayNumbers = currentSlots.stream().map(day -> day.dayNumber).toList();
+        List<java.time.LocalDate> travelDates = currentSlots.stream().map(day -> day.travelDate).toList();
+
+        for (int index = 0; index < orderedDays.size(); index++) {
+            orderedDays.get(index).dayNumber = temporaryPositionFor(index);
+        }
+        tripActivities.getEntityManager().flush();
+
+        for (int index = 0; index < orderedDays.size(); index++) {
+            TripDayEntity day = orderedDays.get(index);
+            day.dayNumber = dayNumbers.get(index);
+            day.travelDate = travelDates.get(index);
+        }
+        tripActivities.getEntityManager().flush();
     }
 
     private void persistRequestedSchedule(

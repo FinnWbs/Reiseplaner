@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight, CalendarClock, CalendarDays, CalendarRange, Compass, MapPin, Search, Sparkles, Sun, Wind } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight, CalendarClock, CalendarDays, CalendarRange, Compass, Landmark, MapPin, MoonStar, Palette, Search, ShoppingBag, Sparkles, Trees, Utensils, Sun, Wind } from 'lucide-vue-next'
 import type { TripDraft } from '~/composables/useTripDraft'
 import type { LocationSuggestion } from '~/types/trip'
 
@@ -63,7 +63,14 @@ const suggestedCities: Record<'WARM' | 'COOL', LocationSuggestion[]> = {
     { id: 'suggested-stockholm-se', city: 'Stockholm', country: 'Schweden', countryCode: 'SE' }
   ]
 }
-const interests = ['Kultur', 'Geschichte', 'Natur', 'Food', 'Shopping', 'Nightlife', 'Sport']
+const interests = [
+  { label: 'Kultur', icon: Palette },
+  { label: 'Geschichte', icon: Landmark },
+  { label: 'Natur', icon: Trees },
+  { label: 'Food', icon: Utensils },
+  { label: 'Shopping', icon: ShoppingBag },
+  { label: 'Nightlife', icon: MoonStar }
+]
 
 const datesBetween = computed(() => {
   if (!startDate.value || !endDate.value || endDate.value < startDate.value) return []
@@ -482,7 +489,7 @@ onUnmounted(() => {
             :class="{ selected: location.selectedLocation.value?.id === suggestion.id }"
             type="button"
             @click="selectSuggestedCity(suggestion)"
-          ><strong>{{ suggestion.city }}</strong><small>{{ suggestion.country }}</small></button>
+          ><strong>{{ suggestion.city }}</strong></button>
         </div>
       </div>
     </div>
@@ -531,11 +538,14 @@ onUnmounted(() => {
       <div class="welcome-interests">
         <button
           v-for="interest in interests"
-          :key="interest"
-          :class="{ selected: interestNames.includes(interest) }"
+          :key="interest.label"
+          :class="{ selected: interestNames.includes(interest.label) }"
           type="button"
-          @click="toggleInterest(interest)"
-        >{{ interest }}</button>
+          @click="toggleInterest(interest.label)"
+        >
+          <component :is="interest.icon" :size="17" stroke-width="2.3" aria-hidden="true" />
+          <span>{{ interest.label }}</span>
+        </button>
       </div>
     </div>
 

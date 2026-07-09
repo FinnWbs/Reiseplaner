@@ -1,3 +1,7 @@
+<script lang="ts">
+const rememberedActivityMapViews = new Map<string, { center: [number, number], zoom: number }>()
+</script>
+
 <script setup lang="ts">
 import { ExternalLink, LocateFixed, MapPinned } from 'lucide-vue-next'
 import type { Map as LeafletMap, Marker } from 'leaflet'
@@ -92,6 +96,7 @@ const fitToActivities = () => {
   if (points.length > 1) map.fitBounds(points, { padding: [42, 42], maxZoom: 15 })
 
   userMovedMap.value = false
+  rememberedActivityMapViews.delete(props.city)
   window.setTimeout(() => {
     suppressMoveTracking = false
   }, 80)
@@ -99,6 +104,29 @@ const fitToActivities = () => {
 
 const markUserMapMove = () => {
   if (!suppressMoveTracking) userMovedMap.value = true
+}
+
+const rememberUserMapView = () => {
+  if (!map || suppressMoveTracking || !userMovedMap.value) return
+  const center = map.getCenter()
+  rememberedActivityMapViews.set(props.city, {
+    center: [center.lat, center.lng],
+    zoom: map.getZoom()
+  })
+}
+
+const restoreRememberedMapView = () => {
+  if (!map) return false
+  const remembered = rememberedActivityMapViews.get(props.city)
+  if (!remembered) return false
+
+  suppressMoveTracking = true
+  map.setView(remembered.center, remembered.zoom, { animate: false })
+  userMovedMap.value = true
+  window.setTimeout(() => {
+    suppressMoveTracking = false
+  }, 80)
+  return true
 }
 
 const initializeMap = async () => {
@@ -109,12 +137,13 @@ const initializeMap = async () => {
     scrollWheelZoom: true
   })
   map.on('dragstart zoomstart', markUserMapMove)
+  map.on('moveend zoomend', rememberUserMapView)
   leaflet.tileLayer(config.public.mapTileUrl, {
     attribution: config.public.mapAttribution,
     maxZoom: 19
   }).addTo(map)
   renderMarkers()
-  fitToActivities()
+  if (!restoreRememberedMapView()) fitToActivities()
   requestAnimationFrame(() => map?.invalidateSize())
 }
 
@@ -125,7 +154,8 @@ watch(mappedSignature, async () => {
     return
   }
   renderMarkers()
-  fitToActivities()
+  if (!userMovedMap.value) fitToActivities()
+  else requestAnimationFrame(() => map?.invalidateSize())
 })
 
 watch(() => props.selectedActivityId, (selectedId) => {
@@ -140,6 +170,7 @@ watch(() => props.selectedActivityId, (selectedId) => {
 onMounted(initializeMap)
 onBeforeUnmount(() => {
   map?.off('dragstart zoomstart', markUserMapMove)
+  map?.off('moveend zoomend', rememberUserMapView)
   map?.remove()
   map = null
   markers.clear()

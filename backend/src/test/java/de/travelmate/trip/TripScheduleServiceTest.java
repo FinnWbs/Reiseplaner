@@ -23,7 +23,7 @@ class TripScheduleServiceTest {
 
     @Test
     void scheduleDayRequestKeepsLegacyItemOrder() {
-        ScheduleDayRequest request = new ScheduleDayRequest(1L, List.of(11L, 12L), null);
+        ScheduleDayRequest request = new ScheduleDayRequest(1L, null, List.of(11L, 12L), null);
 
         assertEquals(List.of(11L, 12L), request.orderedItemIds());
         assertTrue(request.activityDetailsByItemId().isEmpty());
@@ -33,6 +33,7 @@ class TripScheduleServiceTest {
     void scheduleDayRequestUsesDetailedItemsWhenPresent() {
         ScheduleDayRequest request = new ScheduleDayRequest(
             1L,
+            null,
             List.of(99L),
             List.of(
                 new ScheduleActivityRequest(11L, 720, 90),

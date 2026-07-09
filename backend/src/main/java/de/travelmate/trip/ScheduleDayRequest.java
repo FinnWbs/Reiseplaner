@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 public record ScheduleDayRequest(
     @NotNull Long dayId,
+    Integer dayNumber,
     List<Long> activityItemIds,
     List<@Valid ScheduleActivityRequest> activities
 ) {

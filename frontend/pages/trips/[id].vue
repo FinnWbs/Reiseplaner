@@ -54,6 +54,16 @@ const openCatalog = async () => {
   }
 }
 
+const reorderDays = async (dayIds: number[]) => {
+  const activeDayId = activeDay.value?.id
+  await workspace.reorderDays(dayIds)
+  if (!workspace.trip.value || !activeDayId) return
+  const nextActiveIndex = workspace.trip.value.days.findIndex(day => day.id === activeDayId)
+  if (nextActiveIndex >= 0) {
+    await setActiveIndex(nextActiveIndex, true)
+  }
+}
+
 watch(() => route.query.day, syncDayFromRoute)
 
 onErrorCaptured((error) => {
@@ -123,6 +133,7 @@ onMounted(async () => {
           @remove-activity="workspace.removeActivity"
           @request-images="workspace.ensureActivityImages"
           @reorder-activities="workspace.reorderActivities"
+          @reorder-days="reorderDays"
           @update-activity-timing="workspace.updateActivityTiming"
           @move-activity-to-day="workspace.moveActivityToDay"
           @open-catalog="openCatalog"
