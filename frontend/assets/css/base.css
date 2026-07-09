@@ -157,11 +157,14 @@ select {
 
 .location-dropdown {
   position: absolute;
+  top: calc(100% + 6px);
   right: 0;
   left: 0;
-  z-index: 30;
-  overflow: hidden;
-  margin-top: 4px;
+  z-index: 80;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: min(360px, 45vh);
+  margin-top: 0;
   border: 1px solid #cbd5df;
   border-radius: 7px;
   background: white;

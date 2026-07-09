@@ -74,6 +74,7 @@ export const useTripPlanner = () => {
   const datesKnown = ref<boolean | null>(null)
   const startDate = ref('')
   const endDate = ref('')
+  const preferredMonth = ref('')
   const daysCount = ref(3)
   const planningDates = ref<string[]>([])
   const selectedInterestIds = ref<number[]>([])
@@ -189,6 +190,7 @@ export const useTripPlanner = () => {
     datesKnown.value = null
     startDate.value = ''
     endDate.value = ''
+    preferredMonth.value = ''
     daysCount.value = 3
     planningDates.value = []
     selectedInterestIds.value = []
@@ -210,6 +212,7 @@ export const useTripPlanner = () => {
           interestIds: selectedInterestIds.value,
           startDate: datesKnown.value ? startDate.value : null,
           endDate: datesKnown.value ? endDate.value : null,
+          preferredMonth: datesKnown.value ? null : preferredMonth.value || null,
           planningDates: selectedDates,
           pace: pace.value,
           dayRhythm: dayRhythm.value,
@@ -254,6 +257,7 @@ export const useTripPlanner = () => {
     datesKnown.value = draft.datesKnown
     startDate.value = draft.startDate
     endDate.value = draft.endDate
+    preferredMonth.value = draft.preferredMonth || ''
     daysCount.value = draft.daysCount
     planningDates.value = [...draft.planningDates]
     pace.value = draft.pace

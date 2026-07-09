@@ -8,6 +8,7 @@ const currentMonth = ref(new Date(new Date().getFullYear(), new Date().getMonth(
 const selectedDate = ref('')
 const rangeStart = ref('')
 const rangeEnd = ref('')
+const rangePreviewEnd = ref('')
 const rangeComplete = ref(false)
 const rangeError = ref('')
 const contextMenu = ref<
@@ -59,23 +60,35 @@ function datesInRange(from: string, until: string) {
   return dates
 }
 
-const updateRangeEnd = (date: string, complete: boolean) => {
+const isValidRangeEnd = (date: string) => {
   const from = rangeStart.value <= date ? rangeStart.value : date
   const until = rangeStart.value <= date ? date : rangeStart.value
   if (datesInRange(from, until).length > 14) {
     rangeError.value = 'Ein Reisezeitraum darf maximal 14 Tage umfassen.'
-    return
+    return false
   }
   rangeError.value = ''
+  return true
+}
+
+const previewRangeEnd = (date: string) => {
+  if (!rangeStart.value || rangeComplete.value || !isValidRangeEnd(date)) return
+  rangePreviewEnd.value = date
+}
+
+const completeRange = (date: string) => {
+  if (!isValidRangeEnd(date)) return
   rangeEnd.value = date
-  rangeComplete.value = complete
+  rangePreviewEnd.value = ''
+  rangeComplete.value = true
 }
 
 const beginRange = (date: string) => {
   contextMenu.value = null
   rangeError.value = ''
   rangeStart.value = date
-  rangeEnd.value = date
+  rangeEnd.value = ''
+  rangePreviewEnd.value = ''
   rangeComplete.value = false
 }
 
@@ -85,12 +98,13 @@ const handleRangeClick = (date: string) => {
     beginRange(date)
     return
   }
-  updateRangeEnd(date, true)
+  completeRange(date)
 }
 
 const clearRange = () => {
   rangeStart.value = ''
   rangeEnd.value = ''
+  rangePreviewEnd.value = ''
   rangeComplete.value = false
   rangeError.value = ''
   contextMenu.value = null
@@ -261,7 +275,7 @@ onUnmounted(() => {
           </header>
           <div class="calendar-hint">
             <CalendarPlus :size="16" />
-            <span>Wähle einen Tag oder ziehe über mehrere Tage, um direkt eine Reise anzulegen.</span>
+            <span>Klicke zuerst auf den Starttag und danach auf den Endtag deiner Reise.</span>
           </div>
 
           <TravelCalendar
@@ -270,10 +284,10 @@ onUnmounted(() => {
             :selected-date="selectedDate"
             :range-start="rangeStart"
             :range-end="rangeEnd"
+            :range-preview-end="rangePreviewEnd"
+            :range-complete="rangeComplete"
             @select-date="handleRangeClick"
-            @range-start="beginRange"
-            @range-hover="updateRangeEnd($event, false)"
-            @range-end="updateRangeEnd($event, true)"
+            @range-hover="previewRangeEnd"
             @range-context="openRangeContext"
             @open-trip="openTrip"
           />

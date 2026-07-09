@@ -82,7 +82,12 @@ a,
 
 .calendar-cell.range-selected {
   background: var(--brand-selection);
-  box-shadow: inset 0 2px 0 var(--brand-interactive), inset 0 -2px 0 var(--brand-interactive);
+  box-shadow: none;
+}
+
+.calendar-cell.range-preview {
+  background: color-mix(in srgb, var(--brand-selection) 58%, white);
+  box-shadow: none;
 }
 
 .calendar-cell.range-start,
@@ -92,6 +97,7 @@ a,
 
 .calendar-cell.range-start .calendar-date-number,
 .calendar-cell.range-end .calendar-date-number,
+.calendar-cell.range-pending-start .calendar-date-number,
 .calendar-cell.today .calendar-date-number {
   background: var(--brand-navy);
 }
