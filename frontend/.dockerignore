@@ -1,0 +1,7 @@
+.nuxt
+.nuxt-dev
+.output
+node_modules
+127.0.0.1
+dev-*.log
+npm-debug.log*

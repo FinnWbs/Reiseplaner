@@ -36,18 +36,18 @@ public class CityBoundaryResolver {
         WikidataCity wikidataCity = resolveWikidataCity(trip, geoapifyCity);
 
         Double centerLat = firstNonNull(
-            geoapifyCity == null ? null : geoapifyCity.latitude,
-            firstNonNull(trip.latitude, wikidataCity == null ? null : wikidataCity.latitude)
+            trip.latitude,
+            firstNonNull(geoapifyCity == null ? null : geoapifyCity.latitude, wikidataCity == null ? null : wikidataCity.latitude)
         );
         Double centerLon = firstNonNull(
-            geoapifyCity == null ? null : geoapifyCity.longitude,
-            firstNonNull(trip.longitude, wikidataCity == null ? null : wikidataCity.longitude)
+            trip.longitude,
+            firstNonNull(geoapifyCity == null ? null : geoapifyCity.longitude, wikidataCity == null ? null : wikidataCity.longitude)
         );
         if (centerLat == null || centerLon == null) {
             return null;
         }
 
-        CityBoundingBox bbox = geoapifyCity == null ? null : geoapifyCity.boundingBox;
+        CityBoundingBox bbox = compatibleBoundingBox(trip, geoapifyCity);
         String wikidataId = wikidataCity == null ? null : wikidataCity.wikidataId;
         if (bbox != null) {
             return CityBoundary.fromBoundingBox(
@@ -168,17 +168,41 @@ public class CityBoundaryResolver {
 
     private static double referenceDistanceKm(TripEntity trip, GeoapifyCity geoapifyCity, Coordinates coordinates) {
         Double referenceLat = firstNonNull(
-            geoapifyCity == null ? null : geoapifyCity.latitude,
-            trip.latitude
+            trip.latitude,
+            geoapifyCity == null ? null : geoapifyCity.latitude
         );
         Double referenceLon = firstNonNull(
-            geoapifyCity == null ? null : geoapifyCity.longitude,
-            trip.longitude
+            trip.longitude,
+            geoapifyCity == null ? null : geoapifyCity.longitude
         );
         if (referenceLat == null || referenceLon == null) {
             return 0.0;
         }
         return GeoDistance.distanceKm(referenceLat, referenceLon, coordinates.latitude, coordinates.longitude);
+    }
+
+    private CityBoundingBox compatibleBoundingBox(TripEntity trip, GeoapifyCity geoapifyCity) {
+        if (geoapifyCity == null || geoapifyCity.boundingBox == null) {
+            return null;
+        }
+        if (trip.latitude == null || trip.longitude == null) {
+            return geoapifyCity.boundingBox;
+        }
+        double bufferKm = settings.cityBoundaryBufferKm() + settings.enclaveExtraBufferKm();
+        boolean containsSelectedLocation = expandedContains(
+            geoapifyCity.boundingBox,
+            trip.latitude,
+            trip.longitude,
+            bufferKm
+        );
+        if (!containsSelectedLocation) {
+            LOG.warnf(
+                "Ignoring Geoapify catalog bbox for city=%s because selected trip coordinates are outside the bbox.",
+                trip.city
+            );
+            return null;
+        }
+        return geoapifyCity.boundingBox;
     }
 
     static CityBoundingBox bbox(JsonNode node) {
@@ -215,6 +239,16 @@ public class CityBoundaryResolver {
             return city;
         }
         return city + ", " + country.trim();
+    }
+
+    private static boolean expandedContains(CityBoundingBox box, double latitude, double longitude, double extraKm) {
+        double latPadding = extraKm / 111.32;
+        double cos = Math.max(0.2, Math.cos(Math.toRadians((box.minLat() + box.maxLat()) / 2.0)));
+        double lonPadding = extraKm / (111.32 * cos);
+        return latitude >= box.minLat() - latPadding
+            && latitude <= box.maxLat() + latPadding
+            && longitude >= box.minLon() - lonPadding
+            && longitude <= box.maxLon() + lonPadding;
     }
 
     private static Double number(JsonNode node, String field) {

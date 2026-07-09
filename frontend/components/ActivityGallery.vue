@@ -4,7 +4,8 @@ import {
   ArrowRight,
   Camera,
   MapPin,
-  Maximize
+  Maximize,
+  X
 } from 'lucide-vue-next'
 import type { ActivityImage, TripActivity } from '~/types/trip'
 
@@ -40,9 +41,10 @@ const failedImageUrls = ref<string[]>([])
 const loadedImageUrls = ref<string[]>([])
 const imageRetryVersions = ref<Record<string, number>>({})
 const imageLoadStatus = ref<ImageLoadStatus>('idle')
-const expanded = ref(false)
+const isFullscreenOpen = ref(false)
 const imageRetryAfterMs = 7000
 const failedImageRetryTimers = new Map<string, ReturnType<typeof setTimeout>>()
+let previousBodyOverflow = ''
 
 const debugGallery = (event: string, extra: Record<string, unknown> = {}) => {
   if (!import.meta.dev) return
@@ -132,6 +134,19 @@ const propImages = computed(() => {
 
 const localImages = computed<ActivityImage[]>(() => [])
 
+function resolveImageUrl(url: string) {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  const base = String(config.public.apiBase || '').replace(/\/$/, '')
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`
+}
+
+function isUsableImageUrl(url: string) {
+  if (!url) return false
+  if (url.includes('/undefined/') || url.includes('/null/')) return false
+  return /^https?:\/\//i.test(url) || url.startsWith('/')
+}
+
 const rawImages = computed(() => {
   const merged: ActivityImage[] = []
   const seen = new Set<string>()
@@ -188,6 +203,13 @@ const displaySlides = computed<GallerySlide[]>(() => {
 
 const galleryClass = computed(() => `gallery-${categoryName.value.toLowerCase()}`)
 const visibleSlides = computed(() => displaySlides.value)
+const currentSlide = computed(() => visibleSlides.value[activeSlide.value] || visibleSlides.value[0] || null)
+const currentFullscreenImage = computed(() => {
+  const slide = currentSlide.value
+  if (!slide) return null
+  return isSlideImageLoaded(slide) && slide.realImage ? slide.realImage : slide.fallbackImage
+})
+const fullscreenLabel = computed(() => `Bild von ${props.activity?.activity?.name || 'Aktivitaet'} im Vollbild`)
 
 const clearFailedImageUrl = (url: string) => {
   const timer = failedImageRetryTimers.get(url)
@@ -224,7 +246,7 @@ const scheduleFailedImageRetry = (url: string) => {
 watch(() => props.activity.id, () => {
   debugGallery('activity-change-before-reset')
   activeSlide.value = 0
-  expanded.value = false
+  closeFullscreen()
   clearFailedImageRetries()
   loadedImageUrls.value = []
   imageLoadStatus.value = 'idle'
@@ -258,17 +280,13 @@ const changeSlide = (offset: number) => {
   activeSlide.value = (activeSlide.value + offset + count) % count
 }
 
-const resolveImageUrl = (url: string) => {
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-  const base = String(config.public.apiBase || '').replace(/\/$/, '')
-  return `${base}${url.startsWith('/') ? url : `/${url}`}`
+const openFullscreen = () => {
+  if (!currentSlide.value) return
+  isFullscreenOpen.value = true
 }
 
-const isUsableImageUrl = (url: string) => {
-  if (!url) return false
-  if (url.includes('/undefined/') || url.includes('/null/')) return false
-  return /^https?:\/\//i.test(url) || url.startsWith('/')
+const closeFullscreen = () => {
+  isFullscreenOpen.value = false
 }
 
 const imageSource = (url: string) => {
@@ -279,6 +297,28 @@ const imageSource = (url: string) => {
 }
 
 const isImageLoaded = (url: string) => loadedImageUrls.value.includes(url)
+const realImageUrl = (slide: GallerySlide) => slide.realImage?.url || ''
+const hasRealImage = (slide: GallerySlide) => Boolean(realImageUrl(slide))
+const isSlideImageLoaded = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  return Boolean(url && isImageLoaded(url))
+}
+const isSlideImageFailed = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  return Boolean(url && failedImageUrls.value.includes(url))
+}
+const slideImageSource = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  return url ? imageSource(url) : ''
+}
+const markSlideImageLoaded = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  if (url) markImageLoaded(url)
+}
+const markSlideImageFailed = (slide: GallerySlide) => {
+  const url = realImageUrl(slide)
+  if (url) markImageFailed(url)
+}
 
 const requestImages = () => {
   if (!props.activity?.activity?.id) return
@@ -314,12 +354,35 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'ArrowRight') changeSlide(1)
 }
 
+const handleFullscreenKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') closeFullscreen()
+  if (event.key === 'ArrowLeft') changeSlide(-1)
+  if (event.key === 'ArrowRight') changeSlide(1)
+}
+
+watch(isFullscreenOpen, (open) => {
+  if (!import.meta.client) return
+  if (open) {
+    previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleFullscreenKeydown)
+    return
+  }
+  document.body.style.overflow = previousBodyOverflow
+  window.removeEventListener('keydown', handleFullscreenKeydown)
+})
+
 onMounted(() => {
   debugGallery('mount')
   requestImages()
 })
 
 onUnmounted(() => {
+  closeFullscreen()
+  if (import.meta.client) {
+    document.body.style.overflow = previousBodyOverflow
+    window.removeEventListener('keydown', handleFullscreenKeydown)
+  }
   clearFailedImageRetries()
   debugGallery('unmount')
 })
@@ -328,7 +391,7 @@ onUnmounted(() => {
 <template>
   <section
     class="activity-gallery"
-    :class="[galleryClass, { 'is-expanded': expanded }]"
+    :class="galleryClass"
     tabindex="0"
     :aria-label="`Bildergalerie zu ${activity.activity.name}`"
     @keydown="handleKeydown"
@@ -341,26 +404,26 @@ onUnmounted(() => {
           :class="`placeholder-variant-${slide.variant}`"
           >
           <img
-            v-if="!slide.realImage || !isImageLoaded(slide.realImage.url)"
+            v-if="!hasRealImage(slide) || !isSlideImageLoaded(slide)"
             class="gallery-fallback-image"
-            :class="{ 'is-loading-underlay': slide.realImage }"
+            :class="{ 'is-loading-underlay': hasRealImage(slide) }"
             :src="slide.fallbackImage.url"
             :alt="slide.fallbackImage.alt"
             loading="eager"
           >
           <img
-            v-if="slide.realImage"
+            v-if="hasRealImage(slide)"
             class="gallery-real-image"
             :class="{
-              'is-loaded': isImageLoaded(slide.realImage.url),
-              'has-load-error': failedImageUrls.includes(slide.realImage.url)
+              'is-loaded': isSlideImageLoaded(slide),
+              'has-load-error': isSlideImageFailed(slide)
             }"
-            :src="imageSource(slide.realImage.url)"
-            :alt="slide.realImage.alt || slide.fallbackImage.alt"
+            :src="slideImageSource(slide)"
+            :alt="slide.realImage?.alt || slide.fallbackImage.alt"
             loading="eager"
             decoding="async"
-            @load="markImageLoaded(slide.realImage.url)"
-            @error="markImageFailed(slide.realImage.url)"
+            @load="markSlideImageLoaded(slide)"
+            @error="markSlideImageFailed(slide)"
           >
 
           <figcaption>
@@ -376,7 +439,7 @@ onUnmounted(() => {
       </template>
 
       <button
-        v-if="visibleSlides.length > 1 || expanded"
+        v-if="visibleSlides.length > 1"
         class="gallery-arrow gallery-arrow-left"
         type="button"
         :disabled="visibleSlides.length <= 1"
@@ -384,7 +447,7 @@ onUnmounted(() => {
         @click="changeSlide(-1)"
       ><ArrowLeft :size="19" /></button>
       <button
-        v-if="visibleSlides.length > 1 || expanded"
+        v-if="visibleSlides.length > 1"
         class="gallery-arrow gallery-arrow-right"
         type="button"
         :disabled="visibleSlides.length <= 1"
@@ -395,9 +458,9 @@ onUnmounted(() => {
       <button
         class="gallery-expand-button"
         type="button"
-        :aria-pressed="expanded"
-        :aria-label="expanded ? 'Bildvorschau verkleinern' : 'Bildvorschau vergrößern'"
-        @click.stop="expanded = !expanded"
+        :aria-pressed="isFullscreenOpen"
+        aria-label="Bild im Vollbild anzeigen"
+        @click.stop="openFullscreen"
       >
         <Maximize
           class="gallery-expand-icon"
@@ -431,4 +494,52 @@ onUnmounted(() => {
       </div>
     </footer>
   </section>
+
+  <Teleport to="body">
+    <Transition name="gallery-lightbox">
+      <div
+        v-if="isFullscreenOpen && currentSlide && currentFullscreenImage"
+        class="gallery-lightbox-backdrop"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="fullscreenLabel"
+        @click="closeFullscreen"
+      >
+        <span class="gallery-lightbox-counter">{{ activeSlide + 1 }} / {{ visibleSlides.length }}</span>
+        <button
+          class="gallery-lightbox-close"
+          type="button"
+          aria-label="Vollbild schließen"
+          @click.stop="closeFullscreen"
+        >
+          <X :size="28" aria-hidden="true" />
+        </button>
+        <button
+          v-if="visibleSlides.length > 1"
+          class="gallery-lightbox-nav gallery-lightbox-nav-left"
+          type="button"
+          aria-label="Vorheriges Bild"
+          @click.stop="changeSlide(-1)"
+        >
+          <ArrowLeft :size="34" aria-hidden="true" />
+        </button>
+        <div class="gallery-lightbox-shell" @click.stop>
+          <img
+            class="gallery-lightbox-image"
+            :src="currentFullscreenImage.url"
+            :alt="currentFullscreenImage.alt"
+          >
+        </div>
+        <button
+          v-if="visibleSlides.length > 1"
+          class="gallery-lightbox-nav gallery-lightbox-nav-right"
+          type="button"
+          aria-label="Nächstes Bild"
+          @click.stop="changeSlide(1)"
+        >
+          <ArrowRight :size="34" aria-hidden="true" />
+        </button>
+      </div>
+    </Transition>
+  </Teleport>
 </template>

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays, MapPin, Sparkles, Trash2 } from 'lucide-vue-next'
+import { CalendarDays, MapPin } from 'lucide-vue-next'
 
 const route = useRoute()
 const workspace = useTripWorkspace()
 const activeIndex = ref(0)
-const deleteDialogOpen = ref(false)
 const catalogOpen = ref(false)
 const dayViewError = ref('')
 
@@ -48,18 +47,6 @@ const syncDayFromRoute = () => {
   workspace.preloadUpcomingImages(activeIndex.value)
 }
 
-const removeCurrentTrip = async () => {
-  const trip = workspace.trip.value
-  if (!trip) return
-  deleteDialogOpen.value = true
-}
-
-const confirmCurrentTripDeletion = async () => {
-  const trip = workspace.trip.value
-  if (!trip) return
-  if (await workspace.deleteTrip(trip.id)) await navigateTo('/calendar')
-}
-
 const openCatalog = async () => {
   catalogOpen.value = true
   if (!workspace.catalog.value) {
@@ -93,8 +80,6 @@ onMounted(async () => {
     />
 
     <main class="workspace-main orbit-page-main">
-      <NuxtLink class="back-link" to="/calendar"><ArrowLeft :size="17" />Zurück zum Kalender</NuxtLink>
-
       <section v-if="workspace.loading.value" class="calendar-loading" aria-live="polite">
         <span />
         <p>Reise wird geladen...</p>
@@ -103,7 +88,6 @@ onMounted(async () => {
       <template v-else-if="workspace.trip.value">
         <header class="orbit-page-heading">
           <div>
-            <span class="eyebrow">Deine Reise</span>
             <h1>{{ workspace.trip.value.city }}</h1>
             <p>
               <MapPin :size="16" />
@@ -119,10 +103,6 @@ onMounted(async () => {
             </p>
           </div>
           <div class="orbit-heading-actions">
-            <button class="catalog-open-button" type="button" @click="openCatalog">
-              <Sparkles :size="17" />
-              Highlights entdecken
-            </button>
             <div class="orbit-heading-count">
               <strong>{{ activeIndex + 1 }}</strong>
               <span>von {{ workspace.trip.value.days.length }} Tagen</span>
@@ -142,6 +122,10 @@ onMounted(async () => {
           @regenerate-activity="workspace.regenerateActivity"
           @remove-activity="workspace.removeActivity"
           @request-images="workspace.ensureActivityImages"
+          @reorder-activities="workspace.reorderActivities"
+          @update-activity-timing="workspace.updateActivityTiming"
+          @move-activity-to-day="workspace.moveActivityToDay"
+          @open-catalog="openCatalog"
         />
 
         <section v-if="dayViewError && activeDay" class="trip-plan-fallback" aria-live="polite">
@@ -158,15 +142,6 @@ onMounted(async () => {
             </li>
           </ul>
         </section>
-
-        <footer class="trip-danger-zone">
-          <button
-            class="trip-delete-button"
-            type="button"
-            :disabled="workspace.deletingTripId.value === workspace.trip.value.id"
-            @click="removeCurrentTrip"
-          ><Trash2 :size="17" />{{ workspace.deletingTripId.value ? 'Wird gelöscht...' : 'Reise löschen' }}</button>
-        </footer>
 
         <AttractionCatalogPanel
           :open="catalogOpen"
@@ -188,13 +163,5 @@ onMounted(async () => {
       </section>
     </main>
 
-    <TripDeleteDialog
-      :open="deleteDialogOpen"
-      :trip="workspace.trip.value"
-      :loading="workspace.deletingTripId.value === workspace.trip.value?.id"
-      :error="deleteDialogOpen ? workspace.error.value : ''"
-      @cancel="deleteDialogOpen = false"
-      @confirm="confirmCurrentTripDeletion"
-    />
   </div>
 </template>

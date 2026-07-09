@@ -132,13 +132,33 @@ public class TripScheduleService {
             if (!dayById.containsKey(dayRequest.dayId()) || !requestedDays.add(dayRequest.dayId())) {
                 throw new BadRequestException("Der Zeitplan enthaelt einen ungueltigen Reisetag.");
             }
-            requestedItems.addAll(dayRequest.activityItemIds());
+            List<Long> orderedItemIds = dayRequest.orderedItemIds();
+            if (orderedItemIds.isEmpty()) {
+                continue;
+            }
+            validateActivityTiming(dayRequest);
+            requestedItems.addAll(orderedItemIds);
         }
         if (requestedItems.size() != new HashSet<>(requestedItems).size()
             || !new HashSet<>(requestedItems).equals(itemById.keySet())) {
             throw new BadRequestException("Jeder Planeintrag muss im Zeitplan genau einmal vorkommen.");
         }
         return requestedItems;
+    }
+
+    private void validateActivityTiming(ScheduleDayRequest dayRequest) {
+        for (ScheduleActivityRequest activity : dayRequest.activityDetailsByItemId().values()) {
+            if (activity.scheduledStart() != null
+                && (activity.scheduledStart() < 0 || activity.scheduledStart() > 1439)) {
+                throw new BadRequestException("Startzeit muss zwischen 00:00 und 23:59 liegen.");
+            }
+            if (activity.durationMinutes() != null
+                && (activity.durationMinutes() < 30
+                    || activity.durationMinutes() > 720
+                    || activity.durationMinutes() % 30 != 0)) {
+                throw new BadRequestException("Dauer muss in 30-Minuten-Schritten zwischen 30 und 720 Minuten liegen.");
+            }
+        }
     }
 
     private void moveItemsToTemporaryPositivePositions(List<Long> requestedItems) {
@@ -163,20 +183,29 @@ public class TripScheduleService {
     ) {
         for (ScheduleDayRequest dayRequest : request.days()) {
             TripDayEntity day = dayById.get(dayRequest.dayId());
+            Map<Long, ScheduleActivityRequest> detailsByItemId = dayRequest.activityDetailsByItemId();
             int cursor = day.availableFrom;
-            for (int index = 0; index < dayRequest.activityItemIds().size(); index++) {
-                TripDayActivityEntity item = itemById.get(dayRequest.activityItemIds().get(index));
-                int start = nextStart(day, item, cursor);
+            List<Long> orderedItemIds = dayRequest.orderedItemIds();
+            for (int index = 0; index < orderedItemIds.size(); index++) {
+                TripDayActivityEntity item = itemById.get(orderedItemIds.get(index));
+                ScheduleActivityRequest details = detailsByItemId.get(item.id);
+                int duration = details != null && details.durationMinutes() != null
+                    ? details.durationMinutes()
+                    : item.durationMinutes;
+                int start = details != null && details.scheduledStart() != null
+                    ? details.scheduledStart()
+                    : nextStart(day, item, cursor);
                 tripActivities.getEntityManager().createNativeQuery(
                     "UPDATE trip_day_activities "
-                        + "SET trip_day_id = ?1, position = ?2, scheduled_start = ?3, locked = TRUE "
-                        + "WHERE id = ?4"
+                        + "SET trip_day_id = ?1, position = ?2, scheduled_start = ?3, duration_minutes = ?4, locked = TRUE "
+                        + "WHERE id = ?5"
                 ).setParameter(1, day.id)
                     .setParameter(2, index + 1)
                     .setParameter(3, start)
-                    .setParameter(4, item.id)
+                    .setParameter(4, duration)
+                    .setParameter(5, item.id)
                     .executeUpdate();
-                cursor = start + item.durationMinutes + STOP_GAP_MINUTES;
+                cursor = start + duration + STOP_GAP_MINUTES;
             }
         }
     }
