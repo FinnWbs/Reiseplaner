@@ -41,8 +41,6 @@ const interestLabel = (interest: string) => ({
   NIGHTLIFE: 'Nachtleben'
 }[interest] || interest)
 
-const sourceLabel = (source?: string) => source === 'WIKIMEDIA' ? 'Wikidata + Pageviews' : 'Kuratiert'
-
 const compactNumber = (value?: number) => {
   if (value == null || value <= 0) return ''
   return new Intl.NumberFormat('de-DE', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
@@ -77,7 +75,7 @@ const add = (catalogId: string) => {
               Zu Tag hinzufügen
               <select v-model.number="selectedDayId">
                 <option v-for="day in trip.days" :key="day.id" :value="day.id">
-                  Tag {{ day.dayNumber }}{{ day.weekday ? ` · ${day.weekday}` : '' }}
+                  Tag {{ day.dayNumber }}{{ day.weekday ? ` - ${day.weekday}` : '' }}
                 </option>
               </select>
             </label>
@@ -111,7 +109,6 @@ const add = (catalogId: string) => {
                 <span class="catalog-meta">
                   <Landmark :size="14" />
                   {{ interestLabel(item.primaryInterest) }}
-                  <span v-if="item.source">Â· {{ sourceLabel(item.source) }}</span>
                 </span>
                 <h3>{{ item.name }}</h3>
                 <p v-if="item.description">{{ item.description }}</p>
@@ -121,7 +118,7 @@ const add = (catalogId: string) => {
                     Score {{ roundedScore(item.publicAttractionScore) }}
                   </template>
                   <template v-if="compactNumber(item.pageviews)">
-                    Â· {{ compactNumber(item.pageviews) }} Aufrufe
+                    <span v-if="roundedScore(item.publicAttractionScore) != null"> &middot; </span>{{ compactNumber(item.pageviews) }} Aufrufe
                   </template>
                 </span>
                 <span v-if="item.latitude != null && item.longitude != null" class="catalog-location">

@@ -92,6 +92,7 @@ const emit = defineEmits<{
   regenerateActivity: [dayId: number, itemId: number]
   removeActivity: [dayId: number, itemId: number]
   requestImages: [activityId: number]
+  openCatalog: []
 }>()
 
 const getActivityMenuPosition = (x: number, y: number) => {
@@ -214,7 +215,10 @@ onUnmounted(() => {
         <h2>{{ day.weekday || `Tag ${day.dayNumber}` }}</h2>
         <p v-if="day.travelDate"><CalendarDays :size="15" />{{ formatDate(day.travelDate) }}</p>
       </div>
-      <DayAvailabilityMenu :day="day" @update="$emit('updateAvailability', $event)" />
+      <button class="catalog-open-button" type="button" @click.stop="$emit('openCatalog')">
+        <Sparkles :size="17" />
+        Highlights entdecken
+      </button>
     </header>
 
     <template v-if="active">

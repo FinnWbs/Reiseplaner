@@ -15,6 +15,7 @@ const emit = defineEmits<{
   regenerateActivity: [dayId: number, itemId: number]
   removeActivity: [dayId: number, itemId: number]
   requestImages: [activityId: number]
+  openCatalog: []
 }>()
 
 const activeDay = computed(() => props.trip.days[props.activeIndex])
@@ -63,6 +64,7 @@ const onKeydown = (event: KeyboardEvent) => {
           @regenerate-activity="(dayId, itemId) => $emit('regenerateActivity', dayId, itemId)"
           @remove-activity="(dayId, itemId) => $emit('removeActivity', dayId, itemId)"
           @request-images="$emit('requestImages', $event)"
+          @open-catalog="$emit('openCatalog')"
         />
       </div>
     </div>

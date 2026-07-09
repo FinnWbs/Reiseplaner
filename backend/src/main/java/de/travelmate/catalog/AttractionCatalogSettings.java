@@ -5,7 +5,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class AttractionCatalogSettings {
-    public static final int SOURCE_VERSION = 3;
+    public static final int SOURCE_VERSION = 4;
 
     @ConfigProperty(name = "travelmate.catalog.wikimedia.enabled", defaultValue = "true")
     boolean wikimediaEnabled;
@@ -33,6 +33,12 @@ public class AttractionCatalogSettings {
 
     @ConfigProperty(name = "travelmate.catalog.pageview-months", defaultValue = "12")
     int pageviewMonths;
+
+    @ConfigProperty(name = "travelmate.catalog.pageview-candidate-limit", defaultValue = "20")
+    int pageviewCandidateLimit;
+
+    @ConfigProperty(name = "travelmate.catalog.pageview-parallelism", defaultValue = "4")
+    int pageviewParallelism;
 
     @ConfigProperty(name = "travelmate.catalog.user-agent", defaultValue = "TravelMate/1.0 (travelmate-local@example.invalid)")
     String userAgent;
@@ -71,6 +77,14 @@ public class AttractionCatalogSettings {
 
     public int pageviewMonths() {
         return pageviewMonths;
+    }
+
+    public int pageviewCandidateLimit() {
+        return pageviewCandidateLimit;
+    }
+
+    public int pageviewParallelism() {
+        return pageviewParallelism;
     }
 
     public String userAgent() {

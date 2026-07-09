@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays, MapPin, Sparkles, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, CalendarDays, MapPin, Trash2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const workspace = useTripWorkspace()
@@ -86,7 +86,6 @@ onMounted(async () => {
       <template v-else-if="workspace.trip.value">
         <header class="orbit-page-heading">
           <div>
-            <span class="eyebrow">Deine Reise</span>
             <h1>{{ workspace.trip.value.city }}</h1>
             <p>
               <MapPin :size="16" />
@@ -98,10 +97,6 @@ onMounted(async () => {
             </p>
           </div>
           <div class="orbit-heading-actions">
-            <button class="catalog-open-button" type="button" @click="openCatalog">
-              <Sparkles :size="17" />
-              Highlights entdecken
-            </button>
             <div class="orbit-heading-count">
               <strong>{{ activeIndex + 1 }}</strong>
               <span>von {{ workspace.trip.value.days.length }} Tagen</span>
@@ -121,6 +116,7 @@ onMounted(async () => {
           @regenerate-activity="workspace.regenerateActivity"
           @remove-activity="workspace.removeActivity"
           @request-images="workspace.ensureActivityImages"
+          @open-catalog="openCatalog"
         />
 
         <section v-if="dayViewError && activeDay" class="trip-plan-fallback" aria-live="polite">
