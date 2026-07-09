@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays, MapPin, Trash2 } from 'lucide-vue-next'
+import { CalendarDays, MapPin } from 'lucide-vue-next'
 
 const route = useRoute()
 const workspace = useTripWorkspace()
 const activeIndex = ref(0)
-const deleteDialogOpen = ref(false)
 const catalogOpen = ref(false)
 const dayViewError = ref('')
 
@@ -29,18 +28,6 @@ const syncDayFromRoute = () => {
   activeIndex.value = index >= 0 ? index : 0
   dayViewError.value = ''
   workspace.preloadUpcomingImages(activeIndex.value)
-}
-
-const removeCurrentTrip = async () => {
-  const trip = workspace.trip.value
-  if (!trip) return
-  deleteDialogOpen.value = true
-}
-
-const confirmCurrentTripDeletion = async () => {
-  const trip = workspace.trip.value
-  if (!trip) return
-  if (await workspace.deleteTrip(trip.id)) await navigateTo('/calendar')
 }
 
 const openCatalog = async () => {
@@ -76,8 +63,6 @@ onMounted(async () => {
     />
 
     <main class="workspace-main orbit-page-main">
-      <NuxtLink class="back-link" to="/calendar"><ArrowLeft :size="17" />Zurück zum Kalender</NuxtLink>
-
       <section v-if="workspace.loading.value" class="calendar-loading" aria-live="polite">
         <span />
         <p>Reise wird geladen...</p>
@@ -116,6 +101,9 @@ onMounted(async () => {
           @regenerate-activity="workspace.regenerateActivity"
           @remove-activity="workspace.removeActivity"
           @request-images="workspace.ensureActivityImages"
+          @reorder-activities="workspace.reorderActivities"
+          @update-activity-timing="workspace.updateActivityTiming"
+          @move-activity-to-day="workspace.moveActivityToDay"
           @open-catalog="openCatalog"
         />
 
@@ -133,15 +121,6 @@ onMounted(async () => {
             </li>
           </ul>
         </section>
-
-        <footer class="trip-danger-zone">
-          <button
-            class="trip-delete-button"
-            type="button"
-            :disabled="workspace.deletingTripId.value === workspace.trip.value.id"
-            @click="removeCurrentTrip"
-          ><Trash2 :size="17" />{{ workspace.deletingTripId.value ? 'Wird gelöscht...' : 'Reise löschen' }}</button>
-        </footer>
 
         <AttractionCatalogPanel
           :open="catalogOpen"
@@ -163,13 +142,5 @@ onMounted(async () => {
       </section>
     </main>
 
-    <TripDeleteDialog
-      :open="deleteDialogOpen"
-      :trip="workspace.trip.value"
-      :loading="workspace.deletingTripId.value === workspace.trip.value?.id"
-      :error="deleteDialogOpen ? workspace.error.value : ''"
-      @cancel="deleteDialogOpen = false"
-      @confirm="confirmCurrentTripDeletion"
-    />
   </div>
 </template>

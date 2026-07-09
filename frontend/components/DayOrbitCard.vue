@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CalendarDays, RefreshCw, Sparkles, Trash2 } from 'lucide-vue-next'
+import draggable from 'vuedraggable'
 import type { TripActivity, TripDay } from '~/types/trip'
 
 const props = defineProps<{
@@ -13,8 +14,10 @@ const props = defineProps<{
 const selectedActivityId = ref<number | null>(null)
 const activityContextMenu = ref<{ x: number; y: number; item: TripActivity } | null>(null)
 const activityLongPressId = ref<number | null>(null)
+const openTimingItemId = ref<number | null>(null)
 const galleryError = ref(false)
 const contentRef = ref<HTMLElement | null>(null)
+const localActivities = ref<TripActivity[]>([])
 let activityLongPressTimer: ReturnType<typeof setTimeout> | null = null
 let activityLongPressOrigin: { x: number; y: number } | null = null
 const selectedActivity = computed(() =>
@@ -41,8 +44,10 @@ const fallbackCategory = computed(() => {
 const fallbackImageUrl = computed(() => `/images/activity-fallbacks/${fallbackCategory.value}-01.png`)
 
 watch(() => props.day.id, () => {
+  localActivities.value = [...props.day.activities]
   selectedActivityId.value = props.day.activities[0]?.id || null
   activityContextMenu.value = null
+  openTimingItemId.value = null
   galleryError.value = false
   nextTick(() => {
     if (contentRef.value) contentRef.value.scrollTop = 0
@@ -50,6 +55,7 @@ watch(() => props.day.id, () => {
 })
 
 watch(() => props.day.activities, (activities) => {
+  localActivities.value = [...activities]
   if (!activities.length) {
     selectedActivityId.value = null
     return
@@ -92,6 +98,10 @@ const emit = defineEmits<{
   regenerateActivity: [dayId: number, itemId: number]
   removeActivity: [dayId: number, itemId: number]
   requestImages: [activityId: number]
+  reorderActivities: [dayId: number, activityItemIds: number[]]
+  updateActivityTiming: [dayId: number, itemId: number, scheduledStart: number, durationMinutes: number]
+  dragActivityStart: [dayId: number, itemId: number]
+  dragActivityEnd: []
   openCatalog: []
 }>()
 
@@ -128,6 +138,7 @@ const openActivityContextMenu = (itemId: number, x: number, y: number) => {
   if (!item) return
   const position = getActivityMenuPosition(x, y)
   selectedActivityId.value = item.id
+  openTimingItemId.value = null
   activityContextMenu.value = { ...position, item }
 }
 
@@ -169,6 +180,21 @@ const selectActivity = (itemId: number) => {
   selectedActivityId.value = itemId
 }
 
+const openTimingMenu = (itemId: number) => {
+  closeActivityContextMenu()
+  selectedActivityId.value = itemId
+  openTimingItemId.value = itemId
+}
+
+const closeTimingMenu = () => {
+  openTimingItemId.value = null
+}
+
+const updateActivityTiming = (payload: { itemId: number; scheduledStart: number; durationMinutes: number }) => {
+  closeTimingMenu()
+  emit('updateActivityTiming', props.day.id, payload.itemId, payload.scheduledStart, payload.durationMinutes)
+}
+
 const regenerateFromMenu = () => {
   if (!activityContextMenu.value) return
   const itemId = activityContextMenu.value.item.id
@@ -183,8 +209,30 @@ const removeFromMenu = () => {
   emit('removeActivity', props.day.id, itemId)
 }
 
+const handleActivityDragStart = (event: { oldIndex?: number }) => {
+  clearActivityLongPress()
+  closeActivityContextMenu()
+  closeTimingMenu()
+  const item = localActivities.value[event.oldIndex ?? -1]
+  if (!item) return
+  selectedActivityId.value = item.id
+  emit('dragActivityStart', props.day.id, item.id)
+}
+
+const handleActivityDragEnd = () => {
+  const orderedIds = localActivities.value.map(item => item.id)
+  const currentIds = props.day.activities.map(item => item.id)
+  if (orderedIds.length === currentIds.length && orderedIds.some((id, index) => id !== currentIds[index])) {
+    emit('reorderActivities', props.day.id, orderedIds)
+  }
+  emit('dragActivityEnd')
+}
+
 const handleEscape = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') closeActivityContextMenu()
+  if (event.key === 'Escape') {
+    closeActivityContextMenu()
+    closeTimingMenu()
+  }
 }
 
 onMounted(() => {
@@ -194,6 +242,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearActivityLongPress()
+  closeTimingMenu()
   window.removeEventListener('click', closeActivityContextMenu)
   window.removeEventListener('keydown', handleEscape)
 })
@@ -225,14 +274,29 @@ onUnmounted(() => {
       <div class="orbit-active-layout">
         <div ref="contentRef" class="orbit-day-content">
           <div v-if="day.activities.length > 0" class="day-activity-experience">
-            <div class="compact-timeline">
+            <draggable
+              v-model="localActivities"
+              class="compact-timeline compact-timeline-draggable"
+              item-key="id"
+              handle=".compact-activity-drag-handle"
+              ghost-class="compact-activity-ghost"
+              chosen-class="compact-activity-chosen"
+              drag-class="compact-activity-dragging"
+              :animation="150"
+              @start="handleActivityDragStart"
+              @end="handleActivityDragEnd"
+            >
+              <template #item="{ element: item }">
               <CompactActivityRow
-                v-for="item in day.activities"
                 :key="item.id"
                 :item="item"
                 :city="city"
                 :selected="selectedActivityId === item.id"
+                :timing-open="openTimingItemId === item.id"
                 @select="selectActivity"
+                @request-timing-open="openTimingMenu"
+                @close-timing="closeTimingMenu"
+                @update-timing="updateActivityTiming"
                 @action-menu="openActivityContextMenu"
                 @pointerdown="startActivityLongPress($event, item)"
                 @pointermove="moveActivityLongPress"
@@ -240,7 +304,8 @@ onUnmounted(() => {
                 @pointercancel="clearActivityLongPress"
                 @pointerleave="clearActivityLongPress"
               />
-            </div>
+              </template>
+            </draggable>
             <ActivityGallery
               v-if="day.activities.length && !galleryError"
               :key="(selectedActivity || day.activities[0])?.id"

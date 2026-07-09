@@ -783,8 +783,9 @@
 }
 
 .compact-activity {
+  position: relative;
   display: grid;
-  grid-template-columns: 66px 18px 38px minmax(0, 1fr) auto;
+  grid-template-columns: 28px 66px 18px 38px minmax(0, 1fr) auto;
   align-items: start;
   gap: 10px;
   min-width: 0;
@@ -792,11 +793,50 @@
   border-bottom: 1px solid #e4eaec;
 }
 
+.compact-activity-drag-handle {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #98a2b3;
+  cursor: grab;
+  touch-action: none;
+}
+
+.compact-activity-drag-handle:hover,
+.compact-activity-drag-handle:focus-visible {
+  background: #eef5fb;
+  color: #256da8;
+}
+
+.compact-activity-drag-handle:active {
+  cursor: grabbing;
+}
+
+.compact-activity-ghost {
+  opacity: 0.36;
+}
+
+.compact-activity-chosen {
+  background: #edf6ff;
+  box-shadow: inset 3px 0 #1f86df;
+}
+
+.compact-activity-dragging {
+  cursor: grabbing;
+}
+
 .compact-activity:last-child {
   border-bottom: 0;
 }
 
 .compact-activity-time {
+  position: relative;
   display: grid;
   gap: 3px;
   padding-top: 3px;
@@ -805,6 +845,152 @@
 .compact-activity-time span {
   color: #7a8990;
   font-size: 11px;
+}
+
+.compact-activity-time-button {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.compact-activity-time-button:hover,
+.compact-activity-time-button:focus-visible {
+  color: #1769aa;
+  outline: 0;
+}
+
+.compact-activity-time-button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(31, 134, 223, 0.16);
+}
+
+.activity-time-editor {
+  position: fixed;
+  z-index: 1300;
+  display: grid;
+  max-width: calc(100vw - 24px);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d9e4ee;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(15, 33, 51, 0.18);
+}
+
+.activity-time-editor-field {
+  display: grid;
+  gap: 5px;
+  color: #102a43;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.activity-time-editor-field input,
+.activity-time-editor-field select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #cbd8e3;
+  border-radius: 8px;
+  background: #f8fbfd;
+  color: #102a43;
+  font: inherit;
+  font-weight: 700;
+}
+
+.activity-time-editor-field input {
+  padding: 0 10px;
+}
+
+.activity-time-editor-field select {
+  padding: 0 8px;
+}
+
+.activity-time-editor-field input[aria-invalid="true"] {
+  border-color: #e5484d;
+  background: #fff6f6;
+}
+
+.activity-time-options {
+  display: grid;
+  max-height: 170px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 3px;
+  border: 1px solid #e3ebf2;
+  border-radius: 9px;
+  background: #f6f9fc;
+}
+
+.activity-time-options button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #40566b;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.activity-time-options button:hover,
+.activity-time-options button:focus-visible {
+  background: #e8f3fd;
+  color: #1769aa;
+  outline: 0;
+}
+
+.activity-time-options button.active {
+  background: #1976c9;
+  color: #fff;
+}
+
+.activity-time-editor-error {
+  color: #bd2f35;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.activity-time-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.activity-time-editor-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #156dae;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.activity-time-editor-actions button.ghost {
+  border: 1px solid #d4e0ea;
+  background: #fff;
+  color: #516273;
+}
+
+.activity-time-editor-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .compact-activity-line {
@@ -1168,7 +1354,7 @@
   }
 
   .compact-activity {
-    grid-template-columns: 54px 12px 34px minmax(0, 1fr);
+    grid-template-columns: 24px 54px 12px 34px minmax(0, 1fr);
     gap: 7px;
   }
 
@@ -1178,7 +1364,7 @@
   }
 
   .compact-activity-actions {
-    grid-column: 4;
+    grid-column: 5;
     justify-content: flex-end;
   }
 

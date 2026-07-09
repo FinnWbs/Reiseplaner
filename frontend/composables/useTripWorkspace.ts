@@ -1,4 +1,4 @@
-import type { Trip, TripDay } from '~/types/trip'
+import type { Trip, TripActivity, TripDay } from '~/types/trip'
 import { useTripCatalogActions } from '~/composables/useTripCatalogActions'
 import { useTripImages } from '~/composables/useTripImages'
 import { workspaceErrorMessage } from '~/utils/workspaceErrors'
@@ -14,6 +14,7 @@ export const useTripWorkspace = () => {
   const deletingActivityId = ref<number | null>(null)
   const regeneratingActivityId = ref<number | null>(null)
   const deletingTripId = ref<number | null>(null)
+  const savingSchedule = ref(false)
   const tripImages = useTripImages(trip, request, config)
 
   const requireAuth = async () => {
@@ -117,6 +118,89 @@ export const useTripWorkspace = () => {
     }
   }
 
+  const normalizeClientSchedule = () => {
+    if (!trip.value) return
+    for (const day of trip.value.days) {
+      day.activities.forEach((item, index) => {
+        item.position = index + 1
+      })
+    }
+  }
+
+  const persistSchedule = async (options: { includeTimings?: boolean } = {}) => {
+    if (!trip.value || savingSchedule.value) return
+    const tripId = trip.value.id
+    savingSchedule.value = true
+    error.value = ''
+    try {
+      replaceTrip(await request<Trip>(`/trips/${tripId}/schedule`, {
+        method: 'PUT',
+        body: {
+          days: trip.value.days.map(day => ({
+            dayId: day.id,
+            activityItemIds: day.activities.map(item => item.id),
+            ...(options.includeTimings
+              ? {
+                  activities: day.activities.map(item => ({
+                    itemId: item.id,
+                    scheduledStart: item.scheduledStart,
+                    durationMinutes: item.durationMinutes
+                  }))
+                }
+              : {})
+          }))
+        }
+      }))
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Der Zeitplan konnte nicht gespeichert werden.')
+      await loadTrip(tripId)
+    } finally {
+      savingSchedule.value = false
+    }
+  }
+
+  const reorderActivities = async (dayId: number, activityItemIds: number[]) => {
+    if (!trip.value || savingSchedule.value) return
+    const day = trip.value.days.find(item => item.id === dayId)
+    if (!day) return
+    const activityById = new Map(day.activities.map(item => [item.id, item]))
+    const reordered = activityItemIds
+      .map(itemId => activityById.get(itemId))
+      .filter((item): item is TripActivity => Boolean(item))
+    if (reordered.length !== day.activities.length) return
+    day.activities = reordered
+    normalizeClientSchedule()
+    await persistSchedule()
+  }
+
+  const updateActivityTiming = async (
+    dayId: number,
+    itemId: number,
+    scheduledStart: number,
+    durationMinutes: number
+  ) => {
+    if (!trip.value || savingSchedule.value) return
+    const day = trip.value.days.find(item => item.id === dayId)
+    const activity = day?.activities.find(item => item.id === itemId)
+    if (!day || !activity) return
+    activity.scheduledStart = scheduledStart
+    activity.durationMinutes = durationMinutes
+    await persistSchedule({ includeTimings: true })
+  }
+
+  const moveActivityToDay = async (sourceDayId: number, itemId: number, targetDayId: number) => {
+    if (!trip.value || savingSchedule.value || sourceDayId === targetDayId) return
+    const sourceDay = trip.value.days.find(day => day.id === sourceDayId)
+    const targetDay = trip.value.days.find(day => day.id === targetDayId)
+    if (!sourceDay || !targetDay) return
+    const movingItem = sourceDay.activities.find(item => item.id === itemId)
+    if (!movingItem) return
+    sourceDay.activities = sourceDay.activities.filter(item => item.id !== itemId)
+    targetDay.activities = [...targetDay.activities, movingItem]
+    normalizeClientSchedule()
+    await persistSchedule()
+  }
+
   const deleteTrip = async (tripId: number) => {
     deletingTripId.value = tripId
     error.value = ''
@@ -147,6 +231,7 @@ export const useTripWorkspace = () => {
     deletingActivityId,
     regeneratingActivityId,
     deletingTripId,
+    savingSchedule,
     catalog: catalogActions.catalog,
     catalogLoading: catalogActions.catalogLoading,
     catalogError: catalogActions.catalogError,
@@ -160,6 +245,9 @@ export const useTripWorkspace = () => {
     updateAvailability,
     removeActivity,
     regenerateActivity,
+    reorderActivities,
+    updateActivityTiming,
+    moveActivityToDay,
     addCatalogAttraction: catalogActions.addCatalogAttraction,
     deleteTrip,
     preloadUpcomingImages: tripImages.preloadUpcomingImages,

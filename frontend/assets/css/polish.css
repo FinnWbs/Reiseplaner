@@ -1520,6 +1520,13 @@ select:focus {
   box-shadow: inset 0 -3px var(--brand-interactive);
 }
 
+.day-switcher button.day-drop-target {
+  border-color: var(--brand-interactive);
+  background: #eef6ff;
+  color: var(--brand-primary);
+  box-shadow: inset 0 0 0 2px rgba(31, 134, 223, 0.28);
+}
+
 .day-orbit-stage {
   height: clamp(610px, calc(100vh - 285px), 760px);
   overflow: hidden;
@@ -1871,6 +1878,133 @@ select:focus {
   filter: brightness(1.08);
 }
 
+.gallery-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 4vw, 54px);
+  background: rgba(4, 18, 33, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.gallery-lightbox-shell {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: min(1180px, calc(100vw - 180px));
+  max-height: 86vh;
+}
+
+.gallery-lightbox-image {
+  display: block;
+  width: auto;
+  max-width: min(1180px, calc(100vw - 180px));
+  height: auto;
+  max-height: 86vh;
+  border-radius: 6px;
+  object-fit: contain;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
+}
+
+.gallery-lightbox-close {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  min-height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+}
+
+.gallery-lightbox-close:hover,
+.gallery-lightbox-close:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+  color: white;
+  transform: none;
+}
+
+.gallery-lightbox-counter {
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.gallery-lightbox-nav {
+  position: fixed;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  min-height: 58px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: white;
+  box-shadow: none;
+  transform: translateY(-50%);
+  backdrop-filter: blur(10px);
+  transition: background 130ms ease;
+}
+
+.gallery-lightbox-nav:hover,
+.gallery-lightbox-nav:focus-visible {
+  background: rgba(255, 255, 255, 0.32);
+  color: white;
+  transform: translateY(-50%) !important;
+}
+
+.gallery-lightbox-nav:active:not(:disabled) {
+  transform: translateY(-50%) !important;
+}
+
+.gallery-lightbox-nav-left {
+  left: clamp(18px, 3vw, 48px);
+}
+
+.gallery-lightbox-nav-right {
+  right: clamp(18px, 3vw, 48px);
+}
+
+.gallery-lightbox-enter-active,
+.gallery-lightbox-leave-active {
+  transition: opacity 160ms ease;
+}
+
+.gallery-lightbox-enter-active .gallery-lightbox-shell,
+.gallery-lightbox-leave-active .gallery-lightbox-shell {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.gallery-lightbox-enter-from,
+.gallery-lightbox-leave-to {
+  opacity: 0;
+}
+
+.gallery-lightbox-enter-from .gallery-lightbox-shell,
+.gallery-lightbox-leave-to .gallery-lightbox-shell {
+  opacity: 0;
+  transform: translateY(8px) scale(0.985);
+}
+
 .gallery-arrow {
   position: absolute;
   top: 50%;
@@ -2082,6 +2216,12 @@ select:focus {
 :root.dark-mode .day-switcher button.active {
   border-color: var(--brand-interactive);
   background: var(--brand-selection);
+}
+
+:root.dark-mode .day-switcher button.day-drop-target {
+  border-color: var(--brand-interactive);
+  background: rgba(36, 98, 153, 0.42);
+  color: #cce7ff;
 }
 
 :root.dark-mode .activity-gallery,

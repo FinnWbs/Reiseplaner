@@ -4,7 +4,8 @@ import {
   ArrowRight,
   Camera,
   MapPin,
-  Maximize
+  Maximize,
+  X
 } from 'lucide-vue-next'
 import type { ActivityImage, TripActivity } from '~/types/trip'
 
@@ -40,9 +41,10 @@ const failedImageUrls = ref<string[]>([])
 const loadedImageUrls = ref<string[]>([])
 const imageRetryVersions = ref<Record<string, number>>({})
 const imageLoadStatus = ref<ImageLoadStatus>('idle')
-const expanded = ref(false)
+const isFullscreenOpen = ref(false)
 const imageRetryAfterMs = 7000
 const failedImageRetryTimers = new Map<string, ReturnType<typeof setTimeout>>()
+let previousBodyOverflow = ''
 
 const debugGallery = (event: string, extra: Record<string, unknown> = {}) => {
   if (!import.meta.dev) return
@@ -201,6 +203,13 @@ const displaySlides = computed<GallerySlide[]>(() => {
 
 const galleryClass = computed(() => `gallery-${categoryName.value.toLowerCase()}`)
 const visibleSlides = computed(() => displaySlides.value)
+const currentSlide = computed(() => visibleSlides.value[activeSlide.value] || visibleSlides.value[0] || null)
+const currentFullscreenImage = computed(() => {
+  const slide = currentSlide.value
+  if (!slide) return null
+  return isSlideImageLoaded(slide) && slide.realImage ? slide.realImage : slide.fallbackImage
+})
+const fullscreenLabel = computed(() => `Bild von ${props.activity?.activity?.name || 'Aktivitaet'} im Vollbild`)
 
 const clearFailedImageUrl = (url: string) => {
   const timer = failedImageRetryTimers.get(url)
@@ -237,7 +246,7 @@ const scheduleFailedImageRetry = (url: string) => {
 watch(() => props.activity.id, () => {
   debugGallery('activity-change-before-reset')
   activeSlide.value = 0
-  expanded.value = false
+  closeFullscreen()
   clearFailedImageRetries()
   loadedImageUrls.value = []
   imageLoadStatus.value = 'idle'
@@ -269,6 +278,15 @@ watch(realImages, (images) => {
 const changeSlide = (offset: number) => {
   const count = displaySlides.value.length
   activeSlide.value = (activeSlide.value + offset + count) % count
+}
+
+const openFullscreen = () => {
+  if (!currentSlide.value) return
+  isFullscreenOpen.value = true
+}
+
+const closeFullscreen = () => {
+  isFullscreenOpen.value = false
 }
 
 const imageSource = (url: string) => {
@@ -336,12 +354,35 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'ArrowRight') changeSlide(1)
 }
 
+const handleFullscreenKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') closeFullscreen()
+  if (event.key === 'ArrowLeft') changeSlide(-1)
+  if (event.key === 'ArrowRight') changeSlide(1)
+}
+
+watch(isFullscreenOpen, (open) => {
+  if (!import.meta.client) return
+  if (open) {
+    previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleFullscreenKeydown)
+    return
+  }
+  document.body.style.overflow = previousBodyOverflow
+  window.removeEventListener('keydown', handleFullscreenKeydown)
+})
+
 onMounted(() => {
   debugGallery('mount')
   requestImages()
 })
 
 onUnmounted(() => {
+  closeFullscreen()
+  if (import.meta.client) {
+    document.body.style.overflow = previousBodyOverflow
+    window.removeEventListener('keydown', handleFullscreenKeydown)
+  }
   clearFailedImageRetries()
   debugGallery('unmount')
 })
@@ -350,7 +391,7 @@ onUnmounted(() => {
 <template>
   <section
     class="activity-gallery"
-    :class="[galleryClass, { 'is-expanded': expanded }]"
+    :class="galleryClass"
     tabindex="0"
     :aria-label="`Bildergalerie zu ${activity.activity.name}`"
     @keydown="handleKeydown"
@@ -398,7 +439,7 @@ onUnmounted(() => {
       </template>
 
       <button
-        v-if="visibleSlides.length > 1 || expanded"
+        v-if="visibleSlides.length > 1"
         class="gallery-arrow gallery-arrow-left"
         type="button"
         :disabled="visibleSlides.length <= 1"
@@ -406,7 +447,7 @@ onUnmounted(() => {
         @click="changeSlide(-1)"
       ><ArrowLeft :size="19" /></button>
       <button
-        v-if="visibleSlides.length > 1 || expanded"
+        v-if="visibleSlides.length > 1"
         class="gallery-arrow gallery-arrow-right"
         type="button"
         :disabled="visibleSlides.length <= 1"
@@ -417,9 +458,9 @@ onUnmounted(() => {
       <button
         class="gallery-expand-button"
         type="button"
-        :aria-pressed="expanded"
-        :aria-label="expanded ? 'Bildvorschau verkleinern' : 'Bildvorschau vergrößern'"
-        @click.stop="expanded = !expanded"
+        :aria-pressed="isFullscreenOpen"
+        aria-label="Bild im Vollbild anzeigen"
+        @click.stop="openFullscreen"
       >
         <Maximize
           class="gallery-expand-icon"
@@ -453,4 +494,52 @@ onUnmounted(() => {
       </div>
     </footer>
   </section>
+
+  <Teleport to="body">
+    <Transition name="gallery-lightbox">
+      <div
+        v-if="isFullscreenOpen && currentSlide && currentFullscreenImage"
+        class="gallery-lightbox-backdrop"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="fullscreenLabel"
+        @click="closeFullscreen"
+      >
+        <span class="gallery-lightbox-counter">{{ activeSlide + 1 }} / {{ visibleSlides.length }}</span>
+        <button
+          class="gallery-lightbox-close"
+          type="button"
+          aria-label="Vollbild schließen"
+          @click.stop="closeFullscreen"
+        >
+          <X :size="28" aria-hidden="true" />
+        </button>
+        <button
+          v-if="visibleSlides.length > 1"
+          class="gallery-lightbox-nav gallery-lightbox-nav-left"
+          type="button"
+          aria-label="Vorheriges Bild"
+          @click.stop="changeSlide(-1)"
+        >
+          <ArrowLeft :size="34" aria-hidden="true" />
+        </button>
+        <div class="gallery-lightbox-shell" @click.stop>
+          <img
+            class="gallery-lightbox-image"
+            :src="currentFullscreenImage.url"
+            :alt="currentFullscreenImage.alt"
+          >
+        </div>
+        <button
+          v-if="visibleSlides.length > 1"
+          class="gallery-lightbox-nav gallery-lightbox-nav-right"
+          type="button"
+          aria-label="Nächstes Bild"
+          @click.stop="changeSlide(1)"
+        >
+          <ArrowRight :size="34" aria-hidden="true" />
+        </button>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
