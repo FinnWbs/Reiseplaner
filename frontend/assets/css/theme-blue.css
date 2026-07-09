@@ -149,6 +149,18 @@ a,
   color: var(--brand-primary);
 }
 
+.category-nightlife .compact-activity-icon,
+.category-nightlife .activity-icon {
+  background: #f0e7ff;
+  color: #7a3fb0;
+}
+
+.category-geschichte .compact-activity-icon,
+.category-geschichte .activity-icon {
+  background: #f4e7d8;
+  color: #7c4f24;
+}
+
 .chip.active,
 .choice.selected,
 .date-choice.selected,

@@ -2,6 +2,7 @@
 import { CalendarDays, RefreshCw, Sparkles, Trash2 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 import type { TripActivity, TripDay } from '~/types/trip'
+import { fallbackImageCategoryForActivity } from '~/utils/activityCategory'
 
 const props = defineProps<{
   day: TripDay
@@ -24,22 +25,7 @@ const selectedActivity = computed(() =>
   props.day.activities.find(item => item.id === selectedActivityId.value) || props.day.activities[0] || null
 )
 
-const normalizeText = (value: unknown) => String(value || '')
-  .normalize('NFD')
-  .replace(/\p{M}/gu, '')
-  .toLowerCase()
-
-const fallbackCategory = computed(() => {
-  const activity = selectedActivity.value?.activity
-  const value = normalizeText(`${activity?.category || ''} ${activity?.subcategory || ''}`)
-  if (/night|club|bar|pub|nacht/.test(value)) return 'nightlife'
-  if (/food|essen|restaurant|cafe|cafes|market|markt|catering/.test(value)) return 'food'
-  if (/park|natur|garden|garten|forest|wald|beach|strand/.test(value)) return 'nature'
-  if (/shop|shopping|commercial|mall|markt|markte/.test(value)) return 'shopping'
-  if (/sport|stadium|fitness/.test(value)) return 'sport'
-  if (/heritage|historic|historisch|monument|castle|schloss|geschichte/.test(value)) return 'history'
-  return 'culture'
-})
+const fallbackCategory = computed(() => fallbackImageCategoryForActivity(selectedActivity.value?.activity))
 
 const fallbackImageUrl = computed(() => `/images/activity-fallbacks/${fallbackCategory.value}-01.png`)
 

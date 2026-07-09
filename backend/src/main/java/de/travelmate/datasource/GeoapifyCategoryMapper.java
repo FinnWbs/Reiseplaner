@@ -29,11 +29,10 @@ public class GeoapifyCategoryMapper {
             "catering.restaurant", "catering.cafe", "catering.biergarten", "catering.food_court"
         ),
         InterestType.SHOPPING, List.of(
-            "commercial.shopping_mall", "commercial.department_store", "commercial.marketplace"
+            "commercial.shopping_mall", "commercial.department_store"
         ),
         InterestType.NIGHTLIFE, List.of(
-            "catering.bar", "catering.pub", "catering.taproom", "entertainment.cinema",
-            "entertainment.escape_game"
+            "catering.bar", "catering.pub"
         )
     );
 

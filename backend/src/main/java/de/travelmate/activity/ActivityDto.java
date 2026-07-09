@@ -2,6 +2,7 @@ package de.travelmate.activity;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import de.travelmate.interest.InterestType;
 import de.travelmate.quality.CanonicalCategory;
 
 public record ActivityDto(
@@ -11,6 +12,7 @@ public record ActivityDto(
     String name,
     String description,
     String city,
+    InterestType primaryInterest,
     String category,
     String subcategory,
     Double latitude,
@@ -39,6 +41,7 @@ public record ActivityDto(
             activity.name,
             activity.description,
             activity.city,
+            activity.primaryInterest,
             activity.category,
             activity.subcategory,
             activity.latitude,

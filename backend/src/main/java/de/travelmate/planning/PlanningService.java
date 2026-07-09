@@ -45,6 +45,9 @@ public class PlanningService {
     SpatialDiagnosticsService spatialDiagnosticsService;
 
     @Inject
+    TripTimeWindowPolicy timeWindowPolicy;
+
+    @Inject
     SpatialPlanningSettings spatialSettings;
 
     @Inject
@@ -64,6 +67,7 @@ public class PlanningService {
 
     public void generatePlan(TripEntity trip, List<Long> interestIds, Set<InterestType> requestedInterests) {
         Set<InterestType> selectedTypes = selectedTypes(trip, requestedInterests);
+        timeWindowPolicy().extendDaysForInterests(trip, selectedTypes);
         ImportDemand demand = demandFor(trip, selectedTypes);
         RefreshDecision refreshDecision = sync.refreshDecision(trip.city, selectedTypes, demand, trip.latitude, trip.longitude);
         if (refreshDecision.importRequired()) {
@@ -272,6 +276,10 @@ public class PlanningService {
 
     private SpatialPlanningSettings settings() {
         return spatialSettings == null ? new SpatialPlanningSettings() : spatialSettings;
+    }
+
+    private TripTimeWindowPolicy timeWindowPolicy() {
+        return timeWindowPolicy == null ? new TripTimeWindowPolicy() : timeWindowPolicy;
     }
 
     private InterestQuotaAllocator quotaAllocator() {

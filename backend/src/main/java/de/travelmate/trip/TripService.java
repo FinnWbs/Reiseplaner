@@ -32,6 +32,9 @@ public class TripService {
     TripScheduleService scheduleService;
 
     @Inject
+    TripTimeWindowPolicy timeWindowPolicy;
+
+    @Inject
     AttractionCatalogService catalog;
 
     @Inject
@@ -87,6 +90,7 @@ public class TripService {
         Set<InterestType> selectedTypes = selected.stream()
             .map(interest -> InterestType.valueOf(interest.code))
             .collect(java.util.stream.Collectors.toSet());
+        timeWindowPolicy().extendDaysForInterests(trip, selectedTypes);
         planning.generatePlan(trip, interestIds, selectedTypes);
         return TripDto.from(trip);
     }
@@ -125,6 +129,7 @@ public class TripService {
         Set<InterestType> selectedTypes = selected.stream()
             .map(interest -> InterestType.valueOf(interest.code))
             .collect(java.util.stream.Collectors.toSet());
+        timeWindowPolicy().extendDaysForInterests(trip, selectedTypes);
         planning.generatePlan(trip, interestIds, selectedTypes);
         return TripDto.from(trip);
     }
@@ -233,6 +238,10 @@ public class TripService {
 
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private TripTimeWindowPolicy timeWindowPolicy() {
+        return timeWindowPolicy == null ? new TripTimeWindowPolicy() : timeWindowPolicy;
     }
 
 }

@@ -7,6 +7,7 @@ import de.travelmate.activity.ActivityRepository;
 import de.travelmate.interest.InterestEntity;
 import de.travelmate.interest.InterestType;
 import de.travelmate.sync.ActivitySyncService;
+import de.travelmate.sync.RefreshDecision;
 import de.travelmate.trip.TripDayActivityEntity;
 import de.travelmate.trip.TripDayEntity;
 import de.travelmate.trip.TripEntity;
@@ -210,6 +211,24 @@ class PlanningServiceTest {
         service.generatePlan(day.trip, List.of(6L), Set.of(InterestType.SIGHTSEEING));
 
         assertTrue(day.activities.isEmpty());
+    }
+
+    @Test
+    void generatePlanExtendsBalancedWindowAndSchedulesNightlife() {
+        InterestEntity nightlife = interest(9L, "Nachtleben");
+        nightlife.code = InterestType.NIGHTLIFE.name();
+        ActivityEntity bar = primaryActivity(42L, "Bar", InterestType.NIGHTLIFE, nightlife);
+        PlanningService service = serviceWithActivities(bar);
+        service.sync = noRefreshSync();
+        TripDayEntity day = emptyDay();
+        day.trip.selectedInterests = new HashSet<>(Set.of(nightlife));
+
+        service.generatePlan(day.trip, List.of(9L), Set.of(InterestType.NIGHTLIFE));
+
+        assertEquals(1440, day.availableUntil);
+        assertEquals(1, day.activities.size());
+        assertEquals(1200, day.activities.get(0).scheduledStart);
+        assertEquals(180, day.activities.get(0).durationMinutes);
     }
 
     @Test
@@ -490,6 +509,17 @@ class PlanningServiceTest {
             @Override
             public boolean needsRefresh(String city, Set<InterestType> interests) {
                 return false;
+            }
+
+            @Override
+            public RefreshDecision refreshDecision(
+                String city,
+                Set<InterestType> interests,
+                de.travelmate.activity.ImportDemand demand,
+                Double latitude,
+                Double longitude
+            ) {
+                return RefreshDecision.NO_REFRESH_NEEDED;
             }
         };
     }

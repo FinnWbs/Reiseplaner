@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {
+  BookOpen,
   Check,
   ChevronDown,
   Clock3,
   Dumbbell,
   ExternalLink,
   GripVertical,
-  Landmark,
   MapPin,
-  Moon,
+  Martini,
   Palette,
   ShoppingBag,
   Star,
@@ -16,6 +16,7 @@ import {
   Utensils
 } from 'lucide-vue-next'
 import type { TripActivity } from '~/types/trip'
+import { displayCategoryForActivity } from '~/utils/activityCategory'
 import { googleMapsUrl } from '~/utils/maps'
 
 const props = defineProps<{
@@ -44,24 +45,15 @@ const editorStyle = ref<Record<string, string>>({})
 const timeOptions = Array.from({ length: 48 }, (_, index) => index * 30)
 const durationOptions = Array.from({ length: 16 }, (_, index) => (index + 1) * 30)
 
-const categoryName = computed(() => {
-  const value = `${props.item.activity.category || ''} ${props.item.activity.subcategory || ''}`.toLowerCase()
-  if (/night|club|bar|pub/.test(value)) return 'Nightlife'
-  if (/food|restaurant|cafe|market|catering/.test(value)) return 'Food'
-  if (/park|natur|garden|forest|beach/.test(value)) return 'Natur'
-  if (/shop|commercial|mall/.test(value)) return 'Shopping'
-  if (/sport|stadium|fitness/.test(value)) return 'Sport'
-  if (/heritage|historic|monument|castle|geschichte/.test(value)) return 'Geschichte'
-  return 'Kultur'
-})
+const categoryName = computed(() => displayCategoryForActivity(props.item.activity))
 
 const icon = computed(() => ({
   Kultur: Palette,
-  Geschichte: Landmark,
+  Geschichte: BookOpen,
   Natur: Trees,
   Food: Utensils,
   Shopping: ShoppingBag,
-  Nightlife: Moon,
+  Nightlife: Martini,
   Sport: Dumbbell
 })[categoryName.value])
 

@@ -29,6 +29,15 @@ public class ActivityImportSettings {
     @ConfigProperty(name = "travelmate.geoapify.max-pages-per-interest", defaultValue = "2")
     int maxPagesPerInterest = 2;
 
+    @ConfigProperty(name = "travelmate.import.shopping.marketplace.short-trip-target", defaultValue = "30")
+    int shoppingMarketplaceShortTripTarget = 30;
+
+    @ConfigProperty(name = "travelmate.import.shopping.marketplace.default-target", defaultValue = "45")
+    int shoppingMarketplaceDefaultTarget = 45;
+
+    @ConfigProperty(name = "travelmate.import.shopping.marketplace.short-trip-max-days", defaultValue = "3")
+    int shoppingMarketplaceShortTripMaxDays = 3;
+
     @ConfigProperty(name = "travelmate.import.radius.default-m", defaultValue = "20000")
     int importRadiusDefaultMeters = 20000;
 
@@ -155,6 +164,24 @@ public class ActivityImportSettings {
 
     public int maxPagesPerInterest() {
         return Math.max(1, maxPagesPerInterest);
+    }
+
+    public int shoppingMarketplaceShortTripTarget() {
+        return Math.max(0, shoppingMarketplaceShortTripTarget);
+    }
+
+    public int shoppingMarketplaceDefaultTarget() {
+        return Math.max(0, shoppingMarketplaceDefaultTarget);
+    }
+
+    public int shoppingMarketplaceShortTripMaxDays() {
+        return Math.max(1, shoppingMarketplaceShortTripMaxDays);
+    }
+
+    public int shoppingMarketplaceTargetForTripDays(int tripDays) {
+        return tripDays <= shoppingMarketplaceShortTripMaxDays()
+            ? shoppingMarketplaceShortTripTarget()
+            : shoppingMarketplaceDefaultTarget();
     }
 
     public int importRadiusDefaultMeters() {

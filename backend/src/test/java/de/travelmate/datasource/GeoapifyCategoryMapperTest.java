@@ -37,9 +37,9 @@ class GeoapifyCategoryMapperTest {
     @Test
     void shoppingImportsDestinationsNotSingleStores() {
         assertTrue(mapper.categoriesFor(InterestType.SHOPPING).contains("commercial.shopping_mall"));
-        assertTrue(mapper.categoriesFor(InterestType.SHOPPING).contains("commercial.marketplace"));
         assertTrue(mapper.categoriesFor(InterestType.SHOPPING).contains("commercial.department_store"));
 
+        assertFalse(mapper.categoriesFor(InterestType.SHOPPING).contains("commercial.marketplace"));
         assertFalse(mapper.categoriesFor(InterestType.SHOPPING).contains("commercial.clothing"));
         assertFalse(mapper.categoriesFor(InterestType.SHOPPING).contains("commercial.gift_and_souvenir"));
     }

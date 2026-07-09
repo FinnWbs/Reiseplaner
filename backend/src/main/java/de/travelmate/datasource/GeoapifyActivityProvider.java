@@ -22,6 +22,7 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class GeoapifyActivityProvider implements ActivityCandidateSource {
     private static final Logger LOG = Logger.getLogger(GeoapifyActivityProvider.class);
+    private static final String MARKETPLACE_CATEGORY = "commercial.marketplace";
 
     @Inject
     @RestClient
@@ -132,6 +133,19 @@ public class GeoapifyActivityProvider implements ActivityCandidateSource {
                         area
                     );
                 }
+                if (interest == InterestType.SHOPPING) {
+                    fetchMarketplaces(
+                        locationText,
+                        selectedPlaceId,
+                        apiKey,
+                        originLatitude,
+                        originLongitude,
+                        candidates,
+                        seen,
+                        plan,
+                        demand
+                    );
+                }
                 logAreaQuality(plan, candidates.subList(beforeInterestFetch, candidates.size()), context);
             }
             populateNearbyShopDensity(candidates);
@@ -235,6 +249,161 @@ public class GeoapifyActivityProvider implements ActivityCandidateSource {
             }
         }
     }
+
+    private void fetchMarketplaces(
+        String locationText,
+        String selectedPlaceId,
+        String apiKey,
+        double originLatitude,
+        double originLongitude,
+        List<ExternalActivityCandidate> candidates,
+        Set<String> seen,
+        MultiAreaImportPlan plan,
+        ImportDemand demand
+    ) {
+        int target = marketplaceTarget(demand);
+        if (target <= 0) {
+            return;
+        }
+        List<ImportArea> marketplaceAreas = rebudgetAreas(plan.areas(), target);
+        int totalFetched = 0;
+        int totalAccepted = 0;
+        String filterMode = selectedPlaceId == null || selectedPlaceId.isBlank() ? "circle" : "place";
+        for (ImportArea area : marketplaceAreas) {
+            FetchStats stats = fetchMarketplaceArea(
+                locationText,
+                selectedPlaceId,
+                apiKey,
+                originLatitude,
+                originLongitude,
+                candidates,
+                seen,
+                area
+            );
+            totalFetched += stats.fetched();
+            totalAccepted += stats.accepted();
+        }
+        LOG.debugf(
+            "Geoapify marketplace import city=%s target=%d fetched=%d accepted=%d filter=%s",
+            locationText,
+            target,
+            totalFetched,
+            totalAccepted,
+            filterMode
+        );
+    }
+
+    private FetchStats fetchMarketplaceArea(
+        String locationText,
+        String selectedPlaceId,
+        String apiKey,
+        double originLatitude,
+        double originLongitude,
+        List<ExternalActivityCandidate> candidates,
+        Set<String> seen,
+        ImportArea area
+    ) {
+        int rawFetched = 0;
+        int totalAccepted = 0;
+        int maxRaw = Math.min(area.rawTarget(), settings().maxRawPerInterest());
+        String filter = marketplaceFilter(selectedPlaceId, area);
+        for (int page = 0; page < settings().maxPagesPerInterest() && rawFetched < maxRaw; page++) {
+            int offset = page * settings().geoapifyPageSize();
+            int pageLimit = Math.min(settings().geoapifyPageSize(), maxRaw - rawFetched);
+            JsonNode features = client.places(
+                MARKETPLACE_CATEGORY,
+                null,
+                filter,
+                "proximity:" + area.centerLon() + "," + area.centerLat(),
+                pageLimit,
+                offset,
+                "de",
+                apiKey
+            ).path("features");
+            if (!features.isArray() || features.isEmpty()) {
+                break;
+            }
+            rawFetched += features.size();
+            for (JsonNode feature : features) {
+                ExternalActivityCandidate candidate = mapper().candidate(feature.path("properties"), locationText);
+                if (candidate == null
+                    || !filtering.isRelevant(candidate, InterestType.SHOPPING)
+                    || filtering.isDuplicate(candidate, seen)) {
+                    continue;
+                }
+                candidate.distanceToCenterKm = distanceInKilometers(
+                    originLatitude,
+                    originLongitude,
+                    candidate.latitude,
+                    candidate.longitude
+                );
+                candidate.primaryInterest = InterestType.SHOPPING;
+                candidate.matchedInterests.add(InterestType.SHOPPING);
+                candidates.add(candidate);
+                totalAccepted++;
+            }
+            if (features.size() < pageLimit) {
+                break;
+            }
+        }
+        return new FetchStats(rawFetched, totalAccepted);
+    }
+
+    private int marketplaceTarget(ImportDemand demand) {
+        if (demand == null) {
+            return settings().shoppingMarketplaceDefaultTarget();
+        }
+        return settings().shoppingMarketplaceTargetForTripDays(demand.tripDays());
+    }
+
+    private String marketplaceFilter(String selectedPlaceId, ImportArea area) {
+        if (selectedPlaceId != null && !selectedPlaceId.isBlank()) {
+            return "place:" + selectedPlaceId.trim();
+        }
+        return "circle:" + area.centerLon() + "," + area.centerLat() + "," + area.radiusMeters();
+    }
+
+    private static List<ImportArea> rebudgetAreas(List<ImportArea> sourceAreas, int target) {
+        if (sourceAreas == null || sourceAreas.isEmpty() || target <= 0) {
+            return List.of();
+        }
+        int sourceTotal = sourceAreas.stream().mapToInt(ImportArea::rawTarget).sum();
+        if (sourceTotal <= 0) {
+            sourceTotal = sourceAreas.size();
+        }
+        List<ImportArea> result = new ArrayList<>();
+        int remaining = target;
+        for (int index = 0; index < sourceAreas.size(); index++) {
+            ImportArea area = sourceAreas.get(index);
+            int budget;
+            if (index == sourceAreas.size() - 1) {
+                budget = remaining;
+            } else {
+                double share = Math.max(1, area.rawTarget()) / (double) sourceTotal;
+                budget = Math.max(1, (int) Math.round(target * share));
+                budget = Math.min(budget, Math.max(0, remaining - (sourceAreas.size() - index - 1)));
+            }
+            remaining -= budget;
+            if (budget <= 0) {
+                continue;
+            }
+            result.add(new ImportArea(
+                area.id() + "-marketplace",
+                area.label() + " Marketplace",
+                area.centerLat(),
+                area.centerLon(),
+                area.radiusMeters(),
+                budget / (double) target,
+                budget,
+                area.areaType(),
+                area.distanceFromCityCenterKm(),
+                area.reachable()
+            ));
+        }
+        return result;
+    }
+
+    private record FetchStats(int fetched, int accepted) {}
 
     static void populateNearbyShopDensity(List<ExternalActivityCandidate> candidates) {
         NearbyShopDensityCalculator.populate(candidates);

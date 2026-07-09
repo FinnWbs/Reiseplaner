@@ -8,8 +8,9 @@ import {
   X
 } from 'lucide-vue-next'
 import type { ActivityImage, TripActivity } from '~/types/trip'
+import { displayCategoryForActivity, type DisplayActivityCategory } from '~/utils/activityCategory'
 
-type GalleryCategory = 'Kultur' | 'Geschichte' | 'Natur' | 'Food' | 'Shopping' | 'Nightlife' | 'Sport'
+type GalleryCategory = DisplayActivityCategory
 type GalleryImage = {
   url: string
   alt: string
@@ -61,21 +62,7 @@ const debugGallery = (event: string, extra: Record<string, unknown> = {}) => {
   })
 }
 
-const normalizeText = (value: unknown) => String(value || '')
-  .normalize('NFD')
-  .replace(/\p{M}/gu, '')
-  .toLowerCase()
-
-const categoryName = computed<GalleryCategory>(() => {
-  const value = normalizeText(`${props.activity?.activity?.category || ''} ${props.activity?.activity?.subcategory || ''}`)
-  if (/night|club|bar|pub|nacht/.test(value)) return 'Nightlife'
-  if (/food|essen|restaurant|cafe|cafes|market|markt|catering/.test(value)) return 'Food'
-  if (/park|natur|garden|garten|forest|wald|beach|strand/.test(value)) return 'Natur'
-  if (/shop|shopping|commercial|mall|markt|markte/.test(value)) return 'Shopping'
-  if (/sport|stadium|fitness/.test(value)) return 'Sport'
-  if (/heritage|historic|historisch|monument|castle|schloss|geschichte/.test(value)) return 'Geschichte'
-  return 'Kultur'
-})
+const categoryName = computed<GalleryCategory>(() => displayCategoryForActivity(props.activity?.activity))
 
 const categoryCopy: Record<GalleryCategory, string[]> = {
   Kultur: ['Kunst & Atmosphäre', 'Details entdecken', 'Ein Ort mit Charakter'],

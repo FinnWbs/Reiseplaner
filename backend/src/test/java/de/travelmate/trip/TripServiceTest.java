@@ -47,6 +47,28 @@ class TripServiceTest {
     }
 
     @Test
+    void createExtendsBalancedDaysWhenNightlifeIsSelected() {
+        InterestEntity nightlife = interest(9L, InterestType.NIGHTLIFE);
+        TripService service = service(new TestPlanningService(), new CapturingTripRepository(), nightlife);
+
+        TripDto created = service.create(request(List.of(9L), null));
+
+        assertEquals(1440, created.days().get(0).availableUntil());
+        assertEquals(1440, created.days().get(1).availableUntil());
+        assertEquals(540, created.days().get(0).availableFrom());
+    }
+
+    @Test
+    void createKeepsBalancedWindowWithoutNightlife() {
+        InterestEntity food = interest(4L, InterestType.FOOD);
+        TripService service = service(new TestPlanningService(), new CapturingTripRepository(), food);
+
+        TripDto created = service.create(request(List.of(4L), null));
+
+        assertEquals(1200, created.days().get(0).availableUntil());
+    }
+
+    @Test
     void createRejectsMissingInterestsInsteadOfPersistingEmptyPlan() {
         CapturingTripRepository trips = new CapturingTripRepository();
         TripService service = service(new TestPlanningService(), trips);

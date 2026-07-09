@@ -30,7 +30,8 @@ const normalizeInterestLabel = (value: string) =>
 
 const draftInterestAliases: Record<string, string> = {
   kultur: 'CULTURE',
-  geschichte: 'HISTORY',
+  // Product label "Geschichte" uses the planable sightseeing import path.
+  geschichte: 'SIGHTSEEING',
   natur: 'NATURE',
   food: 'FOOD',
   essen: 'FOOD',

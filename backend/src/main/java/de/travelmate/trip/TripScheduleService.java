@@ -37,6 +37,9 @@ public class TripScheduleService {
     @Inject
     ActivityTimeRules timeRules;
 
+    @Inject
+    TripTimeWindowPolicy timeWindowPolicy;
+
     public void deleteActivity(TripEntity trip, Long dayId, Long itemId) {
         TripDayEntity day = requireDay(trip, dayId);
         TripDayActivityEntity item = requireItem(day, itemId);
@@ -109,13 +112,14 @@ public class TripScheduleService {
         if (!activity.active) {
             throw new BadRequestException("Diese Aktivitaet ist nicht mehr fuer neue Plaene verfuegbar.");
         }
+        timeWindowPolicy().extendDayForActivity(day, activity);
         TripDayActivityEntity item = new TripDayActivityEntity();
         item.tripDay = day;
         item.activity = activity;
         item.position = day.activities.size() + 1;
         ActivityTimeRules.TimeProfile profile = timeRules.profile(activity);
         item.durationMinutes = profile.durationMinutes();
-        item.scheduledStart = Math.max(day.availableFrom, profile.earliestStart());
+        item.scheduledStart = nextStartForNewItem(day, profile, item.durationMinutes);
         item.notes = request.notes();
         item.locked = request.locked() != null && request.locked();
         day.activities.add(item);
@@ -220,6 +224,15 @@ public class TripScheduleService {
         return Math.min(start, 1440 - item.durationMinutes);
     }
 
+    private int nextStartForNewItem(TripDayEntity day, ActivityTimeRules.TimeProfile profile, int durationMinutes) {
+        int cursor = day.activities.stream()
+            .mapToInt(item -> item.scheduledStart + item.durationMinutes + STOP_GAP_MINUTES)
+            .max()
+            .orElse(day.availableFrom);
+        int start = Math.max(cursor, Math.max(day.availableFrom, profile.earliestStart()));
+        return Math.min(start, 1440 - durationMinutes);
+    }
+
     private TripDayEntity requireDay(TripEntity trip, Long dayId) {
         return trip.days.stream()
             .filter(day -> day.id.equals(dayId))
@@ -238,5 +251,9 @@ public class TripScheduleService {
         for (int i = 0; i < day.activities.size(); i++) {
             day.activities.get(i).position = i + 1;
         }
+    }
+
+    private TripTimeWindowPolicy timeWindowPolicy() {
+        return timeWindowPolicy == null ? new TripTimeWindowPolicy() : timeWindowPolicy;
     }
 }

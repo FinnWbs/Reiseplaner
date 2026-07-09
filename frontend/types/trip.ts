@@ -19,6 +19,7 @@ export type TripActivity = {
     id: number
     name: string
     description?: string
+    primaryInterest?: string
     category?: string
     subcategory?: string
     address?: string
