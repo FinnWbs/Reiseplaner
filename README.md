@@ -138,22 +138,18 @@ Alle lokalen Schlüssel gehören in `.env` oder in eine sichere Deployment-Konfi
 | Variable | Pflicht | Wirkung |
 |---|---:|---|
 | `GEOAPIFY_API_KEY` | Für echte Ortsdaten ja | Stadt-Autocomplete und Aktivitätsimport |
-| `GOOGLE_PLACES_API_KEY` | Optional | nachträgliche echte Aktivitätsbilder |
-| `GOOGLE_PLACES_PROVIDER_ENABLED` | Optional | muss für Google-Bilder auf `true` gesetzt werden |
 | `CATALOG_WIKIMEDIA_ENABLED` | Optional | aktiviert den Highlight-Katalog; Standard `true` |
 | `WIKIMEDIA_USER_AGENT` | Empfohlen | Kontaktkennung für Wikimedia-Anfragen |
 
-Beispiel für Bildanreicherung:
+Beispielkonfiguration:
 
 ```dotenv
 GEOAPIFY_API_KEY=dein_geoapify_key
-GOOGLE_PLACES_API_KEY=dein_google_places_key
-GOOGLE_PLACES_PROVIDER_ENABLED=true
 CATALOG_WIKIMEDIA_ENABLED=true
 WIKIMEDIA_USER_AGENT=TravelMate/1.0 (kontakt@deine-domain.de)
 ```
 
-Google Places wird ausschließlich serverseitig aufgerufen. Der API-Key wird nicht an den Browser ausgeliefert.
+Google Places ist deaktiviert und es wird kein Google-Places-Key benötigt.
 
 Weitere Import-, Radius-, Cache- und räumliche Planungsparameter sind in [.env.example](.env.example) dokumentiert. Die Standardwerte sind für die lokale Entwicklung geeignet; ändere sie erst, wenn du die Auswirkungen auf Importmenge und Planung verstehst.
 
@@ -307,12 +303,9 @@ docker compose up -d --build backend
 
 - Prüfe die Logs: `docker compose logs -f backend`.
 
-### Nur Platzhalter statt echter Bilder
+### Aktivitätsbilder
 
-- Setze `GOOGLE_PLACES_API_KEY`.
-- Setze zusätzlich `GOOGLE_PLACES_PROVIDER_ENABLED=true`.
-- Stelle sicher, dass die verwendete Google-Cloud-Konfiguration Places API (New) erlaubt.
-- Beachte: Ein Platzhalter ist erwartetes Verhalten, wenn Google keinen ausreichend sicheren Ort-Match findet.
+Die Galerie verwendet die mitgelieferten lokalen Kategoriebilder. Google Places ist deaktiviert.
 
 ### Backend-Tests scheitern unter Windows
 

@@ -58,6 +58,10 @@ public class GooglePlacesImageService {
         if (activity == null) {
             throw new NotFoundException("Aktivitaet nicht gefunden.");
         }
+        if (!enabled || apiKey().isEmpty()) {
+            LOG.debug(String.format("Image enrichment disabled: activityId=%d", activity.id));
+            return List.of();
+        }
         List<ActivityImageDto> existing = currentImages(activity.id);
         LOG.debug(String.format(
             "Image enrichment start: activityId=%d, activity=%s, existingImages=%d",
@@ -69,11 +73,6 @@ public class GooglePlacesImageService {
             LOG.debug(String.format("Image enrichment existing: activityId=%d, images=%d", activity.id, existing.size()));
             return existing;
         }
-        if (!enabled || apiKey().isEmpty()) {
-            LOG.debug(String.format("Image enrichment disabled: activityId=%d", activity.id));
-            return List.of();
-        }
-
         try {
             Optional<GooglePlaceMatch> match = findGooglePlace(activity);
             if (match.isEmpty()) {
