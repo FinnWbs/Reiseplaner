@@ -62,5 +62,7 @@ onUnmounted(() => {
         @complete="completeInterview"
       />
     </main>
+
+    <TravelPlanningLoadingOverlay :show="planner.loading.value" />
   </div>
 </template>

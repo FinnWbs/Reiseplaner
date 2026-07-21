@@ -30,7 +30,14 @@ public class ImportDemandService {
             ceil(eligiblePoolTarget / Math.max(0.01, settings().expectedYield())),
             settings().maxRawTotalPerTrip()
         );
-
+        // 7 Tage
+        // Temp = hoch = 4 Aktivitäten pro Tag
+        // 3 Interessen ausgewählt - Natur, Geschichte, Kultur
+        // 7 × 4 = 28 geplante Aktivitäten
+        // 28 × 2,5 = 70 geeignete Aktivitäten im Pool
+        // 70 / 0,35 = 200 Rohdaten-Treffer nötig
+        // 200 / 3 = ~66 Rohdaten pro interesse
+        // 66 * 0,35 = ~ 23 Aktivitäten notwenig
         Map<InterestType, Integer> rawTargetByInterest = new EnumMap<>(InterestType.class);
         Map<InterestType, Integer> eligibleTargetByInterest = new EnumMap<>(InterestType.class);
         double desiredSlotsForInterest = targetActivities / (double) interests.size();

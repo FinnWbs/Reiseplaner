@@ -79,6 +79,35 @@ class TripScheduleServiceTest {
         assertEquals(180, day.activities.get(1).durationMinutes);
     }
 
+    @Test
+    void deleteActivityRemovesItemThroughDayCollectionAndRenumbersRemainingItems() {
+        TripScheduleService service = new TripScheduleService();
+        service.tripActivities = new TripDayActivityRepository() {
+            @Override
+            public void flush() {
+                // No persistence context is needed for this collection-level regression test.
+            }
+        };
+        TripEntity trip = new TripEntity();
+        TripDayEntity day = new TripDayEntity();
+        day.id = 7L;
+        day.trip = trip;
+        trip.days.add(day);
+
+        for (int position = 1; position <= 4; position++) {
+            TripDayActivityEntity item = new TripDayActivityEntity();
+            item.id = 10L + position;
+            item.tripDay = day;
+            item.position = position;
+            day.activities.add(item);
+        }
+
+        service.deleteActivity(trip, 7L, 12L);
+
+        assertEquals(List.of(11L, 13L, 14L), day.activities.stream().map(item -> item.id).toList());
+        assertEquals(List.of(1, 2, 3), day.activities.stream().map(item -> item.position).toList());
+    }
+
     private static TripScheduleService serviceWithActivity(ActivityEntity activity) {
         TripScheduleService service = new TripScheduleService();
         service.timeRules = new ActivityTimeRules();

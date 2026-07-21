@@ -58,6 +58,7 @@ export type Trip = {
   pace: 'RELAXED' | 'BALANCED' | 'ACTIVE'
   dayRhythm: 'EARLY' | 'BALANCED' | 'LATE'
   destinationSource: 'KNOWN' | 'SUGGESTED'
+  selectedInterests?: string[]
   days: TripDay[]
 }
 

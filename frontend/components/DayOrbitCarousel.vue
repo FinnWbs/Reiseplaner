@@ -12,7 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   change: [index: number]
   updateAvailability: [day: TripDay]
-  regenerateActivity: [dayId: number, itemId: number]
+  regenerateActivity: [dayId: number, itemId: number, primaryInterest?: string]
   removeActivity: [dayId: number, itemId: number]
   requestImages: [activityId: number]
   reorderActivities: [dayId: number, activityItemIds: number[]]
@@ -136,10 +136,11 @@ onUnmounted(() => {
           :day="activeDay"
           :city="trip.city"
           active
+          :selected-interests="trip.selectedInterests"
           :deleting-activity-id="deletingActivityId"
           :regenerating-activity-id="regeneratingActivityId"
           @update-availability="$emit('updateAvailability', $event)"
-          @regenerate-activity="(dayId, itemId) => $emit('regenerateActivity', dayId, itemId)"
+          @regenerate-activity="(dayId, itemId, primaryInterest) => $emit('regenerateActivity', dayId, itemId, primaryInterest)"
           @remove-activity="(dayId, itemId) => $emit('removeActivity', dayId, itemId)"
           @request-images="$emit('requestImages', $event)"
           @reorder-activities="(dayId, activityItemIds) => $emit('reorderActivities', dayId, activityItemIds)"

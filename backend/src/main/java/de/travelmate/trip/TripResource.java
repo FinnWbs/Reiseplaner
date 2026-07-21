@@ -46,6 +46,18 @@ public class TripResource {
         return trips.generatePlan(id, request);
     }
 
+    @POST
+    @Path("/{id}/fill-missing-plan")
+    public TripDto fillMissingPlan(@PathParam("id") Long id, GeneratePlanRequest request) {
+        return trips.fillMissingPlan(id, request);
+    }
+
+    @POST
+    @Path("/{id}/interests")
+    public TripDto addInterest(@PathParam("id") Long id, AddTripInterestRequest request) {
+        return trips.addInterest(id, request);
+    }
+
     @DELETE
     @Path("/{id}/days/{dayId}/activities/{itemId}")
     public TripDto deleteActivity(@PathParam("id") Long id, @PathParam("dayId") Long dayId, @PathParam("itemId") Long itemId) {
@@ -73,9 +85,10 @@ public class TripResource {
     public TripDto regenerateActivity(
         @PathParam("id") Long id,
         @PathParam("dayId") Long dayId,
-        @PathParam("itemId") Long itemId
+        @PathParam("itemId") Long itemId,
+        RegenerateActivityRequest request
     ) {
-        return trips.regenerateActivity(id, dayId, itemId);
+        return trips.regenerateActivity(id, dayId, itemId, request);
     }
 
     @PUT

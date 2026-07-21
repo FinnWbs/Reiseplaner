@@ -10,6 +10,7 @@ import {
   MapPin,
   Martini,
   Palette,
+  RefreshCw,
   ShoppingBag,
   Star,
   Trees,
@@ -24,6 +25,7 @@ const props = defineProps<{
   city: string
   selected?: boolean
   timingOpen?: boolean
+  regenerating?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -208,7 +210,7 @@ const openKeyboardActionMenu = (event: KeyboardEvent) => {
 <template>
   <article
     class="compact-activity"
-    :class="[`category-${categoryName.toLowerCase()}`, { expanded, selected, 'outside-window': !item.fitsAvailability }]"
+    :class="[`category-${categoryName.toLowerCase()}`, { expanded, selected, regenerating, 'outside-window': !item.fitsAvailability }]"
     tabindex="0"
     @click="emit('select', item.id)"
     @contextmenu="openActionMenu"
@@ -293,6 +295,13 @@ const openKeyboardActionMenu = (event: KeyboardEvent) => {
     <span class="compact-activity-line" aria-hidden="true"><i /></span>
     <div class="compact-activity-icon">
       <component :is="icon" :size="20" :stroke-width="1.8" />
+      <RefreshCw
+        v-if="regenerating"
+        class="compact-activity-regenerating-icon spinning"
+        :size="18"
+        :stroke-width="2.1"
+        aria-hidden="true"
+      />
     </div>
     <div class="compact-activity-copy">
       <span class="compact-category">{{ categoryName }} &middot; Stopp {{ item.position }}</span>

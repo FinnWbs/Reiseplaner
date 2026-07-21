@@ -66,6 +66,19 @@ public class PlanningService {
     }
 
     public void generatePlan(TripEntity trip, List<Long> interestIds, Set<InterestType> requestedInterests) {
+        generatePlan(trip, interestIds, requestedInterests, true);
+    }
+
+    public void fillMissingPlan(TripEntity trip, List<Long> interestIds, Set<InterestType> requestedInterests) {
+        generatePlan(trip, interestIds, requestedInterests, false);
+    }
+
+    private void generatePlan(
+        TripEntity trip,
+        List<Long> interestIds,
+        Set<InterestType> requestedInterests,
+        boolean replaceExistingActivities
+    ) {
         Set<InterestType> selectedTypes = selectedTypes(trip, requestedInterests);
         timeWindowPolicy().extendDaysForInterests(trip, selectedTypes);
         ImportDemand demand = demandFor(trip, selectedTypes);
@@ -83,7 +96,9 @@ public class PlanningService {
             .toList();
 
         ensureDays(trip);
-        removeUnlockedActivities(trip);
+        if (replaceExistingActivities) {
+            removeUnlockedActivities(trip);
+        }
 
         Set<Long> alreadyUsed = usedActivityIds(trip);
         Map<InterestType, Integer> availableByInterest = quotaAllocator().availableByInterest(scored, selectedTypes, alreadyUsed);
@@ -168,12 +183,46 @@ public class PlanningService {
         TripDayActivityEntity item,
         Set<Long> interestIds
     ) {
+        return replacementFor(trip, item, interestIds, null);
+    }
+
+    public Optional<ActivityEntity> replacementFor(
+        TripEntity trip,
+        TripDayActivityEntity item,
+        Set<Long> interestIds,
+        InterestType preferredInterest
+    ) {
         Set<Long> used = usedActivityIds(trip);
         Set<InterestType> selectedTypes = selectedTypes(trip, Set.of());
+        Set<Long> scoringInterestIds = preferredInterest == null ? interestIds : Set.of();
+        if (preferredInterest != null && sync != null) {
+            Set<InterestType> requested = Set.of(preferredInterest);
+            ImportDemand demand = demandFor(trip, requested);
+            RefreshDecision refreshDecision = sync.refreshDecision(
+                trip.city,
+                requested,
+                demand,
+                trip.latitude,
+                trip.longitude
+            );
+            if (refreshDecision.importRequired()) {
+                sync.syncCity(
+                    trip.city,
+                    locationLookupText(trip),
+                    trip.placeId,
+                    trip.latitude,
+                    trip.longitude,
+                    requested,
+                    demand
+                );
+            }
+        }
         return activities.findActiveByCity(trip.city).stream()
-            .filter(activity -> selectedTypes.isEmpty() || selectedTypes.contains(activity.primaryInterest))
+            .filter(activity -> preferredInterest != null
+                ? preferredInterest == activity.primaryInterest
+                : selectedTypes.isEmpty() || selectedTypes.contains(activity.primaryInterest))
             .filter(activity -> isReplacementCandidate(activity, item, used))
-            .map(activity -> score(activity, interestIds))
+            .map(activity -> score(activity, scoringInterestIds))
             .filter(scored -> scored.totalScore() > 0)
             .sorted(Comparator.comparingDouble(ScoredActivity::totalScore).reversed())
             .map(ScoredActivity::activity)

@@ -118,6 +118,35 @@ public class TripService {
     @Transactional
     public TripDto generatePlan(Long tripId, GeneratePlanRequest request) {
         TripEntity trip = requireMine(tripId);
+        PlanSelection selection = resolvePlanSelection(trip, request);
+        trip.selectedInterests = new java.util.HashSet<>(selection.selected());
+        planning.generatePlan(trip, selection.interestIds(), selection.selectedTypes());
+        return TripDto.from(trip);
+    }
+
+    @Transactional
+    public TripDto fillMissingPlan(Long tripId, GeneratePlanRequest request) {
+        TripEntity trip = requireMine(tripId);
+        PlanSelection selection = resolvePlanSelection(trip, request);
+        trip.selectedInterests = new java.util.HashSet<>(selection.selected());
+        planning.fillMissingPlan(trip, selection.interestIds(), selection.selectedTypes());
+        return TripDto.from(trip);
+    }
+
+    @Transactional
+    public TripDto addInterest(Long tripId, AddTripInterestRequest request) {
+        if (request == null || request.primaryInterest() == null || !request.primaryInterest().isPrimary()) {
+            throw new BadRequestException("Bitte waehle ein gueltiges Interesse aus.");
+        }
+        TripEntity trip = requireMine(tripId);
+        InterestEntity interest = interests.findByCode(request.primaryInterest())
+            .orElseThrow(() -> new BadRequestException("Interesse ist nicht verfuegbar."));
+        trip.selectedInterests.add(interest);
+        timeWindowPolicy().extendDaysForInterests(trip, Set.of(request.primaryInterest()));
+        return TripDto.from(trip);
+    }
+
+    private PlanSelection resolvePlanSelection(TripEntity trip, GeneratePlanRequest request) {
         List<Long> interestIds = request == null ? List.of() : request.interestIds();
         List<InterestEntity> selected;
         if (interestIds == null || interestIds.isEmpty()) {
@@ -132,9 +161,7 @@ public class TripService {
         Set<InterestType> selectedTypes = selected.stream()
             .map(interest -> InterestType.valueOf(interest.code))
             .collect(java.util.stream.Collectors.toSet());
-        timeWindowPolicy().extendDaysForInterests(trip, selectedTypes);
-        planning.generatePlan(trip, interestIds, selectedTypes);
-        return TripDto.from(trip);
+        return new PlanSelection(selected, interestIds, selectedTypes);
     }
 
     @Transactional
@@ -159,9 +186,9 @@ public class TripService {
     }
 
     @Transactional
-    public TripDto regenerateActivity(Long tripId, Long dayId, Long itemId) {
+    public TripDto regenerateActivity(Long tripId, Long dayId, Long itemId, RegenerateActivityRequest request) {
         TripEntity trip = requireMine(tripId);
-        scheduleService.regenerateActivity(trip, dayId, itemId);
+        scheduleService.regenerateActivity(trip, dayId, itemId, request == null ? null : request.primaryInterest());
         return TripDto.from(trip);
     }
 
@@ -247,5 +274,11 @@ public class TripService {
     private TripTimeWindowPolicy timeWindowPolicy() {
         return timeWindowPolicy == null ? new TripTimeWindowPolicy() : timeWindowPolicy;
     }
+
+    private record PlanSelection(
+        List<InterestEntity> selected,
+        List<Long> interestIds,
+        Set<InterestType> selectedTypes
+    ) {}
 
 }

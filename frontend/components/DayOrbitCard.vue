@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarDays, RefreshCw, Sparkles, Trash2 } from 'lucide-vue-next'
+import { CalendarDays, Plus, RefreshCw, Sparkles, Trash2, X } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 import type { TripActivity, TripDay } from '~/types/trip'
 import { fallbackImageCategoryForActivity } from '~/utils/activityCategory'
@@ -8,12 +8,15 @@ const props = defineProps<{
   day: TripDay
   city: string
   active: boolean
+  selectedInterests?: string[]
   deletingActivityId: number | null
   regeneratingActivityId: number | null
 }>()
 
 const selectedActivityId = ref<number | null>(null)
 const activityContextMenu = ref<{ x: number; y: number; item: TripActivity } | null>(null)
+const regenerateCategoryOpen = ref(false)
+const categoryLoadingNotice = ref<{ label: string } | null>(null)
 const activityLongPressId = ref<number | null>(null)
 const openTimingItemId = ref<number | null>(null)
 const galleryError = ref(false)
@@ -28,6 +31,15 @@ const selectedActivity = computed(() =>
 const fallbackCategory = computed(() => fallbackImageCategoryForActivity(selectedActivity.value?.activity))
 
 const fallbackImageUrl = computed(() => `/images/activity-fallbacks/${fallbackCategory.value}-01.png`)
+const selectedInterestSet = computed(() => new Set(props.selectedInterests || []))
+const regenerationCategories = [
+  { key: 'SIGHTSEEING', label: 'Sehenswuerdigkeiten' },
+  { key: 'CULTURE', label: 'Kultur & Museen' },
+  { key: 'NATURE', label: 'Natur & Outdoor' },
+  { key: 'FOOD', label: 'Essen & Cafes' },
+  { key: 'SHOPPING', label: 'Shopping & Maerkte' },
+  { key: 'NIGHTLIFE', label: 'Nachtleben' }
+]
 
 watch(() => props.day.id, () => {
   localActivities.value = [...props.day.activities]
@@ -35,8 +47,11 @@ watch(() => props.day.id, () => {
   activityContextMenu.value = null
   openTimingItemId.value = null
   galleryError.value = false
+  categoryLoadingNotice.value = null
   nextTick(() => {
-    if (contentRef.value) contentRef.value.scrollTop = 0
+    contentRef.value
+      ?.querySelector<HTMLElement>('.compact-timeline')
+      ?.scrollTo({ top: 0, behavior: 'auto' })
   })
 })
 
@@ -81,7 +96,7 @@ onErrorCaptured((error, instance, info) => {
 const emit = defineEmits<{
   select: []
   updateAvailability: [day: TripDay]
-  regenerateActivity: [dayId: number, itemId: number]
+  regenerateActivity: [dayId: number, itemId: number, primaryInterest?: string]
   removeActivity: [dayId: number, itemId: number]
   requestImages: [activityId: number]
   reorderActivities: [dayId: number, activityItemIds: number[]]
@@ -126,10 +141,12 @@ const openActivityContextMenu = (itemId: number, x: number, y: number) => {
   selectedActivityId.value = item.id
   openTimingItemId.value = null
   activityContextMenu.value = { ...position, item }
+  regenerateCategoryOpen.value = false
 }
 
 const closeActivityContextMenu = () => {
   activityContextMenu.value = null
+  regenerateCategoryOpen.value = false
 }
 
 const clearActivityLongPress = () => {
@@ -183,9 +200,18 @@ const updateActivityTiming = (payload: { itemId: number; scheduledStart: number;
 
 const regenerateFromMenu = () => {
   if (!activityContextMenu.value) return
+  regenerateCategoryOpen.value = true
+}
+
+const regenerateWithCategory = (primaryInterest: string) => {
+  if (!activityContextMenu.value) return
+  const category = regenerationCategories.find(item => item.key === primaryInterest)
+  if (category && !selectedInterestSet.value.has(primaryInterest)) {
+    categoryLoadingNotice.value = { label: category.label }
+  }
   const itemId = activityContextMenu.value.item.id
   closeActivityContextMenu()
-  emit('regenerateActivity', props.day.id, itemId)
+  emit('regenerateActivity', props.day.id, itemId, primaryInterest)
 }
 
 const removeFromMenu = () => {
@@ -279,6 +305,7 @@ onUnmounted(() => {
                 :city="city"
                 :selected="selectedActivityId === item.id"
                 :timing-open="openTimingItemId === item.id"
+                :regenerating="regeneratingActivityId === item.id"
                 @select="selectActivity"
                 @request-timing-open="openTimingMenu"
                 @close-timing="closeTimingMenu"
@@ -290,6 +317,18 @@ onUnmounted(() => {
                 @pointercancel="clearActivityLongPress"
                 @pointerleave="clearActivityLongPress"
               />
+              </template>
+              <template #footer>
+                <div class="compact-activity-add">
+                  <button
+                    type="button"
+                    title="Aktivität hinzufügen"
+                    aria-label="Aktivität hinzufügen"
+                    @click.stop="$emit('openCatalog')"
+                  >
+                    <Plus :size="18" />
+                  </button>
+                </div>
               </template>
             </draggable>
             <ActivityGallery
@@ -352,6 +391,7 @@ onUnmounted(() => {
         @click.stop
       >
         <button
+          v-if="!regenerateCategoryOpen"
           type="button"
           :disabled="regeneratingActivityId === activityContextMenu.item.id"
           @click="regenerateFromMenu"
@@ -362,12 +402,34 @@ onUnmounted(() => {
           />{{ regeneratingActivityId === activityContextMenu.item.id ? 'Alternative wird gesucht' : 'Neue Aktivität generieren' }}
         </button>
         <button
+          v-if="!regenerateCategoryOpen"
           class="context-menu-danger"
           type="button"
           :disabled="deletingActivityId === activityContextMenu.item.id"
           @click="removeFromMenu"
         >
           <Trash2 :size="16" />{{ deletingActivityId === activityContextMenu.item.id ? 'Wird entfernt' : 'Aktivität entfernen' }}
+        </button>
+        <div v-if="regenerateCategoryOpen" class="regenerate-category-panel">
+          <span>Kategorie waehlen</span>
+          <button
+            v-for="category in regenerationCategories"
+            :key="category.key"
+            type="button"
+            :class="{
+              selected: selectedInterestSet.has(category.key)
+            }"
+            @click="regenerateWithCategory(category.key)"
+          >
+            {{ category.label }}
+          </button>
+        </div>
+      </div>
+      <div v-if="categoryLoadingNotice" class="activity-regenerate-notice" role="status">
+        <RefreshCw class="spinning" :size="15" aria-hidden="true" />
+        <span>{{ categoryLoadingNotice.label }} wird nachgeladen.</span>
+        <button type="button" aria-label="Hinweis schliessen" @click.stop="categoryLoadingNotice = null">
+          <X :size="15" aria-hidden="true" />
         </button>
       </div>
     </template>
