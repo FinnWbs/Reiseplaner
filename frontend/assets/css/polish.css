@@ -2175,6 +2175,8 @@ select:focus {
   overflow-x: auto;
   padding: 0 0 7px;
   scrollbar-width: thin;
+  touch-action: pan-x;
+  overscroll-behavior-inline: contain;
 }
 
 .day-switcher button {
@@ -2193,6 +2195,13 @@ select:focus {
 
 .day-switcher button:active {
   cursor: grabbing;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .day-switcher button,
+  .day-switcher button:active {
+    cursor: pointer;
+  }
 }
 
 .day-switcher button span {
@@ -3371,7 +3380,91 @@ select:focus {
   }
 
   .compact-activity {
-    grid-template-columns: 50px 10px 32px minmax(0, 1fr);
+    grid-template-columns: 32px 40px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "drag icon time actions"
+      "copy copy copy copy";
+    align-items: center;
+    gap: 10px 8px;
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid var(--brand-border);
+    border-radius: 12px;
+    background: var(--brand-surface-raised);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .compact-activity:last-child,
+  .compact-activity:last-of-type {
+    border-bottom: 1px solid var(--brand-border);
+  }
+
+  .compact-activity-drag-handle {
+    grid-area: drag;
+    width: 32px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .compact-activity-time {
+    grid-area: time;
+    align-self: center;
+    padding-top: 0;
+  }
+
+  .compact-activity-time-button {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    width: auto;
+    white-space: nowrap;
+  }
+
+  .compact-activity-time-button strong {
+    font-size: 16px;
+  }
+
+  .compact-activity-line {
+    display: none;
+  }
+
+  .compact-activity-icon {
+    grid-area: icon;
+    width: 40px;
+    height: 40px;
+  }
+
+  .compact-activity-copy {
+    grid-area: copy;
+    gap: 5px;
+    padding-top: 2px;
+  }
+
+  .compact-activity-copy h3 {
+    font-size: 17px;
+    line-height: 1.25;
+  }
+
+  .compact-activity-copy > p {
+    line-height: 1.45;
+    -webkit-line-clamp: 2;
+  }
+
+  .compact-activity-actions {
+    grid-area: actions;
+    align-self: center;
+    justify-content: flex-end;
+  }
+
+  .compact-activity-actions .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .day-activity-experience .compact-timeline {
+    gap: 0;
+    overflow: visible;
+    padding-right: 0;
   }
 
   .orbit-controls {

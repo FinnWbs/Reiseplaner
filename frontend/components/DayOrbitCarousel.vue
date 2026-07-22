@@ -26,6 +26,7 @@ const activeDay = computed(() => props.trip.days[props.activeIndex])
 const dayOrderDraft = ref<TripDay[]>([])
 const draggedActivity = ref<{ sourceDayId: number; itemId: number } | null>(null)
 const hoveredDropDayId = ref<number | null>(null)
+const touchDayScrolling = ref(false)
 let clearDragTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(() => props.trip.days, (days) => {
@@ -82,14 +83,25 @@ const onDayOrderEnd = () => {
   emit('reorderDays', nextIds)
 }
 
+const updateTouchDayScrolling = () => {
+  if (!import.meta.client) return
+  touchDayScrolling.value = window.matchMedia('(hover: none), (pointer: coarse)').matches
+}
+
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key === 'ArrowLeft') setActive(props.activeIndex - 1)
   if (event.key === 'ArrowRight') setActive(props.activeIndex + 1)
 }
 
+onMounted(() => {
+  updateTouchDayScrolling()
+  window.addEventListener('resize', updateTouchDayScrolling)
+})
+
 onUnmounted(() => {
   if (clearDragTimer) clearTimeout(clearDragTimer)
   hoveredDropDayId.value = null
+  window.removeEventListener('resize', updateTouchDayScrolling)
 })
 </script>
 
@@ -101,7 +113,7 @@ onUnmounted(() => {
       item-key="id"
       tag="div"
       :animation="140"
-      :disabled="Boolean(draggedActivity)"
+      :disabled="Boolean(draggedActivity) || touchDayScrolling"
       ghost-class="day-switcher-ghost"
       drag-class="day-switcher-dragging"
       aria-label="Reisetage"
