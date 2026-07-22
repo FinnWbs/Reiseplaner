@@ -1,5 +1,7 @@
 package de.travelmate.trip;
 
+import de.travelmate.catalog.AttractionCatalogResponse;
+import de.travelmate.catalog.AttractionCatalogService;
 import de.travelmate.planning.PlanningService;
 import de.travelmate.interest.InterestRepository;
 import de.travelmate.interest.InterestType;
@@ -9,6 +11,7 @@ import de.travelmate.user.UserEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +30,12 @@ public class TripService {
 
     @Inject
     TripScheduleService scheduleService;
+
+    @Inject
+    TripTimeWindowPolicy timeWindowPolicy;
+
+    @Inject
+    AttractionCatalogService catalog;
 
     @Inject
     TripDateValidator dateValidator;
@@ -48,6 +57,9 @@ public class TripService {
         trip.placeId = blankToNull(request.placeId());
         trip.startDate = request.startDate();
         trip.endDate = request.endDate();
+        trip.preferredMonth = request.startDate() == null
+            ? blankToNull(request.preferredMonth())
+            : null;
         trip.pace = request.pace() == null ? TripPace.BALANCED : request.pace();
         trip.dayRhythm = request.dayRhythm() == null ? DayRhythm.BALANCED : request.dayRhythm();
         trip.destinationSource = request.destinationSource() == null
@@ -71,12 +83,18 @@ public class TripService {
             trip.days.add(day);
         }
 
-        Set<InterestType> requestedInterests = request.interests() == null ? Set.of() : Set.copyOf(request.interests());
-        List<InterestEntity> selected = interests.findByCodes(requestedInterests);
+        List<InterestEntity> selected = resolveSelectedInterests(request);
+        if (selected.isEmpty()) {
+            throw new BadRequestException("Mindestens ein Interesse ist erforderlich.");
+        }
         trip.selectedInterests = new java.util.HashSet<>(selected);
         trips.persist(trip);
         List<Long> interestIds = selected.stream().map(interest -> interest.id).toList();
-        planning.generatePlan(trip, interestIds, requestedInterests);
+        Set<InterestType> selectedTypes = selected.stream()
+            .map(interest -> InterestType.valueOf(interest.code))
+            .collect(java.util.stream.Collectors.toSet());
+        timeWindowPolicy().extendDaysForInterests(trip, selectedTypes);
+        planning.generatePlan(trip, interestIds, selectedTypes);
         return TripDto.from(trip);
     }
 
@@ -100,6 +118,35 @@ public class TripService {
     @Transactional
     public TripDto generatePlan(Long tripId, GeneratePlanRequest request) {
         TripEntity trip = requireMine(tripId);
+        PlanSelection selection = resolvePlanSelection(trip, request);
+        trip.selectedInterests = new java.util.HashSet<>(selection.selected());
+        planning.generatePlan(trip, selection.interestIds(), selection.selectedTypes());
+        return TripDto.from(trip);
+    }
+
+    @Transactional
+    public TripDto fillMissingPlan(Long tripId, GeneratePlanRequest request) {
+        TripEntity trip = requireMine(tripId);
+        PlanSelection selection = resolvePlanSelection(trip, request);
+        trip.selectedInterests = new java.util.HashSet<>(selection.selected());
+        planning.fillMissingPlan(trip, selection.interestIds(), selection.selectedTypes());
+        return TripDto.from(trip);
+    }
+
+    @Transactional
+    public TripDto addInterest(Long tripId, AddTripInterestRequest request) {
+        if (request == null || request.primaryInterest() == null || !request.primaryInterest().isPrimary()) {
+            throw new BadRequestException("Bitte waehle ein gueltiges Interesse aus.");
+        }
+        TripEntity trip = requireMine(tripId);
+        InterestEntity interest = interests.findByCode(request.primaryInterest())
+            .orElseThrow(() -> new BadRequestException("Interesse ist nicht verfuegbar."));
+        trip.selectedInterests.add(interest);
+        timeWindowPolicy().extendDaysForInterests(trip, Set.of(request.primaryInterest()));
+        return TripDto.from(trip);
+    }
+
+    private PlanSelection resolvePlanSelection(TripEntity trip, GeneratePlanRequest request) {
         List<Long> interestIds = request == null ? List.of() : request.interestIds();
         List<InterestEntity> selected;
         if (interestIds == null || interestIds.isEmpty()) {
@@ -114,8 +161,7 @@ public class TripService {
         Set<InterestType> selectedTypes = selected.stream()
             .map(interest -> InterestType.valueOf(interest.code))
             .collect(java.util.stream.Collectors.toSet());
-        planning.generatePlan(trip, interestIds, selectedTypes);
-        return TripDto.from(trip);
+        return new PlanSelection(selected, interestIds, selectedTypes);
     }
 
     @Transactional
@@ -140,9 +186,9 @@ public class TripService {
     }
 
     @Transactional
-    public TripDto regenerateActivity(Long tripId, Long dayId, Long itemId) {
+    public TripDto regenerateActivity(Long tripId, Long dayId, Long itemId, RegenerateActivityRequest request) {
         TripEntity trip = requireMine(tripId);
-        scheduleService.regenerateActivity(trip, dayId, itemId);
+        scheduleService.regenerateActivity(trip, dayId, itemId, request == null ? null : request.primaryInterest());
         return TripDto.from(trip);
     }
 
@@ -157,6 +203,7 @@ public class TripService {
 
         trip.startDate = request.startDate();
         trip.endDate = request.endDate();
+        trip.preferredMonth = null;
         while (trip.days.size() > planningDates.size()) {
             trip.days.remove(trip.days.size() - 1);
         }
@@ -190,6 +237,18 @@ public class TripService {
         return TripDto.from(trip);
     }
 
+    @Transactional
+    public AttractionCatalogResponse catalogAttractions(Long tripId) {
+        return catalog.listForTrip(requireMine(tripId));
+    }
+
+    @Transactional
+    public TripDto addCatalogAttraction(Long tripId, Long dayId, String catalogId) {
+        TripEntity trip = requireMine(tripId);
+        catalog.addToDay(trip, dayId, catalogId);
+        return TripDto.from(trip);
+    }
+
     private TripEntity requireMine(Long tripId) {
         return trips.findForUser(tripId, currentUser.requireCurrentUser())
             .orElseThrow(() -> new NotFoundException("Reise nicht gefunden."));
@@ -200,8 +259,26 @@ public class TripService {
         return trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1).toLowerCase();
     }
 
+    private List<InterestEntity> resolveSelectedInterests(CreateTripRequest request) {
+        if (request.interestIds() != null && !request.interestIds().isEmpty()) {
+            return interests.findByIds(request.interestIds());
+        }
+        Set<InterestType> requestedInterests = request.interests() == null ? Set.of() : Set.copyOf(request.interests());
+        return interests.findByCodes(requestedInterests);
+    }
+
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
+
+    private TripTimeWindowPolicy timeWindowPolicy() {
+        return timeWindowPolicy == null ? new TripTimeWindowPolicy() : timeWindowPolicy;
+    }
+
+    private record PlanSelection(
+        List<InterestEntity> selected,
+        List<Long> interestIds,
+        Set<InterestType> selectedTypes
+    ) {}
 
 }

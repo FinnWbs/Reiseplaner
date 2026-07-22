@@ -1,0 +1,189 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 4252 >>
+stream
+BT /F2 24 Tf 48.00 793.89 Td (TravelMate Bildlade-Flow Analyse) Tj ET
+BT /F1 10 Tf 48.00 759.89 Td (Stand: aktuelle Repository-Analyse ohne Codeaenderung.) Tj ET
+BT /F1 10 Tf 48.00 740.89 Td (Ziel: erklaeren, warum echte Aktivitaetsbilder kurz sichtbar sein koennen und danach) Tj ET
+BT /F1 10 Tf 48.00 726.89 Td (wieder durch Kategorie-Platzhalter ersetzt werden.) Tj ET
+BT /F2 14 Tf 48.00 701.89 Td (Kernaussage) Tj ET
+BT /F1 10 Tf 48.00 681.89 Td (Der Bildlade-Flow hat aktuell zwei Wahrheiten: lokale Bilder in ActivityGallery und) Tj ET
+BT /F1 10 Tf 48.00 667.89 Td (zentrale Bilder im Trip-State aus useTripWorkspace. Wenn echte Bilder nur lokal) Tj ET
+BT /F1 10 Tf 48.00 653.89 Td (ankommen, gehen sie beim Wechsel von Aktivitaet, Tag oder nach einem spaeteren) Tj ET
+BT /F1 10 Tf 48.00 639.89 Td (Trip-Update wieder verloren. Dann greift die Galerie erneut auf Platzhalter zurueck.) Tj ET
+BT /F2 14 Tf 48.00 614.89 Td (1. Wo entsteht der finale Bild-Slide-Stateae) Tj ET
+BT /F1 10 Tf 48.00 594.89 Td (Der finale Slide-State entsteht im Frontend in frontend/components/ActivityGallery.vue.) Tj ET
+BT /F1 10 Tf 48.00 580.89 Td (Die Galerie bekommt von DayOrbitCard.vue eine einzelne TripActivity. Intern baut) Tj ET
+BT /F1 10 Tf 48.00 566.89 Td (ActivityGallery daraus GallerySlide-Objekte mit realImage und fallbackImage.) Tj ET
+q 0.94 0.98 1 rg 44 515.89 507.28 36.00 re f Q
+BT /F3 8.5 Tf 52.00 535.89 Td (<ActivityGallery :key="\(selectedActivity || day.activities[0]\)ae.id") Tj ET
+BT /F3 8.5 Tf 52.00 523.89 Td (:activity="selectedActivity || day.activities[0]" :city="city" />) Tj ET
+BT /F1 10 Tf 48.00 504.89 Td (Es gibt zwei Fallback-Orte: normale Kategorie-Platzhalter in ActivityGallery.vue und) Tj ET
+BT /F1 10 Tf 48.00 490.89 Td (einen zusaetzlichen Notfall-Fallback in DayOrbitCard.vue, falls die Galerie selbst einen) Tj ET
+BT /F1 10 Tf 48.00 476.89 Td (Fehler wirft.) Tj ET
+BT /F2 14 Tf 48.00 451.89 Td (2. Prioritaetslogik in ActivityGallery) Tj ET
+BT /F1 10 Tf 48.00 431.89 Td (Die Galerie sammelt Bilder aus propImages und localImages. propImages kommen aus) Tj ET
+BT /F1 10 Tf 48.00 417.89 Td (props.activity.activity.images, also aus dem zentralen Trip-State. localImages kommen) Tj ET
+BT /F1 10 Tf 48.00 403.89 Td (aus enrichedImages, also aus einem lokalen Galerie-Request.) Tj ET
+q 0.94 0.98 1 rg 44 316.89 507.28 72.00 re f Q
+BT /F3 8.5 Tf 52.00 372.89 Td (const propImages = computed\(\(\) =>) Tj ET
+BT /F3 8.5 Tf 52.00 360.89 Td (Array.isArray\(props.activityae.activityae.images\) ae) Tj ET
+BT /F3 8.5 Tf 52.00 348.89 Td (props.activity.activity.images : []\)) Tj ET
+BT /F3 8.5 Tf 52.00 336.89 Td (const localImages = computed\(\(\) => Array.isArray\(enrichedImages.value\) ae) Tj ET
+BT /F3 8.5 Tf 52.00 324.89 Td (enrichedImages.value : []\)) Tj ET
+BT /F1 10 Tf 48.00 305.89 Td (Wenn realImages vorhanden sind, erzeugt displaySlides echte Slides. Wenn realImages leer) Tj ET
+BT /F1 10 Tf 48.00 291.89 Td (ist, erzeugt displaySlides genau einen Fallback-Slide. Ein Placeholder erscheint also) Tj ET
+BT /F1 10 Tf 48.00 277.89 Td (wieder, sobald realImages leer wird oder ein echtes Bild als failed markiert wird.) Tj ET
+BT /F2 14 Tf 48.00 252.89 Td (3. Erfolgreich geladene Bilder) Tj ET
+BT /F1 10 Tf 48.00 232.89 Td (Das sichtbare echte Bild registriert seinen Ladeerfolg mit) Tj ET
+BT /F1 10 Tf 48.00 218.89 Td (@load="markImageLoaded\(slide.realImage.url\)". Der Erfolg wird per URL in loadedImageUrls) Tj ET
+BT /F1 10 Tf 48.00 204.89 Td (gespeichert. Diese URL ist meistens die interne Proxy-URL) Tj ET
+BT /F1 10 Tf 48.00 190.89 Td (/activities/{activityId}/images/{imageId}/media.) Tj ET
+BT /F1 10 Tf 48.00 171.89 Td (Der Zustand loadedImageUrls lebt nur in der aktuellen Galerie-Instanz. Wird die Galerie) Tj ET
+BT /F1 10 Tf 48.00 157.89 Td (neu gemountet, ist dieser Zustand weg.) Tj ET
+BT /F2 14 Tf 48.00 132.89 Td (4. Fehlgeschlagene Bilder) Tj ET
+BT /F1 10 Tf 48.00 112.89 Td (Fehler werden ebenfalls pro URL in failedImageUrls gespeichert. Innerhalb derselben) Tj ET
+BT /F1 10 Tf 48.00 98.89 Td (Galerie-Instanz kann ein bereits erfolgreich geladenes Bild nicht mehr als failed) Tj ET
+BT /F1 10 Tf 48.00 84.89 Td (gelten. Nach einem Remount ist dieser Schutz aber weg, weil loadedImageUrls neu startet.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 10 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 3950 >>
+stream
+BT /F2 14 Tf 48.00 787.89 Td (5. Wo neue Bilder in den zentralen Trip-State geschrieben werden) Tj ET
+BT /F1 10 Tf 48.00 767.89 Td (Der zentrale Merge passiert in frontend/composables/useTripWorkspace.ts in) Tj ET
+BT /F1 10 Tf 48.00 753.89 Td (updateActivityImages\(activityId, images\). Dort werden Bilder fuer alle passenden) Tj ET
+BT /F1 10 Tf 48.00 739.89 Td (Aktivitaeten im aktuellen trip.value gemerged.) Tj ET
+q 0.94 0.98 1 rg 44 676.89 507.28 48.00 re f Q
+BT /F3 8.5 Tf 52.00 708.89 Td (if \(item.activity.id === activityId\) {) Tj ET
+BT /F3 8.5 Tf 52.00 696.89 Td (item.activity.images = mergeImages\(item.activity.images, images\)) Tj ET
+BT /F3 8.5 Tf 52.00 684.89 Td (}) Tj ET
+BT /F1 10 Tf 48.00 665.89 Td (Wichtig: ActivityGallery.vue schreibt seine lokal geladenen Bilder aktuell nicht) Tj ET
+BT /F1 10 Tf 48.00 651.89 Td (zuverlaessig in diesen zentralen Trip-State. Dort wird nur enrichedImages.value =) Tj ET
+BT /F1 10 Tf 48.00 637.89 Td (incomingImages gesetzt. Das erklaert, warum Bilder kurz sichtbar sein koennen, aber nach) Tj ET
+BT /F1 10 Tf 48.00 623.89 Td (einem Remount verschwinden.) Tj ET
+BT /F2 14 Tf 48.00 598.89 Td (6. Hintergrund-Preloader) Tj ET
+BT /F1 10 Tf 48.00 578.89 Td (Der Preloader in useTripWorkspace laedt den aktiven Tag plus zwei Folgetage. Eine) Tj ET
+BT /F1 10 Tf 48.00 564.89 Td (Aktivitaet gilt als erfolgreich, wenn mindestens ein Bild vorgeladen werden konnte. Der) Tj ET
+BT /F1 10 Tf 48.00 550.89 Td (Preloader-Status wird aktuell aber nicht direkt von der Galerie fuer die) Tj ET
+BT /F1 10 Tf 48.00 536.89 Td (Anzeigeentscheidung genutzt.) Tj ET
+BT /F2 14 Tf 48.00 511.89 Td (7. Doppelte Bildlade-Mechanismen) Tj ET
+BT /F1 10 Tf 48.00 491.89 Td (Es gibt zwei konkurrierende Wege: ActivityGallery.vue ruft beim Mount loadImages\(\) auf,) Tj ET
+BT /F1 10 Tf 48.00 477.89 Td (und useTripWorkspace.ts ruft preloadUpcomingImages\(\) auf. Auf der Trip-Seite wird der) Tj ET
+BT /F1 10 Tf 48.00 463.89 Td (Preloader beim Mount und beim Tagwechsel gestartet. Dadurch koennen Galerie und) Tj ET
+BT /F1 10 Tf 48.00 449.89 Td (Preloader denselben Backend-Endpunkt fast gleichzeitig treffen.) Tj ET
+BT /F2 14 Tf 48.00 424.89 Td (8. Watcher und Remounts) Tj ET
+BT /F1 10 Tf 48.00 404.89 Td (Beim Aktivitaetswechsel loescht ActivityGallery den lokalen Zustand: activeSlide,) Tj ET
+BT /F1 10 Tf 48.00 390.89 Td (enrichedImages, failedImageUrls, loadedImageUrls und imageLoadStatus. Zusaetzlich wird) Tj ET
+BT /F1 10 Tf 48.00 376.89 Td (die Galerie ueber den Key der ausgewaehlten TripActivity neu erzeugt.) Tj ET
+q 0.94 0.98 1 rg 44 277.89 507.28 84.00 re f Q
+BT /F3 8.5 Tf 52.00 345.89 Td (watch\(\(\) => props.activity.id, \(\) => {) Tj ET
+BT /F3 8.5 Tf 52.00 333.89 Td (enrichedImages.value = null) Tj ET
+BT /F3 8.5 Tf 52.00 321.89 Td (failedImageUrls.value = []) Tj ET
+BT /F3 8.5 Tf 52.00 309.89 Td (loadedImageUrls.value = []) Tj ET
+BT /F3 8.5 Tf 52.00 297.89 Td (loadImages\(\)) Tj ET
+BT /F3 8.5 Tf 52.00 285.89 Td (}\)) Tj ET
+BT /F2 14 Tf 48.00 260.89 Td (9. CSS- und Rendering-Logik) Tj ET
+BT /F1 10 Tf 48.00 240.89 Td (Aktuell liegt das echte Bild ueber dem Platzhalter: .gallery-fallback-image hat z-index:) Tj ET
+BT /F1 10 Tf 48.00 226.89 Td (1 und .gallery-real-image hat z-index: 2. CSS sieht im aktuellen Stand nicht nach der) Tj ET
+BT /F1 10 Tf 48.00 212.89 Td (Hauptursache aus. Der Platzhalter wird sichtbar, wenn das echte Bild nicht mehr im DOM) Tj ET
+BT /F1 10 Tf 48.00 198.89 Td (ist oder als failed gilt.) Tj ET
+BT /F2 14 Tf 48.00 173.89 Td (10. Backend-Endpunkt fuer Bild-Enrichment) Tj ET
+BT /F1 10 Tf 48.00 153.89 Td (Der Endpunkt POST /activities/{id}/images liegt in ActivityResource.java und ruft) Tj ET
+BT /F1 10 Tf 48.00 139.89 Td (imageService.ensureImages\(id\) auf. GooglePlacesImageService ist grundsaetzlich) Tj ET
+BT /F1 10 Tf 48.00 125.89 Td (idempotent: Wenn activity.images nicht leer ist, werden vorhandene Bilder) Tj ET
+BT /F1 10 Tf 48.00 111.89 Td (zurueckgegeben.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 10 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 4573 >>
+stream
+BT /F1 10 Tf 48.00 793.89 Td (Restrisiko: Bei parallelen Requests koennen zwei Requests gleichzeitig sehen, dass noch) Tj ET
+BT /F1 10 Tf 48.00 779.89 Td (keine Bilder existieren. Wenn einer beim Speichern wegen Parallelitaet scheitert, landet) Tj ET
+BT /F1 10 Tf 48.00 765.89 Td (er im Catch und gibt List.of\(\) zurueck.) Tj ET
+BT /F2 14 Tf 48.00 740.89 Td (11. Interne Media-URL) Tj ET
+BT /F1 10 Tf 48.00 720.89 Td (Das Frontend bekommt meist keine direkte Google-URL, sondern) Tj ET
+BT /F1 10 Tf 48.00 706.89 Td (/activities/{activityId}/images/{imageId}/media. Der Backend-Proxy loest diese URL bei) Tj ET
+BT /F1 10 Tf 48.00 692.89 Td (jedem Bildaufruf ueber Google auf und gibt einen temporaeren Redirect zurueck. Moegliche) Tj ET
+BT /F1 10 Tf 48.00 678.89 Td (Fehlerquellen sind Google-Timeouts, 403 durch Key-Restrictions, ungueltige) Tj ET
+BT /F1 10 Tf 48.00 664.89 Td (Photo-Referenzen oder langsame Redirects.) Tj ET
+BT /F2 14 Tf 48.00 639.89 Td (12. Wahrscheinlichkeitsbewertung) Tj ET
+BT /F1 10 Tf 48.00 619.89 Td (Sehr hoch: lokaler Galerie-State geht verloren. Hoch: State-Overwrite mit alter Activity) Tj ET
+BT /F1 10 Tf 48.00 605.89 Td (ohne Bilder. Mittel bis hoch: doppelte Requests und Race Conditions. Mittel: onError) Tj ET
+BT /F1 10 Tf 48.00 591.89 Td (nach onLoad nach Remount. Niedrig im aktuellen Stand: CSS versteckt echte Bilder.) Tj ET
+BT /F1 10 Tf 48.00 577.89 Td (Mittel: leere API-Antworten und lokale Placeholder-Entscheidungen.) Tj ET
+BT /F2 14 Tf 48.00 552.89 Td (13. Wahrscheinlichste Root Cause) Tj ET
+BT /F1 10 Tf 48.00 532.89 Td (Echte Bilder werden teilweise nur lokal in ActivityGallery.enrichedImages gehalten.) Tj ET
+BT /F1 10 Tf 48.00 518.89 Td (Dieser lokale Zustand wird beim Aktivitaetswechsel, Tageswechsel oder Remount geloescht.) Tj ET
+BT /F1 10 Tf 48.00 504.89 Td (Wenn der zentrale Trip-State keine Bilder hat oder spaeter ueberschrieben wird, zeigt) Tj ET
+BT /F1 10 Tf 48.00 490.89 Td (die Galerie wieder Platzhalter.) Tj ET
+BT /F2 14 Tf 48.00 465.89 Td (Betroffene Dateien) Tj ET
+BT /F1 10 Tf 48.00 445.89 Td (frontend/components/ActivityGallery.vue; frontend/composables/useTripWorkspace.ts;) Tj ET
+BT /F1 10 Tf 48.00 431.89 Td (frontend/components/DayOrbitCard.vue; frontend/pages/trips/[id].vue;) Tj ET
+BT /F1 10 Tf 48.00 417.89 Td (backend/src/main/java/de/travelmate/activity/ActivityResource.java;) Tj ET
+BT /F1 10 Tf 48.00 403.89 Td (backend/src/main/java/de/travelmate/activity/GooglePlacesImageService.java;) Tj ET
+BT /F1 10 Tf 48.00 389.89 Td (backend/src/main/java/de/travelmate/activity/ActivityImageDto.java.) Tj ET
+BT /F2 14 Tf 48.00 364.89 Td (Minimaler Fix-Vorschlag) Tj ET
+BT /F1 10 Tf 48.00 344.89 Td (1. useTripWorkspace wird der zentrale Besitzer echter Bilddaten. 2. Wenn ActivityGallery) Tj ET
+BT /F1 10 Tf 48.00 330.89 Td (Bilder selbst laedt, muss sie diese in den zentralen Trip-State mergen. 3.) Tj ET
+BT /F1 10 Tf 48.00 316.89 Td (replaceTrip\(updated\) darf vorhandene echte Bilder nicht durch images: [] ersetzen. 4.) Tj ET
+BT /F1 10 Tf 48.00 302.89 Td (Backend soll nach einem parallelen Enrichment-Fehler vorhandene Bilder erneut aus der DB) Tj ET
+BT /F1 10 Tf 48.00 288.89 Td (lesen. 5. Wenn echte Bilder vorhanden sind, darf der Platzhalter nie den finalen) Tj ET
+BT /F1 10 Tf 48.00 274.89 Td (Slide-State ersetzen.) Tj ET
+BT /F2 14 Tf 48.00 249.89 Td (Risiken des Fixes) Tj ET
+BT /F1 10 Tf 48.00 229.89 Td (Wenn Bilder zu aggressiv erhalten werden, koennen alte Bilder laenger im Client bleiben.) Tj ET
+BT /F1 10 Tf 48.00 215.89 Td (Ein explizites Entfernen von Bildern braeuchte spaeter ein eigenes Signal. Wenn Galerie) Tj ET
+BT /F1 10 Tf 48.00 201.89 Td (und Preloader weiter parallel laden, bleiben unnoetige Requests moeglich.) Tj ET
+BT /F1 10 Tf 48.00 187.89 Td (Backend-Requery nach Parallelfehlern ist sicherer, aber etwas mehr DB-Arbeit.) Tj ET
+BT /F2 14 Tf 48.00 162.89 Td (Empfohlene Tests und Logs) Tj ET
+BT /F1 10 Tf 48.00 142.89 Td (Frontend: Log bei Galerie-Mount mit Activity-ID, propImages.length, localImages.length) Tj ET
+BT /F1 10 Tf 48.00 128.89 Td (und realImages.length; Log bei markImageLoaded und markImageFailed; Log bei replaceTrip) Tj ET
+BT /F1 10 Tf 48.00 114.89 Td (mit Bilderzahl vor/nach dem Ersetzen. Backend: Log bei ensureImages mit vorhandenen) Tj ET
+BT /F1 10 Tf 48.00 100.89 Td (Bildern, Google-Match und gespeicherter Bildanzahl. Test: Bild erscheint, Aktivitaet) Tj ET
+BT /F1 10 Tf 48.00 86.89 Td (wechseln, zurueckwechseln, echtes Bild muss bleiben. Tag wechseln und zurueck, echtes) Tj ET
+BT /F1 10 Tf 48.00 72.89 Td (Bild muss bleiben.) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 10 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R] /Count 3 >>
+endobj
+11 0 obj
+<< /Type /Catalog /Pages 10 0 R >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000154 00000 n 
+0000000222 00000 n 
+0000004526 00000 n 
+0000004679 00000 n 
+0000008681 00000 n 
+0000008834 00000 n 
+0000013459 00000 n 
+0000013612 00000 n 
+0000013682 00000 n 
+trailer
+<< /Size 12 /Root 11 0 R >>
+startxref
+13733
+%%EOF

@@ -1,6 +1,9 @@
 package de.travelmate.activity;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import de.travelmate.interest.InterestType;
+import de.travelmate.quality.CanonicalCategory;
 
 public record ActivityDto(
     Long id,
@@ -9,6 +12,7 @@ public record ActivityDto(
     String name,
     String description,
     String city,
+    InterestType primaryInterest,
     String category,
     String subcategory,
     Double latitude,
@@ -16,6 +20,15 @@ public record ActivityDto(
     String address,
     Double rating,
     double dataQualityScore,
+    CanonicalCategory canonicalCategory,
+    double popularityScore,
+    double notabilityScore,
+    double qualityScore,
+    double categoryFitScore,
+    double itineraryFitScore,
+    double finalScore,
+    String qualityReasonCodes,
+    List<ActivityImageDto> images,
     LocalDateTime lastSyncedAt,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
@@ -28,6 +41,7 @@ public record ActivityDto(
             activity.name,
             activity.description,
             activity.city,
+            activity.primaryInterest,
             activity.category,
             activity.subcategory,
             activity.latitude,
@@ -35,6 +49,15 @@ public record ActivityDto(
             activity.address,
             activity.rating,
             activity.dataQualityScore,
+            activity.canonicalCategory,
+            activity.popularityScore,
+            activity.notabilityScore,
+            activity.qualityScore,
+            activity.categoryFitScore,
+            activity.itineraryFitScore,
+            activity.finalScore,
+            activity.qualityReasonCodes,
+            activity.images.stream().map(ActivityImageDto::from).toList(),
             activity.lastSyncedAt,
             activity.createdAt,
             activity.updatedAt

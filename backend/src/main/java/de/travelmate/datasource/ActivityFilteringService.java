@@ -1,8 +1,10 @@
 package de.travelmate.datasource;
 
+import de.travelmate.interest.InterestType;
+import de.travelmate.quality.PoiEligibilityService;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.text.Normalizer;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -10,29 +12,33 @@ import java.util.Set;
 public class ActivityFilteringService {
     private static final Set<String> EXCLUDED_CATEGORY_PREFIXES = Set.of(
         "tourism.information",
-        "tourism.attraction.artwork",
-        "tourism.attraction.fountain",
         "tourism.sights.memorial",
-        "heritage",
-        "historic",
-        "building",
+        "historic.memorial",
         "highway",
         "access",
         "access_limited",
         "no_access"
     );
     private static final Set<String> EXCLUDED_NAME_TERMS = Set.of(
-        "gedenk", "denkmal", "memorial", "plaque", "tafel", "statue", "sculpture", "skulptur", "mural"
+        "plaque", "gedenktafel", "namenstafel"
     );
 
+    @Inject
+    PoiEligibilityService eligibility;
+
     public boolean isRelevant(ExternalActivityCandidate candidate) {
+        return isRelevant(candidate, null);
+    }
+
+    public boolean isRelevant(ExternalActivityCandidate candidate, InterestType interest) {
         return candidate.name != null
             && !candidate.name.isBlank()
             && candidate.latitude != null
             && candidate.longitude != null
             && candidate.rawCategories.stream().noneMatch(this::isExcludedCategory)
             && candidate.rawTags.entrySet().stream().noneMatch(this::isExcludedTag)
-            && !hasExcludedName(candidate.name);
+            && !hasExcludedName(candidate.name)
+            && (interest != InterestType.NATURE || isRelevantNature(candidate));
     }
 
     public boolean isDuplicate(ExternalActivityCandidate candidate, Set<String> seen) {
@@ -54,6 +60,10 @@ public class ActivityFilteringService {
             || (key.equals("artwork_type") && Set.of("statue", "sculpture", "mural").contains(value));
     }
 
+    private boolean isRelevantNature(ExternalActivityCandidate candidate) {
+        return rules().canBeMainNatureActivity(candidate);
+    }
+
     private static boolean hasExcludedName(String name) {
         String normalized = normalize(name);
         return EXCLUDED_NAME_TERMS.stream().anyMatch(normalized::contains);
@@ -68,5 +78,9 @@ public class ActivityFilteringService {
 
     private static String rounded(Double value) {
         return String.format(Locale.ROOT, "%.4f", value);
+    }
+
+    private PoiEligibilityService rules() {
+        return eligibility == null ? new PoiEligibilityService() : eligibility;
     }
 }

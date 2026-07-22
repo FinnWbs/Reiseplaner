@@ -47,6 +47,9 @@ public class TripEntity {
     @Column(name = "end_date")
     public LocalDate endDate;
 
+    @Column(name = "preferred_month", length = 7)
+    public String preferredMonth;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     public TripPace pace = TripPace.BALANCED;

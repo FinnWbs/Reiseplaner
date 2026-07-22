@@ -11,11 +11,12 @@ import java.util.Map;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
-public class WikipediaActivityProvider {
+public class WikipediaActivityProvider implements ActivityEnricher {
     @Inject
     @RestClient
     WikipediaClient client;
 
+    @Override
     public List<String> enrich(List<ExternalActivityCandidate> candidates) {
         List<String> warnings = new ArrayList<>();
         for (ExternalActivityCandidate candidate : candidates) {

@@ -20,6 +20,6 @@ public class ActivityExternalRefEntity {
     @Column(nullable = false)
     public ActivitySource source;
 
-    @Column(name = "external_id", nullable = false)
+    @Column(name = "external_id", nullable = false, columnDefinition = "TEXT")
     public String externalId;
 }

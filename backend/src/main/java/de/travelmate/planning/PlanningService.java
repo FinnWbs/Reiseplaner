@@ -1,18 +1,24 @@
 package de.travelmate.planning;
 
 import de.travelmate.activity.ActivityEntity;
+import de.travelmate.activity.ImportDemand;
+import de.travelmate.activity.ImportDemandService;
+import de.travelmate.activity.ActivityPersistenceService;
 import de.travelmate.activity.ActivityRepository;
 import de.travelmate.interest.InterestEntity;
 import de.travelmate.interest.InterestType;
+import de.travelmate.quality.PoiQualityEngine;
 import de.travelmate.sync.ActivitySyncService;
+import de.travelmate.sync.RefreshDecision;
 import de.travelmate.trip.*;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 import java.util.*;
 
 @ApplicationScoped
 public class PlanningService {
-    private static final int SLOT_GAP_MINUTES = 30;
+    private static final Logger LOG = Logger.getLogger(PlanningService.class);
 
     @Inject
     ActivityRepository activities;
@@ -26,14 +32,59 @@ public class PlanningService {
     @Inject
     ActivityTimeRules timeRules;
 
+    @Inject
+    PoiQualityEngine qualityEngine;
+
+    @Inject
+    ImportDemandService importDemandService;
+
+    @Inject
+    SpatialPlanningService spatialPlanningService;
+
+    @Inject
+    SpatialDiagnosticsService spatialDiagnosticsService;
+
+    @Inject
+    TripTimeWindowPolicy timeWindowPolicy;
+
+    @Inject
+    SpatialPlanningSettings spatialSettings;
+
+    @Inject
+    InterestQuotaAllocator quotaAllocator;
+
+    @Inject
+    DayScheduler dayScheduler;
+
+    @Inject
+    SlotSelectionPolicy slotSelectionPolicy;
+
+    private SpatialDiagnostics lastSpatialDiagnostics;
+
     public void generatePlan(TripEntity trip, List<Long> interestIds) {
         generatePlan(trip, interestIds, Set.of());
     }
 
     public void generatePlan(TripEntity trip, List<Long> interestIds, Set<InterestType> requestedInterests) {
+        generatePlan(trip, interestIds, requestedInterests, true);
+    }
+
+    public void fillMissingPlan(TripEntity trip, List<Long> interestIds, Set<InterestType> requestedInterests) {
+        generatePlan(trip, interestIds, requestedInterests, false);
+    }
+
+    private void generatePlan(
+        TripEntity trip,
+        List<Long> interestIds,
+        Set<InterestType> requestedInterests,
+        boolean replaceExistingActivities
+    ) {
         Set<InterestType> selectedTypes = selectedTypes(trip, requestedInterests);
-        if (sync.needsRefresh(trip.city, selectedTypes)) {
-            sync.syncCity(trip.city, locationLookupText(trip), trip.placeId, trip.latitude, trip.longitude, selectedTypes);
+        timeWindowPolicy().extendDaysForInterests(trip, selectedTypes);
+        ImportDemand demand = demandFor(trip, selectedTypes);
+        RefreshDecision refreshDecision = sync.refreshDecision(trip.city, selectedTypes, demand, trip.latitude, trip.longitude);
+        if (refreshDecision.importRequired()) {
+            sync.syncCity(trip.city, locationLookupText(trip), trip.placeId, trip.latitude, trip.longitude, selectedTypes, demand);
         }
 
         Set<Long> selectedInterests = new HashSet<>(interestIds == null ? List.of() : interestIds);
@@ -45,18 +96,41 @@ public class PlanningService {
             .toList();
 
         ensureDays(trip);
-        removeUnlockedActivities(trip);
+        if (replaceExistingActivities) {
+            removeUnlockedActivities(trip);
+        }
 
         Set<Long> alreadyUsed = usedActivityIds(trip);
-        Map<InterestType, Integer> quotas = quotas(selectedTypes, trip.days.size() * trip.pace.activitiesPerDay());
-        Map<InterestType, Integer> scheduledByInterest = scheduledByInterest(trip);
-        for (TripDayEntity day : trip.days) {
-            scheduleLockedActivities(day);
-            int target = trip.pace.activitiesPerDay();
-            while (day.activities.size() < target) {
-                SlotChoice choice = nextBalancedChoice(day, scored, selectedTypes, quotas, scheduledByInterest, alreadyUsed);
+        Map<InterestType, Integer> availableByInterest = quotaAllocator().availableByInterest(scored, selectedTypes, alreadyUsed);
+        Map<InterestType, Integer> scheduledByInterest = quotaAllocator().scheduledByInterest(trip);
+        Map<InterestType, Integer> quotas = quotaAllocator().reallocatedQuotas(
+            selectedTypes,
+            trip.days.size() * trip.pace.activitiesPerDay(),
+            availableByInterest,
+            scheduledByInterest
+        );
+        List<TripDayEntity> orderedDays = trip.days.stream()
+            .sorted(Comparator.comparingInt(day -> day.dayNumber))
+            .toList();
+        SpatialPlanningContext spatialContext = spatialContextFor(trip, scored, orderedDays);
+        int target = trip.pace.activitiesPerDay();
+        for (int slotIndex = 0; slotIndex < target; slotIndex++) {
+            for (TripDayEntity day : orderedDays) {
+                if (day.activities.size() > slotIndex || day.activities.size() >= target) {
+                    continue;
+                }
+                PlanSlotChoice choice = slotSelection().nextBalancedChoice(
+                    day,
+                    scored,
+                    selectedTypes,
+                    quotas,
+                    scheduledByInterest,
+                    alreadyUsed,
+                    spatialContext,
+                    orderedDays
+                );
                 if (choice == null) {
-                    break;
+                    continue;
                 }
                 addScheduledActivity(day, choice);
                 alreadyUsed.add(choice.activity().id);
@@ -66,40 +140,42 @@ public class PlanningService {
             }
         }
         trip.status = TripStatus.PLANNED;
+        lastSpatialDiagnostics = diagnostics().analyze(trip);
+        logSpatialDiagnostics(trip, lastSpatialDiagnostics, quotas);
+    }
+
+    public Optional<SpatialDiagnostics> lastSpatialDiagnostics() {
+        return Optional.ofNullable(lastSpatialDiagnostics);
     }
 
     public ScoredActivity score(ActivityEntity activity, Set<Long> interestIds) {
+        if (activity.importVersion != ActivityPersistenceService.CURRENT_IMPORT_VERSION) {
+            return new ScoredActivity(activity, 0);
+        }
         int interestScore = activity.interestScores.stream()
             .filter(mapping -> interestIds.contains(mapping.interest.id))
             .filter(mapping -> activity.primaryInterest == null || mapping.interest.code.equals(activity.primaryInterest.name()))
             .mapToInt(mapping -> mapping.score)
             .max()
             .orElse(0);
+        if (interestIds != null && !interestIds.isEmpty() && interestScore <= 0) {
+            return new ScoredActivity(activity, 0);
+        }
 
         double ratingScore = activity.rating == null ? 0 : Math.max(0, Math.min(10, activity.rating * 2));
         double qualityScore = Math.max(0, Math.min(10, activity.dataQualityScore * 10));
-        double total = interestScore * 0.6 + ratingScore * 0.2 + qualityScore * 0.2;
+        double legacyScore = (interestScore * 0.6 + ratingScore * 0.2 + qualityScore * 0.2) / 10;
+        double storedFinalScore = activity.finalScore > 0 ? activity.finalScore : legacyScore;
+        double categoryFitScore = activity.categoryFitScore > 0
+            ? activity.categoryFitScore
+            : Math.max(0, Math.min(1, interestScore / 10.0));
+        double itineraryFitScore = activity.itineraryFitScore > 0 ? activity.itineraryFitScore : 1;
+        double total = 10 * engine().planningScore(storedFinalScore, categoryFitScore, itineraryFitScore, 1);
         return new ScoredActivity(activity, total);
     }
 
     public void scheduleDay(TripDayEntity day, boolean lockItems) {
-        day.activities.sort(Comparator.comparingInt(item -> item.position));
-        int cursor = day.availableFrom;
-        for (int index = 0; index < day.activities.size(); index++) {
-            TripDayActivityEntity item = day.activities.get(index);
-            ActivityTimeRules.TimeProfile profile = timeRules.profile(item.activity);
-            int start = Math.max(cursor, Math.max(day.availableFrom, profile.earliestStart()));
-            if (start < profile.preferredStart() && profile.preferredStart() + item.durationMinutes <= day.availableUntil) {
-                start = profile.preferredStart();
-            }
-            start = Math.min(start, 1440 - item.durationMinutes);
-            item.position = index + 1;
-            item.scheduledStart = start;
-            if (lockItems) {
-                item.locked = true;
-            }
-            cursor = start + item.durationMinutes + SLOT_GAP_MINUTES;
-        }
+        scheduler().scheduleDay(day, lockItems);
     }
 
     public Optional<ActivityEntity> replacementFor(
@@ -107,12 +183,46 @@ public class PlanningService {
         TripDayActivityEntity item,
         Set<Long> interestIds
     ) {
+        return replacementFor(trip, item, interestIds, null);
+    }
+
+    public Optional<ActivityEntity> replacementFor(
+        TripEntity trip,
+        TripDayActivityEntity item,
+        Set<Long> interestIds,
+        InterestType preferredInterest
+    ) {
         Set<Long> used = usedActivityIds(trip);
         Set<InterestType> selectedTypes = selectedTypes(trip, Set.of());
+        Set<Long> scoringInterestIds = preferredInterest == null ? interestIds : Set.of();
+        if (preferredInterest != null && sync != null) {
+            Set<InterestType> requested = Set.of(preferredInterest);
+            ImportDemand demand = demandFor(trip, requested);
+            RefreshDecision refreshDecision = sync.refreshDecision(
+                trip.city,
+                requested,
+                demand,
+                trip.latitude,
+                trip.longitude
+            );
+            if (refreshDecision.importRequired()) {
+                sync.syncCity(
+                    trip.city,
+                    locationLookupText(trip),
+                    trip.placeId,
+                    trip.latitude,
+                    trip.longitude,
+                    requested,
+                    demand
+                );
+            }
+        }
         return activities.findActiveByCity(trip.city).stream()
-            .filter(activity -> selectedTypes.isEmpty() || selectedTypes.contains(activity.primaryInterest))
+            .filter(activity -> preferredInterest != null
+                ? preferredInterest == activity.primaryInterest
+                : selectedTypes.isEmpty() || selectedTypes.contains(activity.primaryInterest))
             .filter(activity -> isReplacementCandidate(activity, item, used))
-            .map(activity -> score(activity, interestIds))
+            .map(activity -> score(activity, scoringInterestIds))
             .filter(scored -> scored.totalScore() > 0)
             .sorted(Comparator.comparingDouble(ScoredActivity::totalScore).reversed())
             .map(ScoredActivity::activity)
@@ -126,76 +236,6 @@ public class PlanningService {
     ) {
         return !usedActivityIds.contains(activity.id)
             && timeRules.fitsAt(activity, item.scheduledStart, item.durationMinutes);
-    }
-
-    private SlotChoice nextBalancedChoice(
-        TripDayEntity day,
-        List<ScoredActivity> scored,
-        Set<InterestType> selectedTypes,
-        Map<InterestType, Integer> quotas,
-        Map<InterestType, Integer> scheduledByInterest,
-        Set<Long> alreadyUsed
-    ) {
-        Set<InterestType> usedToday = day.activities.stream()
-            .map(item -> item.activity.primaryInterest)
-            .filter(Objects::nonNull)
-            .collect(java.util.stream.Collectors.toSet());
-        List<InterestType> orderedTypes = selectedTypes.stream()
-            .sorted(Comparator.comparingInt((InterestType type) ->
-                quotas.getOrDefault(type, 0) - scheduledByInterest.getOrDefault(type, 0)
-            ).reversed().thenComparing(Enum::name))
-            .toList();
-
-        SlotChoice choice = firstChoice(day, scored, orderedTypes, usedToday, alreadyUsed, true, quotas, scheduledByInterest);
-        if (choice != null) return choice;
-        choice = firstChoice(day, scored, orderedTypes, usedToday, alreadyUsed, false, quotas, scheduledByInterest);
-        if (choice != null) return choice;
-        return firstChoice(day, scored, orderedTypes, Set.of(), alreadyUsed, false, quotas, scheduledByInterest);
-    }
-
-    private SlotChoice firstChoice(
-        TripDayEntity day,
-        List<ScoredActivity> scored,
-        List<InterestType> orderedTypes,
-        Set<InterestType> usedToday,
-        Set<Long> alreadyUsed,
-        boolean requireNewDayCategory,
-        Map<InterestType, Integer> quotas,
-        Map<InterestType, Integer> scheduledByInterest
-    ) {
-        for (InterestType type : orderedTypes) {
-            if (requireNewDayCategory && usedToday.contains(type)) continue;
-            if (quotas.getOrDefault(type, 0) <= scheduledByInterest.getOrDefault(type, 0)) continue;
-            Optional<SlotChoice> choice = scored.stream()
-                .map(ScoredActivity::activity)
-                .filter(activity -> activity.primaryInterest == type && !alreadyUsed.contains(activity.id))
-                .map(activity -> slotFor(day, activity))
-                .flatMap(Optional::stream)
-                .findFirst();
-            if (choice.isPresent()) return choice.get();
-        }
-        return null;
-    }
-
-    private Map<InterestType, Integer> quotas(Set<InterestType> selectedTypes, int slots) {
-        Map<InterestType, Integer> quotas = new EnumMap<>(InterestType.class);
-        if (selectedTypes.isEmpty()) return quotas;
-        List<InterestType> ordered = selectedTypes.stream().sorted(Comparator.comparing(Enum::name)).toList();
-        int base = slots / ordered.size();
-        int remainder = slots % ordered.size();
-        for (int index = 0; index < ordered.size(); index++) {
-            quotas.put(ordered.get(index), base + (index < remainder ? 1 : 0));
-        }
-        return quotas;
-    }
-
-    private Map<InterestType, Integer> scheduledByInterest(TripEntity trip) {
-        Map<InterestType, Integer> counts = new EnumMap<>(InterestType.class);
-        trip.days.stream().flatMap(day -> day.activities.stream())
-            .map(item -> item.activity.primaryInterest)
-            .filter(Objects::nonNull)
-            .forEach(type -> counts.merge(type, 1, Integer::sum));
-        return counts;
     }
 
     private Set<InterestType> selectedTypes(TripEntity trip, Set<InterestType> requestedTypes) {
@@ -227,36 +267,10 @@ public class PlanningService {
             tripActivities.delete(item);
         }
         tripActivities.flush();
-        trip.days.forEach(this::renumber);
+        trip.days.forEach(day -> scheduler().renumber(day));
     }
 
-    private void scheduleLockedActivities(TripDayEntity day) {
-        day.activities.sort(Comparator.comparingInt(item -> item.position));
-        int cursor = day.availableFrom;
-        for (TripDayActivityEntity item : day.activities) {
-            cursor = Math.max(cursor, item.scheduledStart + item.durationMinutes + SLOT_GAP_MINUTES);
-        }
-    }
-
-    private Optional<SlotChoice> slotFor(TripDayEntity day, ActivityEntity activity) {
-        ActivityTimeRules.TimeProfile profile = timeRules.profile(activity);
-        int cursor = day.activities.stream()
-            .mapToInt(item -> item.scheduledStart + item.durationMinutes + SLOT_GAP_MINUTES)
-            .max()
-            .orElse(day.availableFrom);
-        int start = Math.max(cursor, Math.max(day.availableFrom, profile.earliestStart()));
-        if (start < profile.preferredStart()
-            && profile.preferredStart() >= day.availableFrom
-            && profile.preferredStart() + profile.durationMinutes() <= day.availableUntil) {
-            start = profile.preferredStart();
-        }
-        int latestEnd = Math.min(day.availableUntil, profile.latestEnd());
-        return start + profile.durationMinutes() <= latestEnd
-            ? Optional.of(new SlotChoice(activity, start, profile.durationMinutes()))
-            : Optional.empty();
-    }
-
-    private void addScheduledActivity(TripDayEntity day, SlotChoice choice) {
+    private void addScheduledActivity(TripDayEntity day, PlanSlotChoice choice) {
         TripDayActivityEntity item = new TripDayActivityEntity();
         item.tripDay = day;
         item.activity = choice.activity();
@@ -277,13 +291,6 @@ public class PlanningService {
         return used;
     }
 
-    private void renumber(TripDayEntity day) {
-        day.activities.sort(Comparator.comparingInt(item -> item.position));
-        for (int i = 0; i < day.activities.size(); i++) {
-            day.activities.get(i).position = i + 1;
-        }
-    }
-
     private String locationLookupText(TripEntity trip) {
         if (trip.country != null && !trip.country.isBlank()) {
             return trip.city + ", " + trip.country;
@@ -294,5 +301,100 @@ public class PlanningService {
         return trip.city;
     }
 
-    private record SlotChoice(ActivityEntity activity, int start, int duration) {}
+    private PoiQualityEngine engine() {
+        return qualityEngine == null ? new PoiQualityEngine() : qualityEngine;
+    }
+
+    private ImportDemand demandFor(TripEntity trip, Set<InterestType> selectedTypes) {
+        ImportDemandService service = importDemandService == null ? new ImportDemandService() : importDemandService;
+        return service.forTrip(trip.city, selectedTypes, trip.daysCount > 0 ? trip.daysCount : trip.days.size(), trip.pace);
+    }
+
+    private SpatialPlanningContext spatialContextFor(
+        TripEntity trip,
+        List<ScoredActivity> scored,
+        List<TripDayEntity> orderedDays
+    ) {
+        SpatialPlanningService service = spatialPlanningService == null ? new SpatialPlanningService() : spatialPlanningService;
+        return service.createContext(trip, scored, orderedDays);
+    }
+
+    private SpatialDiagnosticsService diagnostics() {
+        return spatialDiagnosticsService == null ? new SpatialDiagnosticsService() : spatialDiagnosticsService;
+    }
+
+    private SpatialPlanningSettings settings() {
+        return spatialSettings == null ? new SpatialPlanningSettings() : spatialSettings;
+    }
+
+    private TripTimeWindowPolicy timeWindowPolicy() {
+        return timeWindowPolicy == null ? new TripTimeWindowPolicy() : timeWindowPolicy;
+    }
+
+    private InterestQuotaAllocator quotaAllocator() {
+        return quotaAllocator == null ? new InterestQuotaAllocator() : quotaAllocator;
+    }
+
+    private DayScheduler scheduler() {
+        return dayScheduler == null ? new DayScheduler() : dayScheduler;
+    }
+
+    private SlotSelectionPolicy slotSelection() {
+        if (slotSelectionPolicy == null) {
+            SlotSelectionPolicy fallback = new SlotSelectionPolicy();
+            fallback.spatialSettings = settings();
+            fallback.dayScheduler = scheduler();
+            return fallback;
+        }
+        return slotSelectionPolicy;
+    }
+
+    private void logSpatialDiagnostics(
+        TripEntity trip,
+        SpatialDiagnostics diagnostics,
+        Map<InterestType, Integer> plannedInterestDistribution
+    ) {
+        LOG.infof(
+            "Trip %s %d days: activities=%d clusters=%d dominantClusterShare=%.2f avgDistanceFromCenter=%.1fkm plannedInterests=%s actualInterests=%s dominantInterestDays=%s warnings=%s",
+            diagnostics.cityName(),
+            diagnostics.tripDays(),
+            diagnostics.totalActivities(),
+            diagnostics.uniqueSpatialClusters(),
+            diagnostics.dominantClusterShare(),
+            diagnostics.averageDistanceFromCityCenterKm(),
+            plannedInterestDistribution,
+            actualInterestDistribution(trip),
+            dominantInterestDays(trip),
+            diagnostics.warnings()
+        );
+    }
+
+    private Map<InterestType, Integer> actualInterestDistribution(TripEntity trip) {
+        Map<InterestType, Integer> counts = new EnumMap<>(InterestType.class);
+        trip.days.stream()
+            .flatMap(day -> day.activities.stream())
+            .map(item -> item.activity.primaryInterest)
+            .filter(Objects::nonNull)
+            .forEach(type -> counts.merge(type, 1, Integer::sum));
+        return counts;
+    }
+
+    private Map<Integer, InterestType> dominantInterestDays(TripEntity trip) {
+        Map<Integer, InterestType> dominant = new LinkedHashMap<>();
+        trip.days.stream()
+            .sorted(Comparator.comparingInt(day -> day.dayNumber))
+            .forEach(day -> {
+                Map<InterestType, Integer> counts = new EnumMap<>(InterestType.class);
+                day.activities.stream()
+                    .map(item -> item.activity.primaryInterest)
+                    .filter(Objects::nonNull)
+                    .forEach(type -> counts.merge(type, 1, Integer::sum));
+                counts.entrySet().stream()
+                    .filter(entry -> entry.getValue() > settings().maxSameInterestPerDay())
+                    .max(Map.Entry.<InterestType, Integer>comparingByValue().thenComparing(entry -> entry.getKey().name()))
+                    .ifPresent(entry -> dominant.put(day.dayNumber, entry.getKey()));
+            });
+        return dominant;
+    }
+
 }

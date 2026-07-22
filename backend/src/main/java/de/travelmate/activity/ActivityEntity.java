@@ -1,6 +1,7 @@
 package de.travelmate.activity;
 
 import de.travelmate.interest.InterestType;
+import de.travelmate.quality.CanonicalCategory;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,26 +14,30 @@ public class ActivityEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
-    @Column(name = "external_id", nullable = false)
+    @Column(name = "external_id", nullable = false, columnDefinition = "TEXT")
     public String externalId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     public ActivitySource source;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     public String name;
 
     @Column(columnDefinition = "TEXT")
     public String description;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 120)
     public String city;
 
+    @Column(length = 120)
     public String category;
+
+    @Column(length = 120)
     public String subcategory;
     public Double latitude;
     public Double longitude;
+    @Column(length = 500)
     public String address;
     public Double rating;
 
@@ -49,6 +54,31 @@ public class ActivityEntity {
     @Column(name = "data_quality_score", nullable = false)
     public double dataQualityScore;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "canonical_category")
+    public CanonicalCategory canonicalCategory;
+
+    @Column(name = "popularity_score", nullable = false)
+    public double popularityScore;
+
+    @Column(name = "notability_score", nullable = false)
+    public double notabilityScore;
+
+    @Column(name = "quality_score", nullable = false)
+    public double qualityScore;
+
+    @Column(name = "category_fit_score", nullable = false)
+    public double categoryFitScore;
+
+    @Column(name = "itinerary_fit_score", nullable = false)
+    public double itineraryFitScore;
+
+    @Column(name = "final_score", nullable = false)
+    public double finalScore;
+
+    @Column(name = "quality_reason_codes", columnDefinition = "TEXT")
+    public String qualityReasonCodes;
+
     @Column(name = "last_synced_at")
     public LocalDateTime lastSyncedAt;
 
@@ -57,6 +87,10 @@ public class ActivityEntity {
 
     @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ActivityExternalRefEntity> externalRefs = new ArrayList<>();
+
+    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC, id ASC")
+    public List<ActivityImageEntity> images = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
     public LocalDateTime createdAt = LocalDateTime.now();

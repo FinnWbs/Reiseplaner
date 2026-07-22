@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import de.travelmate.interest.InterestType;
+import de.travelmate.quality.PoiRelationshipService;
 
 @ApplicationScoped
 public class ActivityImportService {
@@ -26,6 +27,9 @@ public class ActivityImportService {
 
     @Inject
     ActivityPersistenceService persistence;
+
+    @Inject
+    PoiRelationshipService relationships;
 
     public ActivityImportResponse importCity(String requestedCity) {
         String city = normalizeCity(requestedCity);
@@ -68,6 +72,7 @@ public class ActivityImportService {
         if (openStreetMap.isEnabled()) {
             candidates.addAll(openStreetMap.fetch(externalLookup));
         }
+        relationships.suppressSubPois(candidates);
         return persistence.persist(city, candidates, warnings);
     }
 
@@ -79,13 +84,26 @@ public class ActivityImportService {
         Double longitude,
         InterestType interest
     ) {
+        return importInterest(requestedCity, lookupText, placeId, latitude, longitude, interest, null);
+    }
+
+    public ActivityImportResponse importInterest(
+        String requestedCity,
+        String lookupText,
+        String placeId,
+        Double latitude,
+        Double longitude,
+        InterestType interest,
+        ImportDemand demand
+    ) {
         String city = normalizeCity(requestedCity);
         String externalLookup = lookupText == null || lookupText.isBlank() ? city : lookupText.trim();
         List<ExternalActivityCandidate> candidates =
-            new ArrayList<>(geoapify.fetch(externalLookup, placeId, latitude, longitude, Set.of(interest)));
+            new ArrayList<>(geoapify.fetch(externalLookup, placeId, latitude, longitude, Set.of(interest), demand));
         List<String> warnings = new ArrayList<>();
         warnings.addAll(wikidata.enrich(candidates));
         warnings.addAll(wikipedia.enrich(candidates));
+        relationships.suppressSubPois(candidates);
         persistence.deactivateGeoapifyActivities(city, interest);
         return persistence.persist(city, candidates, warnings);
     }

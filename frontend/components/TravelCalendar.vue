@@ -16,19 +16,17 @@ const props = defineProps<{
   selectedDate: string
   rangeStart: string
   rangeEnd: string
+  rangePreviewEnd?: string
+  rangeComplete?: boolean
 }>()
 
 const emit = defineEmits<{
   selectDate: [date: string]
   openTrip: [trip: Trip, date: string]
-  rangeStart: [date: string]
   rangeHover: [date: string]
-  rangeEnd: [date: string]
   rangeContext: [date: string, x: number, y: number]
 }>()
 
-const dragging = ref(false)
-const pointerSelection = ref(false)
 const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const isoDate = (date: Date) => {
   const year = date.getFullYear()
@@ -64,41 +62,33 @@ const tripsForDate = (iso: string) => props.trips.filter((trip) => {
   return iso >= trip.startDate && iso <= trip.endDate
 })
 
-const normalizedRange = computed(() => {
-  if (!props.rangeStart) return { start: '', end: '' }
-  const end = props.rangeEnd || props.rangeStart
+const normalizeRange = (end: string) => {
+  if (!props.rangeStart || !end) return { start: '', end: '' }
   return props.rangeStart <= end
     ? { start: props.rangeStart, end }
     : { start: end, end: props.rangeStart }
-})
+}
+
+const normalizedRange = computed(() =>
+  props.rangeComplete ? normalizeRange(props.rangeEnd) : { start: '', end: '' }
+)
+
+const normalizedPreviewRange = computed(() =>
+  !props.rangeComplete ? normalizeRange(props.rangePreviewEnd || '') : { start: '', end: '' }
+)
 
 const isInRange = (iso: string) =>
   Boolean(normalizedRange.value.start && iso >= normalizedRange.value.start && iso <= normalizedRange.value.end)
 
-const startPointerSelection = (event: PointerEvent, iso: string) => {
-  if (event.button !== 0 || event.pointerType !== 'mouse') return
-  event.preventDefault()
-  dragging.value = true
-  pointerSelection.value = true
-  emit('rangeStart', iso)
-}
+const isInPreviewRange = (iso: string) =>
+  Boolean(
+    normalizedPreviewRange.value.start &&
+    iso >= normalizedPreviewRange.value.start &&
+    iso <= normalizedPreviewRange.value.end
+  )
 
 const hoverPointerSelection = (iso: string) => {
-  if (dragging.value) emit('rangeHover', iso)
-}
-
-const finishPointerSelection = (iso: string) => {
-  if (!dragging.value) return
-  dragging.value = false
-  emit('rangeEnd', iso)
-}
-
-const selectByClick = (iso: string) => {
-  if (pointerSelection.value) {
-    pointerSelection.value = false
-    return
-  }
-  emit('selectDate', iso)
+  emit('rangeHover', iso)
 }
 
 const openContextMenu = (event: MouseEvent, iso: string) => {
@@ -123,17 +113,18 @@ const openContextMenu = (event: MouseEvent, iso: string) => {
           today: cell.isToday,
           selected: selectedDate === cell.iso,
           'range-selected': isInRange(cell.iso),
+          'range-preview': isInPreviewRange(cell.iso),
           'range-start': normalizedRange.start === cell.iso,
-          'range-end': normalizedRange.end === cell.iso
+          'range-end': normalizedRange.end === cell.iso,
+          'range-pending-start': !rangeComplete && rangeStart === cell.iso
         }"
         role="button"
         tabindex="0"
-        @pointerdown="startPointerSelection($event, cell.iso)"
         @pointerenter="hoverPointerSelection(cell.iso)"
-        @pointerup="finishPointerSelection(cell.iso)"
-        @click="selectByClick(cell.iso)"
+        @click="emit('selectDate', cell.iso)"
         @contextmenu="openContextMenu($event, cell.iso)"
         @keydown.enter="emit('selectDate', cell.iso)"
+        @keydown.space.prevent="emit('selectDate', cell.iso)"
       >
         <span class="calendar-date-number">{{ cell.dayNumber }}</span>
         <div class="calendar-cell-trips">

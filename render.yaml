@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: travelmate-backend
+    runtime: docker
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GEOAPIFY_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: JWT_PUBLIC_KEY_LOCATION
+        value: /etc/secrets/publicKey.pem
+      - key: JWT_PRIVATE_KEY_LOCATION
+        value: /etc/secrets/privateKey.pem
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=75.0
+      - key: CATALOG_WIKIMEDIA_ENABLED
+        value: "true"
+      - key: WIKIMEDIA_USER_AGENT
+        sync: false

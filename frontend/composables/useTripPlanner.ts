@@ -21,6 +21,33 @@ const plannerErrorMessage = (err: any, fallback: string) =>
 const isNotFoundError = (err: any) =>
   err?.statusCode === 404 || err?.response?.status === 404 || err?.status === 404
 
+const normalizeInterestLabel = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .trim()
+    .toLowerCase()
+
+const draftInterestAliases: Record<string, string> = {
+  kultur: 'CULTURE',
+  // Product label "Geschichte" uses the planable sightseeing import path.
+  geschichte: 'SIGHTSEEING',
+  natur: 'NATURE',
+  food: 'FOOD',
+  essen: 'FOOD',
+  shopping: 'SHOPPING',
+  nightlife: 'NIGHTLIFE',
+  nachtleben: 'NIGHTLIFE',
+  sport: 'ADVENTURE',
+  abenteuer: 'ADVENTURE'
+}
+
+const matchesDraftInterest = (interest: Interest, draftName: string) => {
+  const normalizedDraftName = normalizeInterestLabel(draftName)
+  const aliasCode = draftInterestAliases[normalizedDraftName]
+  return interest.key === aliasCode || normalizeInterestLabel(interest.name) === normalizedDraftName
+}
+
 export const useTripPlanner = () => {
   const { request } = useApi()
   const { clearAuth, hydrateAuth, token, user } = useAuth()
@@ -48,6 +75,7 @@ export const useTripPlanner = () => {
   const datesKnown = ref<boolean | null>(null)
   const startDate = ref('')
   const endDate = ref('')
+  const preferredMonth = ref('')
   const daysCount = ref(3)
   const planningDates = ref<string[]>([])
   const selectedInterestIds = ref<number[]>([])
@@ -163,6 +191,7 @@ export const useTripPlanner = () => {
     datesKnown.value = null
     startDate.value = ''
     endDate.value = ''
+    preferredMonth.value = ''
     daysCount.value = 3
     planningDates.value = []
     selectedInterestIds.value = []
@@ -184,6 +213,7 @@ export const useTripPlanner = () => {
           interestIds: selectedInterestIds.value,
           startDate: datesKnown.value ? startDate.value : null,
           endDate: datesKnown.value ? endDate.value : null,
+          preferredMonth: datesKnown.value ? null : preferredMonth.value || null,
           planningDates: selectedDates,
           pace: pace.value,
           dayRhythm: dayRhythm.value,
@@ -228,12 +258,13 @@ export const useTripPlanner = () => {
     datesKnown.value = draft.datesKnown
     startDate.value = draft.startDate
     endDate.value = draft.endDate
+    preferredMonth.value = draft.preferredMonth || ''
     daysCount.value = draft.daysCount
     planningDates.value = [...draft.planningDates]
     pace.value = draft.pace
     dayRhythm.value = draft.dayRhythm
     selectedInterestIds.value = interests.value
-      .filter(interest => draft.interestNames.some(name => name.toLowerCase() === interest.name.toLowerCase()))
+      .filter(interest => draft.interestNames.some(name => matchesDraftInterest(interest, name)))
       .map(interest => interest.id)
     destinationKnown.value = draft.destinationSource !== 'SUGGESTED'
 

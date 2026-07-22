@@ -22,8 +22,19 @@ public class ActivityScoringService {
         if (candidate.address != null && !candidate.address.isBlank()) {
             score += 5;
         }
+        if (candidate.primaryInterest == InterestType.NATURE) {
+            score += natureQualityBonus(candidate);
+        }
         double distance = distanceInKilometers(originLatitude, originLongitude, candidate.latitude, candidate.longitude);
         return score + Math.max(0, 20 - distance);
+    }
+
+    private static int natureQualityBonus(ExternalActivityCandidate candidate) {
+        if (candidate.rawCategories.contains("national_park")) return 16;
+        if (candidate.rawCategories.contains("leisure.park.nature_reserve")) return 14;
+        if (candidate.rawCategories.contains("leisure.park.garden")) return 12;
+        if (candidate.rawCategories.contains("leisure.park")) return 8;
+        return 0;
     }
 
     private static double distanceInKilometers(double firstLatitude, double firstLongitude, double secondLatitude, double secondLongitude) {

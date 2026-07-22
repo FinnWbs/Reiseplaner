@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, LogIn, UserPlus } from 'lucide-vue-next'
+import { ArrowLeft, Eye, EyeOff, LogIn, UserPlus } from 'lucide-vue-next'
 
 type AuthMode = 'login' | 'register'
 
@@ -13,10 +13,15 @@ const password = ref('')
 const displayName = ref('')
 const error = ref('')
 const loading = ref(false)
+const showPassword = ref(false)
 
 const title = computed(() => mode.value === 'register' ? 'Account erstellen' : 'Einloggen')
 const submitLabel = computed(() => mode.value === 'register' ? 'Account erstellen' : 'Einloggen')
 const toggleLabel = computed(() => mode.value === 'register' ? 'Zurück zum Login' : 'Noch keinen Account? Registrieren')
+const authErrorMessage = (err: unknown) => {
+  const response = err as { data?: { message?: string } }
+  return response.data?.message || 'Anmeldung fehlgeschlagen. Bitte prüfe deine Eingaben.'
+}
 
 const validate = () => {
   if (!email.value.trim() || !password.value) {
@@ -50,8 +55,8 @@ const submitAuth = async () => {
 
     await authenticate(mode.value, body)
     await navigateTo(route.query.continue === 'trip' || hasDraft() ? '/planner?draft=1' : '/calendar')
-  } catch (err: any) {
-    error.value = err?.data?.message || 'Anmeldung fehlgeschlagen. Bitte prüfe deine Eingaben.'
+  } catch (err: unknown) {
+    error.value = authErrorMessage(err)
   } finally {
     loading.value = false
   }
@@ -106,18 +111,30 @@ onMounted(async () => {
             >
           </label>
 
-          <label>
+          <label class="auth-password-field">
             Passwort
-            <input
-              v-model="password"
-              type="password"
-              :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
-              placeholder="Mindestens 8 Zeichen"
-              required
-            >
+            <span class="auth-password-input">
+              <input
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
+                :placeholder="mode === 'register' ? 'Mindestens 8 Zeichen' : 'Dein Passwort'"
+                required
+              >
+              <button
+                type="button"
+                :title="showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'"
+                :aria-label="showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'"
+                @click="showPassword = !showPassword"
+              >
+                <EyeOff v-if="showPassword" :size="18" />
+                <Eye v-else :size="18" />
+              </button>
+            </span>
+            <small v-if="mode === 'register'" class="field-hint">Mindestens 8 Zeichen – verwende am besten eine einzigartige Kombination.</small>
           </label>
 
-          <p v-if="error" class="error">{{ error }}</p>
+          <p v-if="error" class="error auth-error" role="alert">{{ error }}</p>
 
           <div class="auth-actions">
             <button class="auth-submit" :disabled="loading" type="submit">

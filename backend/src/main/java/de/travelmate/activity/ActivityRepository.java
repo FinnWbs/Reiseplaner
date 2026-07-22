@@ -30,7 +30,20 @@ public class ActivityRepository implements PanacheRepository<ActivityEntity> {
     }
 
     public List<ActivityEntity> findActiveByCity(String city) {
-        return list("lower(city) = ?1 and active = true order by name", city.trim().toLowerCase());
+        return list(
+            "lower(city) = ?1 and active = true and importVersion = ?2 order by name",
+            city.trim().toLowerCase(),
+            ActivityPersistenceService.CURRENT_IMPORT_VERSION
+        );
+    }
+
+    public long countActiveByCityAndInterest(String city, de.travelmate.interest.InterestType interest) {
+        return count(
+            "lower(city) = ?1 and active = true and importVersion = ?2 and primaryInterest = ?3",
+            city.trim().toLowerCase(),
+            ActivityPersistenceService.CURRENT_IMPORT_VERSION,
+            interest
+        );
     }
 
     public boolean hasFreshMinimumForCity(String city, int minimum, LocalDateTime freshAfter) {

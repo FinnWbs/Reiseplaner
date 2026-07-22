@@ -4,6 +4,9 @@ import de.travelmate.datasource.ExternalActivityCandidate;
 import de.travelmate.interest.InterestEntity;
 import de.travelmate.interest.InterestRepository;
 import de.travelmate.interest.InterestType;
+import de.travelmate.quality.PoiQualityEngine;
+import de.travelmate.quality.PoiQualityEvaluation;
+import de.travelmate.quality.QualityReasonCode;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -13,7 +16,7 @@ import java.util.*;
 
 @ApplicationScoped
 public class ActivityPersistenceService {
-    public static final int CURRENT_IMPORT_VERSION = 2;
+    public static final int CURRENT_IMPORT_VERSION = 8;
     @Inject
     ActivityRepository activities;
 
@@ -21,10 +24,16 @@ public class ActivityPersistenceService {
     ActivityExternalRefRepository externalRefs;
 
     @Inject
+    ActivityInterestRepository activityInterests;
+
+    @Inject
     InterestRepository interests;
 
     @Inject
     ActivityCategoryMapper categoryMapper;
+
+    @Inject
+    PoiQualityEngine qualityEngine;
 
     @Transactional
     public ActivityImportResponse persist(
@@ -43,6 +52,16 @@ public class ActivityPersistenceService {
                 skipped++;
                 continue;
             }
+            if (candidate.suppressedAsSubPoi) {
+                skipped++;
+                continue;
+            }
+
+            PoiQualityEvaluation quality = qualityEngine.evaluate(candidate, candidate.primaryInterest);
+            if (quality.hardExcluded()) {
+                skipped++;
+                continue;
+            }
 
             Optional<ActivityEntity> existing = findExisting(candidate, city);
             ActivityEntity activity = existing.orElseGet(ActivityEntity::new);
@@ -53,20 +72,28 @@ public class ActivityPersistenceService {
             activity.name = candidate.name.trim();
             activity.city = city;
             activity.description = blankToNull(candidate.description);
-            activity.subcategory = blankToNull(candidate.rawCategory);
+            activity.subcategory = limitedBlankToNull(candidate.rawCategory, 120);
             activity.latitude = candidate.latitude;
             activity.longitude = candidate.longitude;
-            activity.address = blankToNull(candidate.address);
+            activity.address = limitedBlankToNull(candidate.address, 500);
             activity.rating = candidate.rating;
             activity.primaryInterest = candidate.primaryInterest;
             activity.active = true;
             activity.importVersion = CURRENT_IMPORT_VERSION;
-            activity.dataQualityScore = qualityScore(candidate);
+            activity.dataQualityScore = quality.qualityScore();
+            activity.canonicalCategory = quality.canonicalCategory();
+            activity.popularityScore = quality.popularityScore();
+            activity.notabilityScore = quality.notabilityScore();
+            activity.qualityScore = quality.qualityScore();
+            activity.categoryFitScore = quality.categoryFitScore();
+            activity.itineraryFitScore = quality.itineraryFitScore();
+            activity.finalScore = quality.finalScore();
+            activity.qualityReasonCodes = reasonCodes(quality);
             activity.lastSyncedAt = LocalDateTime.now();
 
             ActivityCategoryMapper.CategoryMapping mapping =
                 categoryMapper.map(candidate.primaryInterest, candidate.rawCategories);
-            activity.category = mapping.dominantCategory();
+            activity.category = limitedBlankToNull(quality.canonicalCategory().displayName(), 120);
             if (isNew) {
                 activities.persist(activity);
                 activities.flush();
@@ -142,11 +169,10 @@ public class ActivityPersistenceService {
         Map<String, InterestEntity> interestByCode,
         boolean isNew
     ) {
-        if (!isNew) {
-            activity.interestScores.clear();
-            activities.flush();
-        } else {
-            activity.interestScores.clear();
+        activity.interestScores.clear();
+        if (!isNew && activity.id != null) {
+            activityInterests.delete("activity.id", activity.id);
+            activityInterests.flush();
         }
         for (Map.Entry<InterestType, Integer> score : scores.entrySet()) {
             InterestEntity interest = interestByCode.get(score.getKey().name());
@@ -161,15 +187,6 @@ public class ActivityPersistenceService {
         }
     }
 
-    private static double qualityScore(ExternalActivityCandidate candidate) {
-        int available = 2;
-        if (candidate.description != null && !candidate.description.isBlank()) available++;
-        if (candidate.address != null && !candidate.address.isBlank()) available++;
-        if (candidate.latitude != null && candidate.longitude != null) available++;
-        if (candidate.rawCategory != null && !candidate.rawCategory.isBlank()) available++;
-        return available / 6.0;
-    }
-
     private static String normalize(String value) {
         String ascii = Normalizer.normalize(value.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
             .replaceAll("\\p{M}", "");
@@ -178,5 +195,21 @@ public class ActivityPersistenceService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static String limitedBlankToNull(String value, int maxLength) {
+        String normalized = blankToNull(value);
+        if (normalized == null || normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength);
+    }
+
+    private static String reasonCodes(PoiQualityEvaluation quality) {
+        return quality.reasonCodes().stream()
+            .map(QualityReasonCode::name)
+            .sorted()
+            .reduce((first, second) -> first + "," + second)
+            .orElse("");
     }
 }

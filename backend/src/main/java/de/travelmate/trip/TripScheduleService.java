@@ -2,6 +2,7 @@ package de.travelmate.trip;
 
 import de.travelmate.activity.ActivityEntity;
 import de.travelmate.activity.ActivityRepository;
+import de.travelmate.interest.InterestType;
 import de.travelmate.planning.ActivityTimeRules;
 import de.travelmate.planning.PlanningService;
 import de.travelmate.user.CurrentUserService;
@@ -37,14 +38,23 @@ public class TripScheduleService {
     @Inject
     ActivityTimeRules timeRules;
 
+    @Inject
+    TripTimeWindowPolicy timeWindowPolicy;
+
     public void deleteActivity(TripEntity trip, Long dayId, Long itemId) {
         TripDayEntity day = requireDay(trip, dayId);
         TripDayActivityEntity item = requireItem(day, itemId);
-        tripActivities.delete(item);
-        tripActivities.flush();
         day.activities.remove(item);
+        tripActivities.flush();
         day.activities.sort(Comparator.comparingInt(activity -> activity.position));
+
+        for (int i = 0; i < day.activities.size(); i++) {
+            day.activities.get(i).position = temporaryPositionFor(i);
+        }
+        tripActivities.flush();
+
         renumber(day);
+        tripActivities.flush();
     }
 
     public void updateAvailability(TripEntity trip, Long dayId, UpdateDayAvailabilityRequest request) {
@@ -65,6 +75,7 @@ public class TripScheduleService {
         }
 
         List<Long> requestedItems = validateScheduleRequest(request, dayById, itemById);
+        reorderDaysIfComplete(trip, request, dayById);
         moveItemsToTemporaryPositivePositions(requestedItems);
         persistRequestedSchedule(request, dayById, itemById);
         tripActivities.getEntityManager().flush();
@@ -72,7 +83,7 @@ public class TripScheduleService {
         return trip;
     }
 
-    public void regenerateActivity(TripEntity trip, Long dayId, Long itemId) {
+    public void regenerateActivity(TripEntity trip, Long dayId, Long itemId, InterestType primaryInterest) {
         TripDayEntity day = requireDay(trip, dayId);
         TripDayActivityEntity item = requireItem(day, itemId);
         Set<Long> interestIds = (trip.selectedInterests.isEmpty()
@@ -80,7 +91,7 @@ public class TripScheduleService {
             : trip.selectedInterests).stream()
             .map(interest -> interest.id)
             .collect(java.util.stream.Collectors.toSet());
-        ActivityEntity replacement = planning.replacementFor(trip, item, interestIds)
+        ActivityEntity replacement = planning.replacementFor(trip, item, interestIds, primaryInterest)
             .orElseThrow(() -> new BadRequestException("Keine weitere passende Aktivitaet verfuegbar."));
         item.activity = replacement;
         item.locked = true;
@@ -109,13 +120,14 @@ public class TripScheduleService {
         if (!activity.active) {
             throw new BadRequestException("Diese Aktivitaet ist nicht mehr fuer neue Plaene verfuegbar.");
         }
+        timeWindowPolicy().extendDayForActivity(day, activity);
         TripDayActivityEntity item = new TripDayActivityEntity();
         item.tripDay = day;
         item.activity = activity;
         item.position = day.activities.size() + 1;
         ActivityTimeRules.TimeProfile profile = timeRules.profile(activity);
         item.durationMinutes = profile.durationMinutes();
-        item.scheduledStart = Math.max(day.availableFrom, profile.earliestStart());
+        item.scheduledStart = nextStartForNewItem(day, profile, item.durationMinutes);
         item.notes = request.notes();
         item.locked = request.locked() != null && request.locked();
         day.activities.add(item);
@@ -132,13 +144,33 @@ public class TripScheduleService {
             if (!dayById.containsKey(dayRequest.dayId()) || !requestedDays.add(dayRequest.dayId())) {
                 throw new BadRequestException("Der Zeitplan enthaelt einen ungueltigen Reisetag.");
             }
-            requestedItems.addAll(dayRequest.activityItemIds());
+            List<Long> orderedItemIds = dayRequest.orderedItemIds();
+            if (orderedItemIds.isEmpty()) {
+                continue;
+            }
+            validateActivityTiming(dayRequest);
+            requestedItems.addAll(orderedItemIds);
         }
         if (requestedItems.size() != new HashSet<>(requestedItems).size()
             || !new HashSet<>(requestedItems).equals(itemById.keySet())) {
             throw new BadRequestException("Jeder Planeintrag muss im Zeitplan genau einmal vorkommen.");
         }
         return requestedItems;
+    }
+
+    private void validateActivityTiming(ScheduleDayRequest dayRequest) {
+        for (ScheduleActivityRequest activity : dayRequest.activityDetailsByItemId().values()) {
+            if (activity.scheduledStart() != null
+                && (activity.scheduledStart() < 0 || activity.scheduledStart() > 1439)) {
+                throw new BadRequestException("Startzeit muss zwischen 00:00 und 23:59 liegen.");
+            }
+            if (activity.durationMinutes() != null
+                && (activity.durationMinutes() < 30
+                    || activity.durationMinutes() > 720
+                    || activity.durationMinutes() % 30 != 0)) {
+                throw new BadRequestException("Dauer muss in 30-Minuten-Schritten zwischen 30 und 720 Minuten liegen.");
+            }
+        }
     }
 
     private void moveItemsToTemporaryPositivePositions(List<Long> requestedItems) {
@@ -156,6 +188,41 @@ public class TripScheduleService {
         return TEMPORARY_POSITION_OFFSET + index;
     }
 
+    private void reorderDaysIfComplete(
+        TripEntity trip,
+        UpdateScheduleRequest request,
+        Map<Long, TripDayEntity> dayById
+    ) {
+        if (request.days().size() != trip.days.size()) return;
+
+        List<TripDayEntity> orderedDays = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        for (ScheduleDayRequest dayRequest : request.days()) {
+            TripDayEntity day = dayById.get(dayRequest.dayId());
+            if (day == null || !seen.add(day.id)) return;
+            orderedDays.add(day);
+        }
+        if (orderedDays.size() != trip.days.size()) return;
+
+        List<TripDayEntity> currentSlots = trip.days.stream()
+            .sorted(Comparator.comparingInt(day -> day.dayNumber))
+            .toList();
+        List<Integer> dayNumbers = currentSlots.stream().map(day -> day.dayNumber).toList();
+        List<java.time.LocalDate> travelDates = currentSlots.stream().map(day -> day.travelDate).toList();
+
+        for (int index = 0; index < orderedDays.size(); index++) {
+            orderedDays.get(index).dayNumber = temporaryPositionFor(index);
+        }
+        tripActivities.getEntityManager().flush();
+
+        for (int index = 0; index < orderedDays.size(); index++) {
+            TripDayEntity day = orderedDays.get(index);
+            day.dayNumber = dayNumbers.get(index);
+            day.travelDate = travelDates.get(index);
+        }
+        tripActivities.getEntityManager().flush();
+    }
+
     private void persistRequestedSchedule(
         UpdateScheduleRequest request,
         Map<Long, TripDayEntity> dayById,
@@ -163,20 +230,29 @@ public class TripScheduleService {
     ) {
         for (ScheduleDayRequest dayRequest : request.days()) {
             TripDayEntity day = dayById.get(dayRequest.dayId());
+            Map<Long, ScheduleActivityRequest> detailsByItemId = dayRequest.activityDetailsByItemId();
             int cursor = day.availableFrom;
-            for (int index = 0; index < dayRequest.activityItemIds().size(); index++) {
-                TripDayActivityEntity item = itemById.get(dayRequest.activityItemIds().get(index));
-                int start = nextStart(day, item, cursor);
+            List<Long> orderedItemIds = dayRequest.orderedItemIds();
+            for (int index = 0; index < orderedItemIds.size(); index++) {
+                TripDayActivityEntity item = itemById.get(orderedItemIds.get(index));
+                ScheduleActivityRequest details = detailsByItemId.get(item.id);
+                int duration = details != null && details.durationMinutes() != null
+                    ? details.durationMinutes()
+                    : item.durationMinutes;
+                int start = details != null && details.scheduledStart() != null
+                    ? details.scheduledStart()
+                    : nextStart(day, item, cursor);
                 tripActivities.getEntityManager().createNativeQuery(
                     "UPDATE trip_day_activities "
-                        + "SET trip_day_id = ?1, position = ?2, scheduled_start = ?3, locked = TRUE "
-                        + "WHERE id = ?4"
+                        + "SET trip_day_id = ?1, position = ?2, scheduled_start = ?3, duration_minutes = ?4, locked = TRUE "
+                        + "WHERE id = ?5"
                 ).setParameter(1, day.id)
                     .setParameter(2, index + 1)
                     .setParameter(3, start)
-                    .setParameter(4, item.id)
+                    .setParameter(4, duration)
+                    .setParameter(5, item.id)
                     .executeUpdate();
-                cursor = start + item.durationMinutes + STOP_GAP_MINUTES;
+                cursor = start + duration + STOP_GAP_MINUTES;
             }
         }
     }
@@ -189,6 +265,15 @@ public class TripScheduleService {
             start = profile.preferredStart();
         }
         return Math.min(start, 1440 - item.durationMinutes);
+    }
+
+    private int nextStartForNewItem(TripDayEntity day, ActivityTimeRules.TimeProfile profile, int durationMinutes) {
+        int cursor = day.activities.stream()
+            .mapToInt(item -> item.scheduledStart + item.durationMinutes + STOP_GAP_MINUTES)
+            .max()
+            .orElse(day.availableFrom);
+        int start = Math.max(cursor, Math.max(day.availableFrom, profile.earliestStart()));
+        return Math.min(start, 1440 - durationMinutes);
     }
 
     private TripDayEntity requireDay(TripEntity trip, Long dayId) {
@@ -209,5 +294,9 @@ public class TripScheduleService {
         for (int i = 0; i < day.activities.size(); i++) {
             day.activities.get(i).position = i + 1;
         }
+    }
+
+    private TripTimeWindowPolicy timeWindowPolicy() {
+        return timeWindowPolicy == null ? new TripTimeWindowPolicy() : timeWindowPolicy;
     }
 }

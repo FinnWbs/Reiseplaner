@@ -37,23 +37,23 @@ defineEmits<{
         @keydown="$emit('keydown', $event)"
       >
       <span v-if="loading" class="location-loading">Sucht...</span>
-    </div>
-    <div v-if="dropdownOpen" class="location-dropdown">
-      <button
-        v-for="(suggestion, index) in suggestions"
-        :key="suggestion.id"
-        type="button"
-        class="location-option"
-        :class="{ highlighted: highlightedIndex === index }"
-        @mousedown.prevent="$emit('select', suggestion)"
-        @mouseenter="$emit('highlight', index)"
-      >
-        <MapPin :size="18" />
-        <span>
-          <strong>{{ suggestion.city }}</strong>
-          <small>{{ describeLocation(suggestion) }}</small>
-        </span>
-      </button>
+      <div v-if="dropdownOpen" class="location-dropdown">
+        <button
+          v-for="(suggestion, index) in suggestions"
+          :key="suggestion.id"
+          type="button"
+          class="location-option"
+          :class="{ highlighted: highlightedIndex === index }"
+          @mousedown.prevent="$emit('select', suggestion)"
+          @mouseenter="$emit('highlight', index)"
+        >
+          <MapPin :size="18" />
+          <span>
+            <strong>{{ suggestion.city }}</strong>
+            <small>{{ describeLocation(suggestion) }}</small>
+          </span>
+        </button>
+      </div>
     </div>
     <span v-if="selectedLocation" class="selected-location">
       Ausgewählt: {{ selectedLocation.city }}<template v-if="describeLocation(selectedLocation)">, {{ describeLocation(selectedLocation) }}</template>

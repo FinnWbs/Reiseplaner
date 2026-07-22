@@ -1,5 +1,6 @@
 package de.travelmate.trip;
 
+import de.travelmate.catalog.AttractionCatalogResponse;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -45,6 +46,18 @@ public class TripResource {
         return trips.generatePlan(id, request);
     }
 
+    @POST
+    @Path("/{id}/fill-missing-plan")
+    public TripDto fillMissingPlan(@PathParam("id") Long id, GeneratePlanRequest request) {
+        return trips.fillMissingPlan(id, request);
+    }
+
+    @POST
+    @Path("/{id}/interests")
+    public TripDto addInterest(@PathParam("id") Long id, AddTripInterestRequest request) {
+        return trips.addInterest(id, request);
+    }
+
     @DELETE
     @Path("/{id}/days/{dayId}/activities/{itemId}")
     public TripDto deleteActivity(@PathParam("id") Long id, @PathParam("dayId") Long dayId, @PathParam("itemId") Long itemId) {
@@ -72,9 +85,10 @@ public class TripResource {
     public TripDto regenerateActivity(
         @PathParam("id") Long id,
         @PathParam("dayId") Long dayId,
-        @PathParam("itemId") Long itemId
+        @PathParam("itemId") Long itemId,
+        RegenerateActivityRequest request
     ) {
-        return trips.regenerateActivity(id, dayId, itemId);
+        return trips.regenerateActivity(id, dayId, itemId, request);
     }
 
     @PUT
@@ -98,5 +112,21 @@ public class TripResource {
     @Path("/{id}/days/{dayId}/activities")
     public TripDto addActivity(@PathParam("id") Long id, @PathParam("dayId") Long dayId, @Valid ReplaceTripActivityRequest request) {
         return trips.addActivity(id, dayId, request);
+    }
+
+    @GET
+    @Path("/{id}/catalog-attractions")
+    public AttractionCatalogResponse catalogAttractions(@PathParam("id") Long id) {
+        return trips.catalogAttractions(id);
+    }
+
+    @POST
+    @Path("/{id}/days/{dayId}/catalog-attractions/{catalogId}")
+    public TripDto addCatalogAttraction(
+        @PathParam("id") Long id,
+        @PathParam("dayId") Long dayId,
+        @PathParam("catalogId") String catalogId
+    ) {
+        return trips.addCatalogAttraction(id, dayId, catalogId);
     }
 }

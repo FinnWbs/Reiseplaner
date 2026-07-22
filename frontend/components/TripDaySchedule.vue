@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import draggable from 'vuedraggable'
 import {
+  BookOpen,
   Dumbbell,
   GripVertical,
-  Landmark,
   MapPin,
-  Moon,
+  Martini,
   Palette,
   RefreshCw,
   ShoppingBag,
@@ -15,6 +15,7 @@ import {
   Utensils
 } from 'lucide-vue-next'
 import type { TripDay } from '~/types/trip'
+import { displayCategoryForActivity } from '~/utils/activityCategory'
 
 defineProps<{
   day: TripDay
@@ -31,28 +32,19 @@ defineEmits<{
   removeActivity: [dayId: number, itemId: number]
 }>()
 
-const categoryName = (category?: string, subcategory?: string) => {
-  const value = `${category || ''} ${subcategory || ''}`.toLowerCase()
-  if (/night|club|bar|pub/.test(value)) return 'Nightlife'
-  if (/food|restaurant|cafe|market|catering/.test(value)) return 'Food'
-  if (/park|natur|garden|forest|beach/.test(value)) return 'Natur'
-  if (/shop|commercial|mall/.test(value)) return 'Shopping'
-  if (/sport|stadium|fitness/.test(value)) return 'Sport'
-  if (/heritage|historic|monument|castle|geschichte/.test(value)) return 'Geschichte'
-  return 'Kultur'
-}
+const categoryName = (activity: TripDay['activities'][number]['activity']) => displayCategoryForActivity(activity)
 
-const categoryIcon = (category?: string, subcategory?: string) => {
+const categoryIcon = (activity: TripDay['activities'][number]['activity']) => {
   const icons = {
     Kultur: Palette,
-    Geschichte: Landmark,
+    Geschichte: BookOpen,
     Natur: Trees,
     Food: Utensils,
     Shopping: ShoppingBag,
-    Nightlife: Moon,
+    Nightlife: Martini,
     Sport: Dumbbell
   }
-  return icons[categoryName(category, subcategory)]
+  return icons[categoryName(activity)]
 }
 </script>
 
@@ -76,7 +68,10 @@ const categoryIcon = (category?: string, subcategory?: string) => {
       @end="$emit('persistSchedule')"
     >
       <template #item="{ element: item }">
-        <article class="schedule-item" :class="{ 'outside-window': !item.fitsAvailability }">
+        <article
+          class="schedule-item"
+          :class="[`category-${categoryName(item.activity).toLowerCase()}`, { 'outside-window': !item.fitsAvailability }]"
+        >
           <div class="schedule-time">
             <strong>{{ formatMinutes(item.scheduledStart) }}</strong>
             <span>{{ item.durationMinutes }} Min.</span>
@@ -86,11 +81,11 @@ const categoryIcon = (category?: string, subcategory?: string) => {
             <button class="drag-handle" type="button" title="Aktivität verschieben">
               <GripVertical :size="20" />
             </button>
-            <div class="activity-icon" :title="categoryName(item.activity.category, item.activity.subcategory)">
-              <component :is="categoryIcon(item.activity.category, item.activity.subcategory)" :size="22" :stroke-width="1.8" />
+            <div class="activity-icon" :title="categoryName(item.activity)">
+              <component :is="categoryIcon(item.activity)" :size="22" :stroke-width="1.8" />
             </div>
             <div class="schedule-main">
-              <span class="schedule-position">{{ categoryName(item.activity.category, item.activity.subcategory) }} &middot; Stopp {{ item.position }}</span>
+              <span class="schedule-position">{{ categoryName(item.activity) }} &middot; Stopp {{ item.position }}</span>
               <h4>{{ item.activity.name }}</h4>
               <p v-if="item.activity.description" class="schedule-description">{{ item.activity.description }}</p>
               <div class="activity-facts">
