@@ -42,6 +42,7 @@ const feedbackText = ref('')
 const feedbackSaving = ref(false)
 const feedbackError = ref('')
 const feedbackSuccess = ref(false)
+const simpleFeedbackMode = ref(false)
 const feedbackTarget = ref<{
   label: string
   selector: string
@@ -107,7 +108,7 @@ const availableTripInterests = computed(() =>
   interestCategories.filter(interest => !selectedInterestKeys.value.has(interest.key))
 )
 const feedbackTextboxStyle = computed(() => {
-  if (!feedbackTarget.value || feedbackDirectMode.value || !import.meta.client) return {}
+  if (!feedbackTarget.value || feedbackDirectMode.value || simpleFeedbackMode.value || !import.meta.client) return {}
   return {
     top: `${Math.min(feedbackTarget.value.rect.top + feedbackTarget.value.rect.height + 10, window.innerHeight - 260)}px`,
     left: `${Math.min(feedbackTarget.value.rect.left, window.innerWidth - 360)}px`
@@ -275,7 +276,20 @@ const closeInterestMenu = () => {
   interestMenuOpen.value = false
 }
 
+const updateFeedbackDeviceMode = () => {
+  if (!import.meta.client) return
+  simpleFeedbackMode.value = window.matchMedia('(max-width: 760px), (hover: none), (pointer: coarse)').matches
+  if (simpleFeedbackMode.value && feedbackMode.value) {
+    closeFeedbackMode()
+  }
+}
+
 const openFeedbackIntro = () => {
+  updateFeedbackDeviceMode()
+  if (simpleFeedbackMode.value) {
+    startDirectFeedback()
+    return
+  }
   feedbackInfoOpen.value = true
   feedbackError.value = ''
   feedbackSuccess.value = false
@@ -318,12 +332,33 @@ const closeFeedbackText = () => {
   feedbackText.value = ''
 }
 
+const feedbackTargetSelector = [
+  'button',
+  'a',
+  '[role="button"]',
+  '[aria-label]',
+  '.trip-interest-icon',
+  '.trip-date-meta-button',
+  '.day-switcher button',
+  '.compact-activity',
+  '.activity-gallery',
+  '.activity-day-map',
+  '.orbit-page-heading',
+  '.orbit-heading-count',
+  '.catalog-open-button',
+  '.orbit-card-header',
+  '.day-activity-experience',
+  '.orbit-day-card',
+  'section',
+  'article',
+  'header',
+  'main'
+].join(', ')
+
 const feedbackCandidateFromEvent = (event: MouseEvent) => {
   const target = event.target as HTMLElement | null
-  if (!target || target.closest('[data-feedback-ui="true"]')) return null
-  return target.closest<HTMLElement>(
-    '.trip-interest-icon, .trip-interest-add-button, .trip-date-meta-button, .day-switcher button, .compact-activity, .activity-gallery, .activity-day-map, .orbit-heading-count, .catalog-open-button'
-  )
+  if (!target || target.closest('[data-feedback-ui="true"]') || simpleFeedbackMode.value) return null
+  return target.closest<HTMLElement>(feedbackTargetSelector)
 }
 
 const labelForFeedbackTarget = (element: HTMLElement) =>
@@ -438,7 +473,7 @@ const screenshotViewportWithHighlight = async (rect: { top: number; left: number
 }
 
 const updateFeedbackHover = (event: MouseEvent) => {
-  if (!feedbackMode.value || feedbackTextOpen.value) return
+  if (!feedbackMode.value || feedbackTextOpen.value || simpleFeedbackMode.value) return
   const element = feedbackCandidateFromEvent(event)
   if (!element) {
     feedbackHoverRect.value = null
@@ -449,7 +484,7 @@ const updateFeedbackHover = (event: MouseEvent) => {
 }
 
 const selectFeedbackTarget = async (event: MouseEvent) => {
-  if (!feedbackMode.value || feedbackTextOpen.value) return
+  if (!feedbackMode.value || feedbackTextOpen.value || simpleFeedbackMode.value) return
   const element = feedbackCandidateFromEvent(event)
   if (!element) return
   event.preventDefault()
@@ -511,9 +546,11 @@ onErrorCaptured((error) => {
 })
 
 onMounted(async () => {
+  updateFeedbackDeviceMode()
   window.addEventListener('click', closeInterestMenu)
   window.addEventListener('mousemove', updateFeedbackHover, true)
   window.addEventListener('click', selectFeedbackTarget, true)
+  window.addEventListener('resize', updateFeedbackDeviceMode)
   if (!Number.isFinite(tripId.value)) {
     await navigateTo('/calendar')
     return
@@ -527,6 +564,7 @@ onUnmounted(() => {
   window.removeEventListener('click', closeInterestMenu)
   window.removeEventListener('mousemove', updateFeedbackHover, true)
   window.removeEventListener('click', selectFeedbackTarget, true)
+  window.removeEventListener('resize', updateFeedbackDeviceMode)
 })
 </script>
 
@@ -705,12 +743,11 @@ onUnmounted(() => {
               <span class="eyebrow">Feedback</span>
               <h2>Was moechtest du melden?</h2>
               <p>
-                Du kannst entweder einen Bereich markieren und dazu eine kurze Beschreibung schreiben,
-                oder dein Feedback direkt als Text absenden.
+                Schreib dein Feedback direkt als Text. Auf Desktop kannst du optional vorher einen Bereich markieren.
               </p>
               <div class="feedback-dialog-actions">
                 <button type="button" @click="startDirectFeedback">Nur Text schreiben</button>
-                <button type="button" class="primary" @click="startFeedbackHighlight">Bereich markieren</button>
+                <button v-if="!simpleFeedbackMode" type="button" class="primary feedback-highlight-action" @click="startFeedbackHighlight">Bereich markieren</button>
               </div>
             </section>
           </div>
@@ -719,8 +756,9 @@ onUnmounted(() => {
             v-if="feedbackTextOpen"
             class="feedback-textbox"
             data-feedback-ui="true"
-            :class="{ direct: feedbackDirectMode }"
+            :class="{ direct: feedbackDirectMode, mobile: simpleFeedbackMode }"
             :style="feedbackTextboxStyle"
+            @click.stop
           >
             <button class="feedback-dialog-close" type="button" aria-label="Feedback abbrechen" @click="closeFeedbackText">
               <X :size="16" />
