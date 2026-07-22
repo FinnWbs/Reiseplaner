@@ -54,6 +54,8 @@ defineProps<{
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: travel-loading-spin 800ms linear infinite;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .travel-loading-text {
@@ -76,7 +78,8 @@ defineProps<{
 }
 
 @keyframes travel-loading-spin {
-  to { rotate: 360deg; }
+  from { transform: translateZ(0) rotate(0deg); }
+  to { transform: translateZ(0) rotate(360deg); }
 }
 
 @media (max-width: 520px) {
