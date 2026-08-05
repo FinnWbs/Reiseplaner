@@ -12,7 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   change: [index: number]
   updateAvailability: [day: TripDay]
-  regenerateActivity: [dayId: number, itemId: number]
+  regenerateActivity: [dayId: number, itemId: number, primaryInterest?: string]
   removeActivity: [dayId: number, itemId: number]
   requestImages: [activityId: number]
   reorderActivities: [dayId: number, activityItemIds: number[]]
@@ -26,7 +26,10 @@ const activeDay = computed(() => props.trip.days[props.activeIndex])
 const dayOrderDraft = ref<TripDay[]>([])
 const draggedActivity = ref<{ sourceDayId: number; itemId: number } | null>(null)
 const hoveredDropDayId = ref<number | null>(null)
+const touchDayScrolling = ref(false)
+const strongPressDayDrag = ref(false)
 let clearDragTimer: ReturnType<typeof setTimeout> | null = null
+let clearStrongPressTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(() => props.trip.days, (days) => {
   dayOrderDraft.value = [...days]
@@ -82,14 +85,46 @@ const onDayOrderEnd = () => {
   emit('reorderDays', nextIds)
 }
 
+const clearStrongPressDrag = () => {
+  if (clearStrongPressTimer) clearTimeout(clearStrongPressTimer)
+  clearStrongPressTimer = null
+  strongPressDayDrag.value = false
+}
+
+const handleDayPress = (event: PointerEvent) => {
+  if (!touchDayScrolling.value || event.pointerType === 'mouse') return
+  if (event.pressure > 0.45) {
+    strongPressDayDrag.value = true
+    if (clearStrongPressTimer) clearTimeout(clearStrongPressTimer)
+    clearStrongPressTimer = setTimeout(() => {
+      strongPressDayDrag.value = false
+      clearStrongPressTimer = null
+    }, 900)
+  }
+}
+
+const updateTouchDayScrolling = () => {
+  if (!import.meta.client) return
+  touchDayScrolling.value = window.matchMedia('(hover: none), (pointer: coarse)').matches
+}
+
+const dayDragDelay = computed(() => (touchDayScrolling.value && !strongPressDayDrag.value ? 520 : 0))
+
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key === 'ArrowLeft') setActive(props.activeIndex - 1)
   if (event.key === 'ArrowRight') setActive(props.activeIndex + 1)
 }
 
+onMounted(() => {
+  updateTouchDayScrolling()
+  window.addEventListener('resize', updateTouchDayScrolling)
+})
+
 onUnmounted(() => {
   if (clearDragTimer) clearTimeout(clearDragTimer)
+  clearStrongPressDrag()
   hoveredDropDayId.value = null
+  window.removeEventListener('resize', updateTouchDayScrolling)
 })
 </script>
 
@@ -101,7 +136,11 @@ onUnmounted(() => {
       item-key="id"
       tag="div"
       :animation="140"
+      :delay="dayDragDelay"
+      :delay-on-touch-only="true"
       :disabled="Boolean(draggedActivity)"
+      :fallback-tolerance="touchDayScrolling ? 8 : 3"
+      :touch-start-threshold="8"
       ghost-class="day-switcher-ghost"
       drag-class="day-switcher-dragging"
       aria-label="Reisetage"
@@ -114,6 +153,10 @@ onUnmounted(() => {
           :class="{ active: day.id === activeDay?.id, 'day-drop-target': isDropTarget(day) }"
           :aria-current="day.id === activeDay?.id ? 'step' : undefined"
           @click="setActive(index)"
+          @pointerdown.capture="handleDayPress"
+          @pointermove.capture="handleDayPress"
+          @pointerup="clearStrongPressDrag"
+          @pointercancel="clearStrongPressDrag"
           @dragover.prevent="hoverDropDay(day)"
           @dragenter.prevent="hoverDropDay(day)"
           @dragleave="clearHoveredDropDay(day)"
@@ -136,10 +179,11 @@ onUnmounted(() => {
           :day="activeDay"
           :city="trip.city"
           active
+          :selected-interests="trip.selectedInterests"
           :deleting-activity-id="deletingActivityId"
           :regenerating-activity-id="regeneratingActivityId"
           @update-availability="$emit('updateAvailability', $event)"
-          @regenerate-activity="(dayId, itemId) => $emit('regenerateActivity', dayId, itemId)"
+          @regenerate-activity="(dayId, itemId, primaryInterest) => $emit('regenerateActivity', dayId, itemId, primaryInterest)"
           @remove-activity="(dayId, itemId) => $emit('removeActivity', dayId, itemId)"
           @request-images="$emit('requestImages', $event)"
           @reorder-activities="(dayId, activityItemIds) => $emit('reorderActivities', dayId, activityItemIds)"

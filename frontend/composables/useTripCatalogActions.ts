@@ -14,18 +14,45 @@ export const useTripCatalogActions = (
   const catalogLoading = ref(false)
   const catalogError = ref('')
   const addingCatalogId = ref<string | null>(null)
+  let catalogRequest: Promise<void> | null = null
+  let catalogRequestTripId: number | null = null
 
   const loadCatalogAttractions = async () => {
     if (!trip.value) return
+    const tripId = trip.value.id
+
+    if (catalogRequest && catalogRequestTripId === tripId) {
+      await catalogRequest
+      return
+    }
+
+    if (catalogRequestTripId !== tripId) {
+      catalog.value = null
+      catalogError.value = ''
+    }
+
+    catalogRequestTripId = tripId
     catalogLoading.value = true
     catalogError.value = ''
-    try {
-      catalog.value = await request<CatalogAttractionResponse>(`/trips/${trip.value.id}/catalog-attractions`)
-    } catch (err: any) {
-      catalogError.value = workspaceErrorMessage(err, 'Highlights konnten nicht geladen werden.')
-    } finally {
-      catalogLoading.value = false
-    }
+    catalogRequest = (async () => {
+      try {
+        const loadedCatalog = await request<CatalogAttractionResponse>(`/trips/${tripId}/catalog-attractions`)
+        if (trip.value?.id === tripId) {
+          catalog.value = loadedCatalog
+        }
+      } catch (err: any) {
+        if (trip.value?.id === tripId) {
+          catalogError.value = workspaceErrorMessage(err, 'Highlights konnten nicht geladen werden.')
+        }
+      } finally {
+        if (catalogRequestTripId === tripId) {
+          catalogLoading.value = false
+          catalogRequest = null
+        }
+      }
+    })()
+
+    await catalogRequest
   }
 
   const addCatalogAttraction = async (dayId: number, catalogId: string) => {

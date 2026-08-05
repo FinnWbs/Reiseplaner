@@ -110,6 +110,29 @@ class PlanningServiceTest {
     }
 
     @Test
+    void replacementCanBeRestrictedToPreferredInterest() {
+        InterestEntity food = interest(4L, "Essen & Cafes");
+        food.code = InterestType.FOOD.name();
+        InterestEntity shopping = interest(5L, "Shopping");
+        shopping.code = InterestType.SHOPPING.name();
+        ActivityEntity current = primaryActivity(1L, "Old Stop", InterestType.SHOPPING, shopping);
+        ActivityEntity shoppingAlternative = primaryActivity(2L, "Mall", InterestType.SHOPPING, shopping);
+        ActivityEntity foodAlternative = primaryActivity(3L, "Cafe", InterestType.FOOD, food);
+        PlanningService service = serviceWithActivities(current, shoppingAlternative, foodAlternative);
+        TripDayActivityEntity item = scheduledItem(current);
+        item.scheduledStart = 720;
+
+        Optional<ActivityEntity> replacement = service.replacementFor(
+            item.tripDay.trip,
+            item,
+            Set.of(),
+            InterestType.FOOD
+        );
+
+        assertEquals(foodAlternative.id, replacement.orElseThrow().id);
+    }
+
+    @Test
     void scoreUsesInterestMatchAsDominantFactor() {
         PlanningService service = new PlanningService();
         InterestEntity culture = interest(1L, "Kultur");
@@ -304,6 +327,36 @@ class PlanningServiceTest {
 
         assertEquals(12, trip.days.stream().mapToInt(day -> day.activities.size()).sum());
         assertTrue(trip.days.stream().allMatch(day -> day.activities.size() == 2));
+    }
+
+    @Test
+    void fillMissingPlanKeepsExistingActivitiesAndFillsNewDays() {
+        InterestEntity culture = interest(1L, "Kultur & Museen");
+        culture.code = InterestType.CULTURE.name();
+        ActivityEntity existing = primaryActivity(1L, "Existing Museum", InterestType.CULTURE, culture);
+        ActivityEntity[] activities = java.util.stream.IntStream.range(0, 8)
+            .mapToObj(index -> primaryActivity(10L + index, "Museum " + index, InterestType.CULTURE, culture))
+            .toArray(ActivityEntity[]::new);
+        PlanningService service = serviceWithActivities(
+            java.util.stream.Stream.concat(java.util.stream.Stream.of(existing), java.util.Arrays.stream(activities))
+                .toArray(ActivityEntity[]::new)
+        );
+        service.sync = noRefreshSync();
+        TripEntity trip = tripWithDays(2, de.travelmate.trip.TripPace.BALANCED);
+        trip.selectedInterests = new HashSet<>(Set.of(culture));
+        TripDayActivityEntity existingItem = new TripDayActivityEntity();
+        existingItem.id = 99L;
+        existingItem.tripDay = trip.days.getFirst();
+        existingItem.activity = existing;
+        existingItem.position = 1;
+        existingItem.scheduledStart = 600;
+        existingItem.durationMinutes = 90;
+        trip.days.getFirst().activities.add(existingItem);
+
+        service.fillMissingPlan(trip, List.of(1L), Set.of(InterestType.CULTURE));
+
+        assertTrue(trip.days.getFirst().activities.contains(existingItem));
+        assertTrue(trip.days.get(1).activities.size() > 0);
     }
 
     @Test

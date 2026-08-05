@@ -354,6 +354,25 @@ const clearFixedRange = () => {
   rangeEndSide.value = ''
 }
 
+const confirmFixedRange = () => {
+  if (!startDate.value || !endDate.value || endDate.value < startDate.value) {
+    rangeError.value = 'Bitte waehle ein Start- und Enddatum aus.'
+    return
+  }
+  rangeSelectionComplete.value = true
+  closeRangeDialog()
+}
+
+const clearFlexibleSelection = () => {
+  daysCount.value = durationPresets[0]?.days || 3
+  flexibleMonth.value = ''
+}
+
+const confirmFlexibleSelection = () => {
+  if (daysCount.value < 1 || daysCount.value > 14 || !flexibleMonth.value) return
+  closeRangeDialog()
+}
+
 const chooseFlexibleDuration = () => {
   datesKnown.value = false
   closeRangeDialog()
@@ -616,9 +635,19 @@ onUnmounted(() => {
           </div>
 
           <p v-if="rangeError" class="calendar-range-error">{{ rangeError }}</p>
-          <button class="range-picker-clear" type="button" @click="clearFixedRange">
-            Daten l&ouml;schen
-          </button>
+          <div class="range-picker-actions">
+            <button class="range-picker-clear" type="button" @click="clearFixedRange">
+              Auswahl aufheben
+            </button>
+            <button
+              class="range-picker-confirm"
+              type="button"
+              :disabled="!startDate || !endDate || endDate < startDate"
+              @click="confirmFixedRange"
+            >
+              Best&auml;tigen
+            </button>
+          </div>
         </template>
 
         <div v-else class="flexible-picker-panel">
@@ -651,6 +680,20 @@ onUnmounted(() => {
               </button>
             </div>
           </section>
+
+          <div class="range-picker-actions">
+            <button class="range-picker-clear" type="button" @click="clearFlexibleSelection">
+              Auswahl aufheben
+            </button>
+            <button
+              class="range-picker-confirm"
+              type="button"
+              :disabled="daysCount < 1 || daysCount > 14 || !flexibleMonth"
+              @click="confirmFlexibleSelection"
+            >
+              Best&auml;tigen
+            </button>
+          </div>
         </div>
       </section>
     </Teleport>

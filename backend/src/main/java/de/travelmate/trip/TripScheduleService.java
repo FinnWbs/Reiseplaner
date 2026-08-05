@@ -2,6 +2,7 @@ package de.travelmate.trip;
 
 import de.travelmate.activity.ActivityEntity;
 import de.travelmate.activity.ActivityRepository;
+import de.travelmate.interest.InterestType;
 import de.travelmate.planning.ActivityTimeRules;
 import de.travelmate.planning.PlanningService;
 import de.travelmate.user.CurrentUserService;
@@ -43,11 +44,17 @@ public class TripScheduleService {
     public void deleteActivity(TripEntity trip, Long dayId, Long itemId) {
         TripDayEntity day = requireDay(trip, dayId);
         TripDayActivityEntity item = requireItem(day, itemId);
-        tripActivities.delete(item);
-        tripActivities.flush();
         day.activities.remove(item);
+        tripActivities.flush();
         day.activities.sort(Comparator.comparingInt(activity -> activity.position));
+
+        for (int i = 0; i < day.activities.size(); i++) {
+            day.activities.get(i).position = temporaryPositionFor(i);
+        }
+        tripActivities.flush();
+
         renumber(day);
+        tripActivities.flush();
     }
 
     public void updateAvailability(TripEntity trip, Long dayId, UpdateDayAvailabilityRequest request) {
@@ -76,7 +83,7 @@ public class TripScheduleService {
         return trip;
     }
 
-    public void regenerateActivity(TripEntity trip, Long dayId, Long itemId) {
+    public void regenerateActivity(TripEntity trip, Long dayId, Long itemId, InterestType primaryInterest) {
         TripDayEntity day = requireDay(trip, dayId);
         TripDayActivityEntity item = requireItem(day, itemId);
         Set<Long> interestIds = (trip.selectedInterests.isEmpty()
@@ -84,7 +91,7 @@ public class TripScheduleService {
             : trip.selectedInterests).stream()
             .map(interest -> interest.id)
             .collect(java.util.stream.Collectors.toSet());
-        ActivityEntity replacement = planning.replacementFor(trip, item, interestIds)
+        ActivityEntity replacement = planning.replacementFor(trip, item, interestIds, primaryInterest)
             .orElseThrow(() -> new BadRequestException("Keine weitere passende Aktivitaet verfuegbar."));
         item.activity = replacement;
         item.locked = true;

@@ -837,7 +837,8 @@
   cursor: grabbing;
 }
 
-.compact-activity:last-child {
+.compact-activity:last-child,
+.compact-activity:last-of-type {
   border-bottom: 0;
 }
 
@@ -1015,7 +1016,8 @@
   content: "";
 }
 
-.compact-activity:last-child .compact-activity-line::after {
+.compact-activity:last-child .compact-activity-line::after,
+.compact-activity:last-of-type .compact-activity-line::after {
   display: none;
 }
 

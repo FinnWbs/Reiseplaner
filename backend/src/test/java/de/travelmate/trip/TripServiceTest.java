@@ -12,6 +12,7 @@ import de.travelmate.user.CurrentUserService;
 import de.travelmate.user.UserEntity;
 import jakarta.ws.rs.BadRequestException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -89,6 +90,28 @@ class TripServiceTest {
         assertEquals("2026-08", trips.persisted.preferredMonth);
     }
 
+    @Test
+    void addInterestPersistsAdditionalSelectedInterest() {
+        InterestEntity culture = interest(1L, InterestType.CULTURE);
+        InterestEntity food = interest(4L, InterestType.FOOD);
+        CapturingTripRepository trips = new CapturingTripRepository();
+        TripService service = service(new TestPlanningService(), trips, culture, food);
+        TripEntity trip = new TripEntity();
+        trip.id = 99L;
+        trip.user = new UserEntity();
+        trip.user.id = 7L;
+        trip.city = "Berlin";
+        trip.daysCount = 1;
+        trip.dayRhythm = DayRhythm.BALANCED;
+        trip.selectedInterests = new java.util.HashSet<>(Set.of(culture));
+        trips.persisted = trip;
+
+        TripDto updated = service.addInterest(99L, new AddTripInterestRequest(InterestType.FOOD));
+
+        assertEquals(Set.of(culture, food), trips.persisted.selectedInterests);
+        assertEquals(List.of("CULTURE", "FOOD"), updated.selectedInterests());
+    }
+
     private static TripService service(
         TestPlanningService planning,
         CapturingTripRepository trips,
@@ -159,6 +182,13 @@ class TripServiceTest {
             entity.id = 99L;
             persisted = entity;
         }
+
+        @Override
+        public Optional<TripEntity> findForUser(Long tripId, UserEntity user) {
+            return persisted != null && persisted.id.equals(tripId)
+                ? Optional.of(persisted)
+                : Optional.empty();
+        }
     }
 
     static class TestPlanningService extends PlanningService {
@@ -190,6 +220,13 @@ class TripServiceTest {
             return interests.stream()
                 .filter(interest -> codes.stream().map(Enum::name).anyMatch(interest.code::equals))
                 .toList();
+        }
+
+        @Override
+        public Optional<InterestEntity> findByCode(InterestType code) {
+            return interests.stream()
+                .filter(interest -> interest.code.equals(code.name()))
+                .findFirst();
         }
     }
 }

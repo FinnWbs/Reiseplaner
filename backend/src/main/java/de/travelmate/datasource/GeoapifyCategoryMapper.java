@@ -35,6 +35,23 @@ public class GeoapifyCategoryMapper {
             "catering.bar", "catering.pub"
         )
     );
+//Filterstufen nach Geoapify Abfrage:
+//Zuerst gibt es einfache Relevanzfilter:
+//Hat der Ort einen Namen?
+//Hat er Koordinaten?
+//Ist er keine Gedenktafel, kein unwichtiger Memorial-Eintrag, keine reine Infrastruktur?
+//Passt er wirklich zum gewünschten Interesse?
+//
+//
+//
+//Wichtige Faktoren sind:
+//categoryFitScore: Passt der Ort wirklich zum Interesse?
+//popularityScore: Ist der Ort bekannt oder relevant?
+//notabilityScore: Gibt es Wikidata, Wikipedia, viele Sitelinks oder UNESCO-/Heritage-Hinweise?
+//qualityScore: Hat der Ort Adresse, Öffnungszeiten, Website, Beschreibung?
+//itineraryFitScore: Passt der Ort räumlich und zeitlich in einen Tagesplan?
+//penalties: Abzüge, wenn etwas nicht passt, z. B. falsche Kategorie oder zu weit entfernt.
+
 
     public List<String> categoriesFor(InterestType interest) {
         return CATEGORIES.getOrDefault(interest, List.of());

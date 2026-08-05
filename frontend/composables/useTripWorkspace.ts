@@ -15,6 +15,9 @@ export const useTripWorkspace = () => {
   const regeneratingActivityId = ref<number | null>(null)
   const deletingTripId = ref<number | null>(null)
   const savingSchedule = ref(false)
+  const savingDates = ref(false)
+  const fillingMissingPlan = ref(false)
+  const addingInterest = ref(false)
   const tripImages = useTripImages(trip, request, config)
 
   const requireAuth = async () => {
@@ -59,6 +62,7 @@ export const useTripWorkspace = () => {
     if (!await requireAuth()) return
     try {
       trip.value = await request<Trip>(`/trips/${tripId}`)
+      void catalogActions.loadCatalogAttractions()
     } catch (err: any) {
       await handleLoadError(err, 'Reise konnte nicht geladen werden.')
     } finally {
@@ -86,6 +90,64 @@ export const useTripWorkspace = () => {
     }
   }
 
+  const updateTripDates = async (startDate: string, endDate: string, planningDates: string[]) => {
+    if (!trip.value || savingDates.value) return null
+    const tripId = trip.value.id
+    savingDates.value = true
+    error.value = ''
+    try {
+      const updated = await request<Trip>(`/trips/${tripId}/dates`, {
+        method: 'PUT',
+        body: { startDate, endDate, planningDates }
+      })
+      replaceTrip(updated)
+      return updated
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Reisezeitraum konnte nicht gespeichert werden.')
+      return null
+    } finally {
+      savingDates.value = false
+    }
+  }
+
+  const fillMissingPlan = async () => {
+    if (!trip.value || fillingMissingPlan.value) return null
+    const tripId = trip.value.id
+    fillingMissingPlan.value = true
+    error.value = ''
+    try {
+      const updated = await request<Trip>(`/trips/${tripId}/fill-missing-plan`, { method: 'POST' })
+      replaceTrip(updated)
+      return updated
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Fehlende Reisetage konnten nicht nachgeneriert werden.')
+      return null
+    } finally {
+      fillingMissingPlan.value = false
+    }
+  }
+
+  const addTripInterest = async (primaryInterest: string) => {
+    if (!trip.value || addingInterest.value) return null
+    if (trip.value.selectedInterests?.includes(primaryInterest)) return trip.value
+    const tripId = trip.value.id
+    addingInterest.value = true
+    error.value = ''
+    try {
+      const updated = await request<Trip>(`/trips/${tripId}/interests`, {
+        method: 'POST',
+        body: { primaryInterest }
+      })
+      replaceTrip(updated)
+      return updated
+    } catch (err: any) {
+      error.value = workspaceErrorMessage(err, 'Interesse konnte nicht hinzugefuegt werden.')
+      return null
+    } finally {
+      addingInterest.value = false
+    }
+  }
+
   const removeActivity = async (dayId: number, itemId: number) => {
     if (!trip.value) return
     deletingActivityId.value = itemId
@@ -102,14 +164,17 @@ export const useTripWorkspace = () => {
     }
   }
 
-  const regenerateActivity = async (dayId: number, itemId: number) => {
+  const regenerateActivity = async (dayId: number, itemId: number, primaryInterest?: string) => {
     if (!trip.value) return
     regeneratingActivityId.value = itemId
     error.value = ''
     try {
       replaceTrip(await request<Trip>(
         `/trips/${trip.value.id}/days/${dayId}/activities/${itemId}/regenerate`,
-        { method: 'POST' }
+        {
+          method: 'POST',
+          body: primaryInterest ? { primaryInterest } : {}
+        }
       ))
     } catch (err: any) {
       error.value = workspaceErrorMessage(err, 'Keine passende Alternative gefunden.')
@@ -255,6 +320,9 @@ export const useTripWorkspace = () => {
     regeneratingActivityId,
     deletingTripId,
     savingSchedule,
+    savingDates,
+    fillingMissingPlan,
+    addingInterest,
     catalog: catalogActions.catalog,
     catalogLoading: catalogActions.catalogLoading,
     catalogError: catalogActions.catalogError,
@@ -266,6 +334,9 @@ export const useTripWorkspace = () => {
     loadTrip,
     loadCatalogAttractions: catalogActions.loadCatalogAttractions,
     updateAvailability,
+    updateTripDates,
+    fillMissingPlan,
+    addTripInterest,
     removeActivity,
     regenerateActivity,
     reorderActivities,

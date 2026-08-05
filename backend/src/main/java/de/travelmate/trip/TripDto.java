@@ -1,6 +1,7 @@
 package de.travelmate.trip;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 public record TripDto(
@@ -20,6 +21,7 @@ public record TripDto(
     TripPace pace,
     DayRhythm dayRhythm,
     DestinationSource destinationSource,
+    List<String> selectedInterests,
     List<TripDayDto> days
 ) {
     public static TripDto from(TripEntity trip) {
@@ -40,6 +42,10 @@ public record TripDto(
             trip.pace,
             trip.dayRhythm,
             trip.destinationSource,
+            trip.selectedInterests.stream()
+                .map(interest -> interest.code)
+                .sorted(Comparator.naturalOrder())
+                .toList(),
             trip.days.stream().map(TripDayDto::from).toList()
         );
     }

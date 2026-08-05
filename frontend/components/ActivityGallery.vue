@@ -37,15 +37,18 @@ const emit = defineEmits<{
 }>()
 
 const config = useRuntimeConfig()
+const { request } = useApi()
 const activeSlide = ref(0)
 const failedImageUrls = ref<string[]>([])
 const loadedImageUrls = ref<string[]>([])
 const imageRetryVersions = ref<Record<string, number>>({})
 const imageLoadStatus = ref<ImageLoadStatus>('idle')
 const isFullscreenOpen = ref(false)
+const localImages = ref<ActivityImage[]>([])
 const imageRetryAfterMs = 7000
 const failedImageRetryTimers = new Map<string, ReturnType<typeof setTimeout>>()
 let previousBodyOverflow = ''
+let imageRequest: Promise<void> | null = null
 
 const debugGallery = (event: string, extra: Record<string, unknown> = {}) => {
   if (!import.meta.dev) return
@@ -118,8 +121,6 @@ const propImages = computed(() => {
   const images = props.activity?.activity?.images
   return Array.isArray(images) ? images : []
 })
-
-const localImages = computed<ActivityImage[]>(() => [])
 
 function resolveImageUrl(url: string) {
   if (!url) return ''
@@ -236,6 +237,7 @@ watch(() => props.activity.id, () => {
   closeFullscreen()
   clearFailedImageRetries()
   loadedImageUrls.value = []
+  localImages.value = []
   imageLoadStatus.value = 'idle'
   requestImages()
   debugGallery('activity-change-after-reset')
@@ -307,12 +309,37 @@ const markSlideImageFailed = (slide: GallerySlide) => {
   if (url) markImageFailed(url)
 }
 
-const requestImages = () => {
+const requestImages = async () => {
   if (!props.activity?.activity?.id) return
   if (realImages.value.length || imageLoadStatus.value === 'loading') return
+  if (imageRequest) return
   imageLoadStatus.value = 'loading'
-  debugGallery('request-images')
-  emit('requestImages', props.activity.activity.id)
+  const activityId = props.activity.activity.id
+  debugGallery('request-images', { activityId })
+  imageRequest = request<ActivityImage[]>(`/activities/${activityId}/images`, { method: 'POST' })
+    .then((images) => {
+      localImages.value = Array.isArray(images) ? images : []
+      imageLoadStatus.value = localImages.value.length ? 'loading' : 'failed'
+      debugGallery('request-images-done', {
+        activityId,
+        received: localImages.value.length
+      })
+      if (!localImages.value.length) {
+        emit('requestImages', activityId)
+      }
+    })
+    .catch((error) => {
+      imageLoadStatus.value = 'failed'
+      debugGallery('request-images-error', {
+        activityId,
+        message: error?.message || String(error)
+      })
+      emit('requestImages', activityId)
+    })
+    .finally(() => {
+      imageRequest = null
+    })
+  await imageRequest
 }
 
 const markImageLoaded = (url: string) => {
