@@ -6,6 +6,7 @@ frontend/.nuxt/
 frontend/.nuxt-dev/
 frontend/.output/
 frontend/.nuxt-local/
+frontend/127.0.0.1/
 .npm-cache/
 frontend/dev-*.log
 backend/dev-*.log
